@@ -1,0 +1,355 @@
+
+> gamedev@0.0.4-alpha.2 dev
+> node scripts/build.mjs --dev
+
+(node:219794) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:318:121:
+      318 │ ...blinkCooldown.toFixed(3));cooldown:', blinkCooldown.toFixed(3));
+          ╵                                                                    ^
+
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:318:121:
+      318 │ ...blinkCooldown.toFixed(3));cooldown:', blinkCooldown.toFixed(3));
+          ╵                                                                    ^
+
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:318:121:
+      318 │ ...blinkCooldown.toFixed(3));cooldown:', blinkCooldown.toFixed(3));
+          ╵                                                                    ^
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:315:46:
+      315 │         cooldown:', blinkCooldown.toFixed(3));
+          ╵                                               ^
+
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:315:46:
+      315 │         cooldown:', blinkCooldown.toFixed(3));
+          ╵                                               ^
+
+✘ [ERROR] Unterminated string literal
+
+    src/core/extras/createVRMFactory.js:315:46:
+      315 │         cooldown:', blinkCooldown.toFixed(3));
+          ╵                                               ^
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:825:0:
+      825 │ }
+          ╵ ^
+
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:825:0:
+      825 │ }
+          ╵ ^
+
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:825:0:
+      825 │ }
+          ╵ ^
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:824:0:
+      824 │ }
+          ╵ ^
+
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:824:0:
+      824 │ }
+          ╵ ^
+
+✘ [ERROR] Unexpected "}"
+
+    src/core/extras/createVRMFactory.js:824:0:
+      824 │ }
+          ╵ ^
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Expected "{" but found "console"
+
+    src/core/systems/ClientCameraControls.js:465:4:
+      465 │     console.log('[DOF] Focus speed set to:', speed) {
+          │     ~~~~~~~
+          ╵     {
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Expected "{" but found "console"
+
+    src/core/systems/ClientCameraControls.js:465:4:
+      465 │     console.log('[DOF] Focus speed set to:', speed) {
+          │     ~~~~~~~
+          ╵     {
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+✘ [ERROR] Unexpected "else"
+
+    src/core/extras/createVRMFactory.js:1626:8:
+      1626 │       } else if (mode === Modes.BACKFLIP) {
+           ╵         ~~~~
+
+✘ [ERROR] Unexpected "else"
+
+    src/core/extras/createVRMFactory.js:1626:8:
+      1626 │       } else if (mode === Modes.BACKFLIP) {
+           ╵         ~~~~
+
+✘ [ERROR] Expected "{" but found "console"
+
+    src/core/systems/ClientCameraControls.js:465:4:
+      465 │     console.log('[DOF] Focus speed set to:', speed) {
+          │     ~~~~~~~
+          ╵     {
+
+✘ [ERROR] Unexpected "else"
+
+    src/core/extras/createVRMFactory.js:1626:8:
+      1626 │       } else if (mode === Modes.BACKFLIP) {
+           ╵         ~~~~
+
+✘ [ERROR] Cannot read properties of undefined (reading 'outputs') [plugin client-finalize-plugin]
+
+  This error came from the "onEnd" callback registered here:
+
+    /home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:20:
+      1150 │       let promise = setup({
+           ╵                     ^
+
+    at setup (file:///home/blank/gamedev/scripts/build.mjs:56:17)
+    at handlePlugins (/home/blank/gamedev/node_modules/esbuild/lib/main.js:1150:21)
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000
+[assets] initializing
+[clean] running
+[clean] complete
+server listening on port 5000
+THREE.GLTFLoader: Couldn't load texture blob:nodedata:8906602f-e085-4ebc-a12f-1604f0cd6d0b
+/src/PhysX/physx/source/geomutils/src/cooking/GuCookingTriangleMesh.cpp (217) : warning : TriangleMesh: triangles are too big, reduce their size to increase simulation stability!
+
+[assets] initializing
+[clean] running
+[clean] complete
+(Error#1)
+Error#1: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1907:16)
+    at listenInCluster (node:net:1964:12)
+    at node:net:2170:7
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+failed to launch on port 5000

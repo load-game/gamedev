@@ -23,6 +23,54 @@ Hyperfy is an open-source framework for building interactive 3D virtual worlds. 
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hyperfy-xyz/hyperfy)
 
+
+## 🆕 Enhanced Features (Migrated from hyperfy/dojo)
+
+### Web3 Integration
+
+**StarkNet Support (Cartridge)**
+- Cartridge Controller wallet integration
+- Real StarkNet transaction execution
+- Access via `world.web3` API in apps
+
+**EVM Support (Ethereum)**
+- MetaMask and other wallet integration via wagmi/viem
+- ENS resolution with caching
+- Real transaction execution
+- Access via `world.evm` API in apps
+
+### Advanced Camera System
+
+**Realistic Camera Controls**
+- Depth of field (DOF) with Bokeh effects
+- Raycast-based autofocus
+- Multiple camera presets (portrait, landscape, macro, standard)
+- Programmatic focal length control (24-200mm)
+- ADS (Aim Down Sights) zoom simulation
+- Head bone tracking for avatar focus
+
+**Focus System**
+- Automatic focus on player head bones
+- Reticle-based focus for objects
+- Dynamic DOF adjustment based on zoom
+- Smooth focus transitions
+
+### Enhanced SkinnedMesh
+
+**Bone Manipulation**
+- `entity.getBone('name')` API for bone access
+- Reactive position/quaternion/rotation/scale properties
+- Direct matrixWorld manipulation
+- Perfect for VRM avatar customization
+
+**VRM Facial Expressions**
+- Auto-blink with realistic timing (random intervals 2.5-5s)
+- Viseme mouth animations for talking (aa, ee, ih, oh, ou)
+- Manual expression control via `vrm.setExpression()`
+- Talking state management via `vrm.setSpeaking()`
+- Compatible with VRM 1.0 ExpressionManager and VRM 0.x expression nodes
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites

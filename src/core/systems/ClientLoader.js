@@ -104,8 +104,12 @@ export class ClientLoader extends System {
       return this.files.get(url)
     }
     const resp = await fetch(url)
+    if (!resp.ok) {
+      throw new Error(`Failed to load ${url}: ${resp.status} ${resp.statusText}`)
+    }
     const blob = await resp.blob()
-    const file = new File([blob], url.split('/').pop(), { type: blob.type })
+    const fileName = url.split('/').pop().split('?')[0]
+    const file = new File([blob], fileName, { type: blob.type })
     this.files.set(url, file)
     return file
   }
@@ -237,6 +241,10 @@ export class ClientLoader extends System {
         this.results.set(key, audioBuffer)
         return audioBuffer
       }
+    }).catch(error => {
+      console.error(`Failed to load ${type} from ${url}:`, error)
+      this.promises.delete(key)
+      throw error
     })
     this.promises.set(key, promise)
     return promise
@@ -245,7 +253,8 @@ export class ClientLoader extends System {
   insert(type, url, file) {
     const key = `${type}/${url}`
     const localUrl = URL.createObjectURL(file)
-    this.files.set(url, file)
+    const cleanUrl = url.split('?')[0]
+    this.files.set(cleanUrl, file)
     let promise
     if (type === 'hdr') {
       promise = this.rgbeLoader.loadAsync(localUrl).then(texture => {

@@ -3,6 +3,7 @@ import { isBoolean, isNumber } from 'lodash-es'
 import { System } from './System'
 import { storage } from '../storage'
 import { isTouch } from '../../client/utils'
+import { EffectRegistry } from './EffectRegistry'
 
 /**
  * Client Prefs System
@@ -11,6 +12,8 @@ import { isTouch } from '../../client/utils'
 export class ClientPrefs extends System {
   constructor(world) {
     super(world)
+    this.world = world
+    this.effectRegistry = new EffectRegistry(world)
 
     const isQuest = /OculusBrowser/.test(navigator.userAgent)
 
@@ -43,6 +46,29 @@ export class ClientPrefs extends System {
     this.music = isNumber(data.music) ? data.music : 1
     this.sfx = isNumber(data.sfx) ? data.sfx : 1
     this.voice = isNumber(data.voice) ? data.voice : 1
+
+    // DOF and camera properties
+    this.dofEnabled = isBoolean(data.dofEnabled) ? data.dofEnabled : true
+    this.dofFocusDistance = isNumber(data.dofFocusDistance) ? data.dofFocusDistance : 50
+    this.dofFocalLength = isNumber(data.dofFocalLength) ? data.dofFocalLength : 24
+    this.dofBokehScale = isNumber(data.dofBokehScale) ? data.dofBokehScale : 0.01
+    this.dofFocusRange = isNumber(data.dofFocusRange) ? data.dofFocusRange : 30
+    this.dofFStop = isNumber(data.dofFStop) ? data.dofFStop : 4.0
+    this.dofMaxBlur = isNumber(data.dofMaxBlur) ? data.dofMaxBlur : 0.01
+    this.dofLuminanceThreshold = isNumber(data.dofLuminanceThreshold) ? data.dofLuminanceThreshold : 0.6
+    this.dofLuminanceGain = isNumber(data.dofLuminanceGain) ? data.dofLuminanceGain : 2.5
+    this.dofBias = isNumber(data.dofBias) ? data.dofBias : 0.08
+    this.dofFringe = isNumber(data.dofFringe) ? data.dofFringe : 0.8
+    this.focusSmoothing = isNumber(data.focusSmoothing) ? data.focusSmoothing : 0
+    this.focusSpeed = isNumber(data.focusSpeed) ? data.focusSpeed : 8
+    this.playerAutofocus = isBoolean(data.playerAutofocus) ? data.playerAutofocus : true
+    this.reticleAutofocus = isBoolean(data.reticleAutofocus) ? data.reticleAutofocus : true
+    this.scrollZoomEnabled = isBoolean(data.scrollZoomEnabled) ? data.scrollZoomEnabled : true
+    this.bloomIntensity = isNumber(data.bloomIntensity) ? data.bloomIntensity : 0.5
+    this.bloomRadius = isNumber(data.bloomRadius) ? data.bloomRadius : 0.8
+    this.bloomLuminanceThreshold = isNumber(data.bloomLuminanceThreshold) ? data.bloomLuminanceThreshold : 1
+    this.bloomLuminanceSmoothing = isNumber(data.bloomLuminanceSmoothing) ? data.bloomLuminanceSmoothing : 0.3
+
     this.v = data.v
 
     this.changes = null
@@ -131,6 +157,42 @@ export class ClientPrefs extends System {
 
   setVoice(value) {
     this.modify('voice', value)
+  }
+
+  setFocusSmoothing(value) {
+    this.modify('focusSmoothing', value)
+  }
+
+  setFocusSpeed(value) {
+    this.modify('focusSpeed', value)
+  }
+
+  setDOFEnabled(value) {
+    this.modify('dofEnabled', value)
+  }
+
+  setDOFBokehScale(value) {
+    this.modify('dofBokehScale', value)
+  }
+
+  setDOFFocusDistance(value) {
+    this.modify('dofFocusDistance', value)
+  }
+
+  setDOFFocalLength(value) {
+    this.modify('dofFocalLength', value)
+  }
+
+  setDOFFocusRange(value) {
+    this.modify('dofFocusRange', value)
+  }
+
+  setDOffStop(value) {
+    this.modify('dofFStop', value)
+  }
+
+  setDOFMaxBlur(value) {
+    this.modify('dofMaxBlur', value)
   }
 
   destroy() {

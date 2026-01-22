@@ -60,6 +60,16 @@ export class World extends EventEmitter {
     this.storage = options.storage
     this.assetsDir = options.assetsDir
     this.assetsUrl = options.assetsUrl
+
+    // Set default assetsUrl if not provided
+    if (!this.assetsUrl && typeof window !== 'undefined') {
+      // Default to /assets/ on the same origin for development
+      const protocol = window.location.protocol
+      const host = window.location.host
+      this.assetsUrl = `${protocol}//${host}/assets/`
+      console.log('[World] No assetsUrl provided, using default:', this.assetsUrl)
+    }
+
     for (const system of this.systems) {
       await system.init(options)
     }
@@ -212,11 +222,21 @@ export class World extends EventEmitter {
     }
     if (url.startsWith('asset://')) {
       if (this.assetsDir && allowLocal) {
-        return url.replace('asset:/', this.assetsDir)
+        // Ensure assetsDir ends with slash
+        const normalizedAssetsDir = this.assetsDir.endsWith('/') ? this.assetsDir : this.assetsDir + '/'
+        const resolved = url.replace('asset://', normalizedAssetsDir)
+        console.log('[World] resolveURL (assetsDir):', url, '->', resolved)
+        return resolved
       } else if (this.assetsUrl) {
-        return url.replace('asset:/', this.assetsUrl)
+        // Ensure assetsUrl ends with slash
+        const normalizedAssetsUrl = this.assetsUrl.endsWith('/') ? this.assetsUrl : this.assetsUrl + '/'
+        const resolved = url.replace('asset://', normalizedAssetsUrl)
+        console.log('[World] resolveURL (assetsUrl):', url, '->', resolved)
+        return resolved
       } else {
-        console.error('resolveURL: no assetsUrl or assetsDir defined')
+        console.error('[World] resolveURL: no assetsUrl or assetsDir defined for:', url)
+        console.error('[World] world.assetsUrl =', this.assetsUrl)
+        console.error('[World] world.assetsDir =', this.assetsDir)
         return url
       }
     }

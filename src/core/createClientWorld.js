@@ -5,6 +5,9 @@ import { ClientLiveKit } from './systems/ClientLiveKit'
 import { ClientPointer } from './systems/ClientPointer'
 import { ClientPrefs } from './systems/ClientPrefs'
 import { ClientControls } from './systems/ClientControls'
+import { ClientWeb3 } from './systems/ClientWeb3'
+import { EVM } from './systems/EVMClient'
+import { ClientCameraControls } from './systems/ClientCameraControls'
 import { ClientNetwork } from './systems/ClientNetwork'
 import { AdminClient } from './systems/AdminClient'
 import { ClientLoader } from './systems/ClientLoader'
@@ -31,6 +34,7 @@ export function createClientWorld() {
   world.register('pointer', ClientPointer)
   world.register('prefs', ClientPrefs)
   world.register('controls', ClientControls)
+  world.register('cameraControls', ClientCameraControls)
   world.register('network', ClientNetwork)
   world.register('admin', AdminClient)
   world.register('loader', ClientLoader)
@@ -49,5 +53,7 @@ export function createClientWorld() {
   world.register('snaps', Snaps)
   world.register('wind', Wind)
   world.register('xr', XR)
+  world.register('web3', ClientWeb3)
+  world.register('evm', EVM)
   return world
 }

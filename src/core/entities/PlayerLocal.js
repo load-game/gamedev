@@ -449,6 +449,8 @@ export class PlayerLocal extends Entity {
 
       // if grounded last update, check for moving platforms and move with them
       if (this.grounded) {
+      this.airJumping = false
+      
         // find any potentially moving platform
         const pose = this.capsule.getGlobalPose()
         const origin = v1.copy(pose.p)
@@ -706,8 +708,7 @@ export class PlayerLocal extends Entity {
       // ground/air jump
       const shouldJump =
         this.grounded && !this.jumping && this.jumpDown && !this.data.effect?.snare && !this.data.effect?.freeze
-      const shouldAirJump =
-        false && !this.grounded && !this.airJumped && this.jumpPressed && !this.world.builder?.enabled // temp: disabled
+      const shouldAirJump = !this.grounded && !this.airJumped && this.jumpPressed && !this.world.builder?.enabled 
       if (shouldJump || shouldAirJump) {
         // calc velocity needed to reach jump height
         let jumpVelocity = Math.sqrt(2 * this.effectiveGravity * this.jumpHeight)
@@ -722,11 +723,14 @@ export class PlayerLocal extends Entity {
         }
         // air jump init
         if (shouldAirJump) {
+      console.log('[PLAYER] Air jump triggered!')
+      
           this.falling = false
           this.fallTimer = 0
           this.jumping = true
           this.airJumped = true
           this.airJumping = true
+      console.log('[PLAYER] airJumping set to true')
         }
       }
     } else {
@@ -1013,7 +1017,18 @@ export class PlayerLocal extends Entity {
     } else if (this.flying) {
       mode = Modes.FLY
     } else if (this.airJumping) {
-      mode = Modes.FLIP
+      // Smart flip mode detection - based on movement direction
+      const flipMode = this.detectSmartFlipMode()
+
+      if (flipMode === "left") {
+        mode = Modes.SIDEFLIP_LEFT      // Left strafe flip
+      } else if (flipMode === "right") {
+        mode = Modes.SIDEFLIP_RIGHT     // Right strafe flip
+      } else if (flipMode === "back") {
+        mode = Modes.BACKFLIP           // Back flip for pure backward
+      } else {
+        mode = Modes.FLIP               // Default front flip for forward/any direction
+      }
     } else if (this.jumping) {
       mode = Modes.JUMP
     } else if (this.falling) {
@@ -1100,14 +1115,132 @@ export class PlayerLocal extends Entity {
       }
       this.lastSendAt = 0
     }
+  }
 
-    // effect duration
-    if (this.data.effect?.duration) {
-      this.data.effect.duration -= delta
-      if (this.data.effect.duration <= 0) {
-        this.setEffect(null)
-      }
+  detectSmartFlipMode() {
+    // Detect flip direction based on movement patterns
+    const axis = this.axis
+    if (!axis || axis.length() === 0) return "front"  // Default front flip when still
+
+    let moveRad = Math.atan2(axis.x, -axis.z)
+    let moveDeg = moveRad * (180 / Math.PI)
+    if (moveDeg < 0) moveDeg += 360
+
+    // Check for pure strafe movements (±22.5° from 90°/270°)
+    if (moveDeg >= 67.5 && moveDeg <= 112.5) {
+      return "right"  // Pure right strafe
     }
+    if (moveDeg >= 247.5 && moveDeg <= 292.5) {
+      return "left"   // Pure left strafe
+    }
+
+    // Test coordinate system: In case D key gives different axis values
+    if (axis.x > 0.5) {
+      return "right"
+    }
+    if (axis.x < -0.5) {
+      return "left"
+    }
+
+    // Check for pure backward movement (±22.5° from 180°)
+    if (moveDeg >= 157.5 && moveDeg <= 202.5) {
+      return "back"   // Pure backward
+    }
+
+    // All other movements default to front flip (including diagonals)
+    return "front"    // Default front flip for all other directions
+  }
+
+  teleport({ position, rotationY }) {
+    position = position.isVector3 ? position : new THREE.Vector3().fromArray(position)
+    const hasRotation = isNumber(rotationY)
+    // snap to position
+    const pose = this.capsule.getGlobalPose()
+    position.toPxTransform(pose)
+    this.capsuleHandle.snap(pose)
+    this.base.position.copy(position)
+    if (hasRotation) this.base.rotation.y = rotationY
+    // send network update
+    this.world.network.send('entityModified', {
+      id: this.data.id,
+      p: this.base.position.toArray(),
+      q: this.base.quaternion.toArray(),
+      r: this.base.rotation.y,
+    })
+  }
+
+  kill() {
+    this.capsuleHandle.snap(this.capsule.getGlobalPose()) // reset velocity
+  }
+
+  damage(amount, { point, normal, impact }) {
+    this.data.health -= amount
+    this.updateNetwork()
+  }
+
+  heal(amount) {
+    this.data.health = Math.min(this.data.maxHealth, this.data.health + amount)
+    this.updateNetwork()
+  }
+
+  setHealth(health) {
+    this.data.health = clamp(health, 0, this.data.maxHealth)
+    this.updateNetwork()
+  }
+
+  setMaxHealth(health) {
+    this.data.maxHealth = health
+    this.updateNetwork()
+  }
+
+  respawn() {
+    this.data.health = this.data.maxHealth
+    this.data.effect = {}
+    this.updateNetwork()
+  }
+
+  addEffect(effect) {
+    this.data.effect = { ...this.data.effect, ...effect }
+    this.updateNetwork()
+  }
+
+  removeEffect(key) {
+    delete this.data.effect?.[key]
+    this.updateNetwork()
+  }
+
+  getBone(name) {
+    // TODO: get actual bone
+  }
+
+  updateNetwork() {
+    this.world.network.send('entityModified', {
+      id: this.data.id,
+      data: {
+        health: this.data.health,
+        effect: this.data.effect,
+      },
+    })
+  }
+
+  getState() {
+    return {
+      ...this.data,
+      position: this.base.position.toArray(),
+      quaternion: this.base.quaternion.toArray(),
+      velocity: v1.copy(this.capsule.getLinearVelocity()).toArray(),
+      grounded: this.grounded,
+      jumping: this.jumping,
+    }
+  }
+
+  setState(state) {
+    this.data = state
+    this.base.position.fromArray(state.position)
+    this.base.quaternion.fromArray(state.quaternion)
+    this.capsule.setLinearVelocity(state.velocity)
+    this.grounded = state.grounded
+    this.jumping = state.jumping
   }
 
   lateUpdate(delta) {
@@ -1153,29 +1286,6 @@ export class PlayerLocal extends Entity {
     }
   }
 
-  teleport({ position, rotationY }) {
-    position = position.isVector3 ? position : new THREE.Vector3().fromArray(position)
-    const hasRotation = isNumber(rotationY)
-    // snap to position
-    const pose = this.capsule.getGlobalPose()
-    position.toPxTransform(pose)
-    this.capsuleHandle.snap(pose)
-    this.base.position.copy(position)
-    if (hasRotation) this.base.rotation.y = rotationY
-    // send network update
-    this.world.network.send('entityModified', {
-      id: this.data.id,
-      p: this.base.position.toArray(),
-      q: this.base.quaternion.toArray(),
-      t: true,
-    })
-    // snap camera
-    this.cam.position.copy(this.base.position)
-    this.cam.position.y += this.camHeight
-    if (hasRotation) this.cam.rotation.y = rotationY
-    this.control.camera.position.copy(this.cam.position)
-    this.control.camera.quaternion.copy(this.cam.quaternion)
-  }
 
   setEffect(effect, onEnd) {
     if (this.data.effect === effect) return

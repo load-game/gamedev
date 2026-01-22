@@ -556,9 +556,138 @@ const migrations = [
           shadows: true,
         },
       },
+      {
+        id: 'Webview',
+        name: 'Webview',
+        image: { url: 'asset://Webview.png' },
+        model: 'asset://Webview.glb',
+        script: 'asset://Webview.js',
+        props: {
+          url: 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1',
+        },
+      },
     ]
 
     for (const template of templates) {
+      if (existingIds.has(template.id)) continue
+      const blueprint = {
+        id: template.id,
+        data: JSON.stringify({
+          id: template.id,
+          version: 0,
+          name: template.name,
+          image: template.image,
+          author: null,
+          url: null,
+          desc: null,
+          model: template.model,
+          script: template.script,
+          props: template.props,
+          preload: false,
+          public: false,
+          locked: false,
+          frozen: false,
+          unique: false,
+          scene: false,
+          disabled: false,
+        }),
+        createdAt: now,
+        updatedAt: now,
+      }
+      await db('blueprints').insert(blueprint)
+    }
+  },
+  // add any missing built-in templates (e.g., Webview was missing in older worlds)
+  async db => {
+    const blueprintRows = await db('blueprints')
+    const existingIds = new Set()
+    for (const row of blueprintRows) {
+      existingIds.add(row.id)
+    }
+
+    const now = moment().toISOString()
+    const allBuiltInTemplates = [
+      {
+        id: 'Model',
+        name: 'Model',
+        image: { url: 'asset://Model.png' },
+        model: 'asset://Model.glb',
+        script: 'asset://Model.js',
+        props: { collision: true },
+      },
+      {
+        id: 'Image',
+        name: 'Image',
+        image: { url: 'asset://Image.png' },
+        model: 'asset://Image.glb',
+        script: 'asset://Image.js',
+        props: {
+          width: 0,
+          height: 2,
+          fit: 'cover',
+          image: null,
+          transparent: false,
+          lit: false,
+          shadows: true,
+          placeholder: {
+            type: 'image',
+            url: 'asset://Image.png',
+          },
+        },
+      },
+      {
+        id: 'Video',
+        name: 'Video',
+        image: { url: 'asset://Video.png' },
+        model: 'asset://Video.glb',
+        script: 'asset://Video.js',
+        props: {
+          width: 0,
+          height: 2,
+          fit: 'cover',
+          url: null,
+          loop: true,
+          autoplay: true,
+          transparent: false,
+          lit: false,
+          shadows: true,
+          placeholder: {
+            type: 'video',
+            url: 'asset://Video.mp4',
+          },
+        },
+      },
+      {
+        id: 'Text',
+        name: 'Text',
+        image: { url: 'asset://Text.png' },
+        model: 'asset://Text.glb',
+        script: 'asset://Text.js',
+        props: {
+          width: 200,
+          height: 200,
+          text: 'Enter text...',
+          fontSize: 20,
+          fontWeight: 'bold',
+          color: '#ffffff',
+          transparent: false,
+          lit: false,
+          shadows: true,
+        },
+      },
+      {
+        id: 'Webview',
+        name: 'Webview',
+        image: { url: 'asset://Webview.png' },
+        model: 'asset://Webview.glb',
+        script: 'asset://Webview.js',
+        props: {
+          url: 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1',
+        },
+      },
+    ]
+
+    for (const template of allBuiltInTemplates) {
       if (existingIds.has(template.id)) continue
       const blueprint = {
         id: template.id,

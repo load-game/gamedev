@@ -38,6 +38,7 @@ export class SkinnedMesh extends Node {
     this.actions = {}
     this.bones = null
     this.animNames = []
+    this.boneHandles = {}
 
     this.obj = SkeletonUtils.clone(this._object3d)
     this.obj.matrixWorld.copy(this.matrixWorld)
@@ -83,6 +84,7 @@ export class SkinnedMesh extends Node {
       this.obj = null
       this.bones = null
       this.animNames = []
+      this.boneHandles = {}
     }
   }
 

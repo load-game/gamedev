@@ -19,6 +19,7 @@ import {
 } from 'postprocessing'
 
 import { System } from './System'
+import { EffectRegistry } from './EffectRegistry'
 
 const v1 = new THREE.Vector3()
 
@@ -47,6 +48,8 @@ function getRenderer() {
 export class ClientGraphics extends System {
   constructor(world) {
     super(world)
+    this.world = world
+    this.effectRegistry = new EffectRegistry(world)
   }
 
   async init({ viewport }) {
