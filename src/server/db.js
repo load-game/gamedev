@@ -718,11 +718,14 @@ const migrations = [
   },
   // add deploy snapshots table
   async db => {
-    await db.schema.createTable('deploy_snapshots', table => {
-      table.string('id').primary()
-      table.text('data').notNullable()
-      table.text('meta')
-      table.timestamp('createdAt').notNullable()
-    })
+    const tableExists = await db.schema.hasTable('deploy_snapshots')
+    if (!tableExists) {
+      await db.schema.createTable('deploy_snapshots', table => {
+        table.string('id').primary()
+        table.text('data').notNullable()
+        table.text('meta')
+        table.timestamp('createdAt').notNullable()
+      })
+    }
   },
 ]
