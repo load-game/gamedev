@@ -2,12 +2,15 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import readline from 'readline'
+import { fileURLToPath } from 'url'
 
 import { DirectAppServer } from './direct.js'
 import { buildApp, formatBuildErrors } from './appBundler.js'
 import { uuid } from './utils.js'
 import { deriveBlueprintId, isBlueprintDenylist } from './blueprintUtils.js'
 import { applyTargetEnv, parseTargetArgs, resolveTarget } from './targets.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function sha256Hex(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex')
@@ -30,6 +33,14 @@ function isValidAppName(name) {
   if (!trimmed) return false
   if (trimmed.includes('/') || trimmed.includes('\\')) return false
   return true
+}
+
+function resolveBuiltinAssetPath(filename) {
+  const buildPath = path.join(__dirname, '..', 'build', 'world', 'assets', filename)
+  if (fs.existsSync(buildPath)) return buildPath
+  const srcPath = path.join(__dirname, '..', 'src', 'world', 'assets', filename)
+  if (fs.existsSync(srcPath)) return srcPath
+  return null
 }
 
 function parseDeployArgs(args = []) {
@@ -266,6 +277,61 @@ export class HyperfyCLI {
       console.log(`    📁 ${path.join(this.appsDir, appName)}`)
       console.log(``)
     }
+  }
+
+  async new(appName) {
+    if (!isValidAppName(appName)) {
+      console.error(`❌ Invalid app name: ${appName}`)
+      console.log(`💡 App names cannot contain / or \\`)
+      return
+    }
+
+    const appDir = path.join(this.appsDir, appName)
+    if (fs.existsSync(appDir)) {
+      console.error(`❌ App folder already exists: ${appDir}`)
+      return
+    }
+
+    console.log(`🧩 Creating local app: ${appName}`)
+    const assetDest = path.join(this.assetsDir, 'empty.glb')
+    if (!fs.existsSync(assetDest)) {
+      const assetSrc = resolveBuiltinAssetPath('empty.glb')
+      if (!assetSrc) {
+        console.error('❌ Missing builtin asset empty.glb')
+        console.log(`💡 Expected empty.glb in build/world/assets or src/world/assets`)
+        return
+      }
+      fs.mkdirSync(this.assetsDir, { recursive: true })
+      fs.copyFileSync(assetSrc, assetDest)
+    }
+
+    fs.mkdirSync(appDir, { recursive: true })
+
+    const blueprintPath = path.join(appDir, `${appName}.json`)
+    const blueprint = {
+      model: 'assets/empty.glb',
+      props: {},
+      preload: false,
+      public: false,
+      locked: false,
+      frozen: false,
+      unique: false,
+      scene: false,
+      disabled: false,
+    }
+    fs.writeFileSync(blueprintPath, JSON.stringify(blueprint, null, 2) + '\n', 'utf8')
+
+    const scriptPath = path.join(appDir, 'index.ts')
+    if (!fs.existsSync(scriptPath)) {
+      const script = `app.on('update', () => {})
+`
+      fs.writeFileSync(scriptPath, script, 'utf8')
+    }
+
+    console.log(`✅ Created ${appName}`)
+    console.log(`   • ${blueprintPath}`)
+    console.log(`   • ${scriptPath}`)
+    console.log(`   • ${assetDest}`)
   }
 
   async create(appName, options = {}) {
@@ -685,6 +751,7 @@ Usage:
   ${commandPrefix} <command> [options]
 
 Commands:
+  new <appName>              Create a local app folder + blueprint
   create <appName>           Create a new app in the connected world
   list                       List local apps in ./apps
   build <appName>            Build app bundle to ./dist/apps/<appName>.js
@@ -706,7 +773,7 @@ Options:
   --yes, -y                  Skip confirmation prompt (for prod targets)
 
 Environment:
-  WORLD_URL                  World server base URL (e.g. http://localhost:5000)
+  WORLD_URL                  World server base URL (e.g. http://localhost:3000)
   WORLD_ID                   World ID (must match remote worldId)
   ADMIN_CODE                 Admin code (if the world requires it)
   DEPLOY_CODE                Deploy code (required for script updates when configured)
@@ -743,6 +810,15 @@ export async function runAppCommand({ command, args = [], rootDir = process.cwd(
   let exitCode = 0
 
   switch (command) {
+    case 'new':
+      if (!args[0]) {
+        console.error('❌ App name required')
+        console.log(`Usage: ${commandPrefix} new <appName>`)
+        return 1
+      }
+      await cli.new(args[0])
+      break
+
     case 'create':
       if (!args[0]) {
         console.error('❌ App name required')

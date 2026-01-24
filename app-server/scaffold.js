@@ -18,8 +18,6 @@ const CLAUDE_SKILL_TEMPLATE = path.join(
   'SKILL.md'
 )
 
-export const APP_RUNTIME_TYPES_REFERENCE = '/// <reference types="gamedev/app-runtime" />\n'
-
 const DEFAULT_GITIGNORE = `# Dependencies
 node_modules/
 
@@ -51,9 +49,9 @@ const DEFAULT_TSCONFIG = {
     strict: false,
     noEmit: true,
     skipLibCheck: true,
-    types: ['gamedev/app-runtime'],
+    types: ['gamedev'],
   },
-  include: ['apps/**/*', 'hyperfy.app-runtime.d.ts'],
+  include: ['apps/**/*'],
 }
 
 function normalizePackageName(name, fallback) {
@@ -104,23 +102,23 @@ function resolveSdkVersion() {
 function buildEnvExample() {
   return `# Hyperfy project environment (example)
 # Run "gamedev dev" to generate a local .env automatically.
-WORLD_URL=http://localhost:5000
+WORLD_URL=http://localhost:3000
 WORLD_ID=local-your-world-id
 ADMIN_CODE=your-admin-code
 DEPLOY_CODE=your-deploy-code
 
 # World server
-PORT=5000
+PORT=3000
 JWT_SECRET=your-jwt-secret
 SAVE_INTERVAL=60
 PUBLIC_PLAYER_COLLISION=false
 PUBLIC_MAX_UPLOAD_SIZE=12
-PUBLIC_WS_URL=ws://localhost:5000/ws
-PUBLIC_API_URL=http://localhost:5000/api
+PUBLIC_WS_URL=ws://localhost:3000/ws
+PUBLIC_API_URL=http://localhost:3000/api
 
 # Assets
 ASSETS=local
-ASSETS_BASE_URL=http://localhost:5000/assets
+ASSETS_BASE_URL=http://localhost:3000/assets
 ASSETS_S3_URI=
 
 # Database
@@ -144,7 +142,7 @@ function buildTargetsExample() {
   return JSON.stringify(
     {
       dev: {
-        worldUrl: 'http://localhost:5000',
+        worldUrl: 'http://localhost:3000',
         worldId: 'local-your-world-id',
         adminCode: 'your-admin-code',
         deployCode: 'your-deploy-code',
@@ -326,12 +324,6 @@ export function scaffoldBaseProject({
     report,
   })
 
-  writeFileWithPolicy(path.join(rootDir, 'hyperfy.app-runtime.d.ts'), APP_RUNTIME_TYPES_REFERENCE, {
-    force,
-    writeFile,
-    report,
-  })
-
   copyDirWithPolicy(DOCS_TEMPLATE_DIR, path.join(rootDir, 'docs'), {
     force,
     writeFile,
@@ -407,8 +399,7 @@ export function scaffoldBuiltins({ rootDir, force = false, writeFile } = {}) {
     const scriptPath = path.join(appDir, 'index.ts')
     if (!fs.existsSync(scriptPath) || force) {
       const script = readBuiltinScript(template)
-      const content = `// @ts-nocheck\n${script}`
-      writeFileWithPolicy(scriptPath, content, { force, writeFile, report })
+      writeFileWithPolicy(scriptPath, script, { force, writeFile, report })
     }
   }
 
