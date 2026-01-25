@@ -12,3 +12,6 @@ data/
 project/
 .code-search/
 .glootie-stop-verified
+
+# Dev server quick reference
+DEV-SERVER-QUICK-REF.txt
