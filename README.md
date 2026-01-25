@@ -94,6 +94,13 @@ npm install
 npm run dev
 ```
 
+> **Troubleshooting**: If you see `EADDRINUSE: address already in use 0.0.0.0:5000`, kill the process using the port:
+> ```bash
+> lsof -ti:5000 | xargs kill -9
+> npm run dev
+> ```
+> See [CLAUDE.md](CLAUDE.md) for more dev server troubleshooting tips.
+
 ### Docker Deployment
 
 For containerized deployment, check [DOCKER.md](DOCKER.md) for detailed instructions.

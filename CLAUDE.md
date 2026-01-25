@@ -419,3 +419,60 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
 - **Fix**: Move console.log or any code before the return statement
 - **Impact**: Build fails with warnings, server won't start
 - **Note**: JavaScript automatically inserts semicolons after return statements, making any code on the same line or immediately after unreachable
+
+## Dev Server Issues
+
+### Port 5000 Already In Use
+
+- **Error**: `listen EADDRINUSE: address already in use 0.0.0.0:5000`
+- **Root Cause**: Previous server process didn't exit cleanly or another service is using port 5000
+- **Fix**: Kill the process using the port before starting dev server:
+  ```bash
+  lsof -ti:5000 | xargs kill -9
+  ```
+- **Prevention**: Always stop the dev server with Ctrl+C before restarting
+
+### App-Server Sync Authentication Error
+
+- **Error**: `Error: invalid_code` and `Error: app server exited with code 1`
+- **Location**: `app-server/direct.js:228` - WebSocket authentication fails during sync
+- **Impact**: App-server sync stops, but **world server continues running and serving requests**
+- **Verification**: Check `http://localhost:5000` is accessible even with this error
+- **Symptom**: App-server exits but world server remains functional
+- **Status**: Non-critical - core world functionality works without app-server sync
+
+### Dev Server Verification Checklist
+
+When `npm run dev` appears to hang or fail:
+
+1. **Check port availability**:
+   ```bash
+   lsof -ti:5000  # Should return nothing
+   ```
+
+2. **Verify server is listening**:
+   - Look for: `server listening on port 5000` in output
+   - Check: `http://localhost:5000` in browser
+   - Test: curl http://localhost:5000
+
+3. **Expected startup sequence**:
+   - `> gamedev@0.0.4-alpha.4 dev`
+   - `> bash -c 'npm run dev:runtime & node bin/gamedev.mjs app-server & wait'`
+   - `> node scripts/build.mjs --dev`
+   - `World: Local world detected, waiting for server (http://localhost:5000)`
+   - `[assets] initializing`
+   - `[clean] running`
+   - `server listening on port 5000`
+   - `Sync: Starting app-server sync` (may show auth error after this)
+
+4. **Success indicators**:
+   - Port 5000 responds to HTTP requests
+   - Client interface loads in browser at localhost:5000
+   - World assets resolve successfully
+   - No EADDRINUSE errors in output
+
+5. **What to ignore**:
+   - `Error: invalid_code` from app-server sync (doesn't affect core functionality)
+   - Deprecation warnings from fs.Stats
+   - THREE.GLTFLoader warnings about textures
+   - PhysX warnings about triangle mesh sizes
