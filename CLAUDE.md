@@ -432,14 +432,56 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
   ```
 - **Prevention**: Always stop the dev server with Ctrl+C before restarting
 
-### App-Server Sync Authentication Error
+### App-Server Architecture
+
+**What is the app-server?**
+
+The app-server is a DEVELOPMENT-ONLY sync tool that runs alongside your world server. It provides live code reloading and app management features but is NOT required for your world to run.
+
+**Key points:**
+- App-server is OPTIONAL - world runs fine without it
+- App-server is NOT the main server (that's the world server on port 5000)
+- App-server sync attempts often fail with "invalid_code" - this is NORMAL
+- The main server success indicator is "server listening on port 5000"
+
+**Architecture Timeline:**
+
+npm run dev starts TWO processes:
+1. World Server (port 5000) - The actual game server
+   - Needs 5-10 seconds to start
+   - Shows "server listening on port 5000" when ready
+
+2. App-Server Sync - Development helper
+   - Tries to connect immediately via WebSocket
+   - Gives up after 2-3 seconds
+   - Shows "invalid_code" error (expected behavior)
+   - Exits but world server keeps running
+
+**Why "invalid_code" always appears:**
+
+- App-server tries WebSocket connection immediately
+- World server is not ready yet (still loading assets)
+- App-server times out and shows "invalid_code"
+- By the time world server is ready, app-server already exited
+- This error is completely normal and can be ignored
+
+**What matters:**
+
+- ✅ Look for: "server listening on port 5000"
+- ❌ Ignore: "Error: invalid_code"
+- ❌ Ignore: "app server exited with code 1"
+- ✅ Check: Can you access http://localhost:5000?
+
+**Bottom line:** If you see "server listening on port 5000", your world is running. The app-server sync errors don't affect core functionality.
+
+See CODEBASE-GUIDE.md for complete architecture documentation.
+
+### App-Server Sync Authentication Error (Legacy Note)
 
 - **Error**: `Error: invalid_code` and `Error: app server exited with code 1`
 - **Location**: `app-server/direct.js:228` - WebSocket authentication fails during sync
 - **Impact**: App-server sync stops, but **world server continues running and serving requests**
-- **Verification**: Check `http://localhost:5000` is accessible even with this error
-- **Symptom**: App-server exits but world server remains functional
-- **Status**: Non-critical - core world functionality works without app-server sync
+- **Status**: Non-critical - This is expected behavior, see App-Server Architecture section above
 
 ### Dev Server Verification Checklist
 
