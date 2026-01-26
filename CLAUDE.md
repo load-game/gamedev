@@ -140,21 +140,6 @@ All new systems are registered in `src/core/createClientWorld.js`:
 
 ## VRM Expressions and Auto-Blink
 
-**Added**: VRM facial expression system with auto-blink and talking animations
-
-**Implementation**: `src/core/extras/createVRMFactory.js`
-
-**Features**:
-- **Auto-blink**: Random intervals (2.5-5s) with realistic timing (0.06s close, 0.12s open)
-- **Viseme system**: Mouth animations for talking (aa, ee, ih, oh, ou expressions)
-- **Dual path support**: VRM 1.0 ExpressionManager + VRM 0.x expression nodes fallback
-- **Manual control**: `setExpression(name, weight)`, `setSpeaking(value)`, `setBlinkEnabled(active)`
-
-**Expression Manager Fallback**:
-- Primary: `expressionManager.setValue()` for VRM 1.0
-- Fallback: Direct `VRMExpression` node manipulation for VRM 0.x
-- Auto-detection based on VRM version
-
 **API Methods**:
 ```javascript
 // Auto-blink control (enabled by default)
@@ -177,6 +162,7 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
 - Mouth visemes randomly switch every 180-300ms while talking
 - Expression weights are clamped to 0-1 range
 - Zero-overhead when expressions disabled or VRM lacks expression data
+- Auto-detection of VRM 1.0 ExpressionManager vs VRM 0.x expression nodes
 
 ## VRM Animation Caveats
 
@@ -194,34 +180,6 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
   - "back" → `Modes.BACKFLIP` → `emote-backflip.glb`
   - "front" → `Modes.FLIP` → `emote-flip.glb`
 - **Console Debug**: Look for `[VRM]` prefix logs when flips trigger
-
-### URL Validation for Emotes
-- **Issue**: Console errors when VRM references undefined emote names
-- **Fix**: Added URL validation in `getQueryParams()` to prevent crashes
-- **Pattern**: Invalid URLs are caught and return empty query params object
-
-### Platformer Animation Library
-- **Location**: `/src/world/assets/mp-platformer/`
-- **Status**: Additional platformer mechanics animations added
-- **Animations Available**:
-  - `mp-grinding.glb` - Grinding on rails/edges
-  - `mp-climb-idle.glb` - Idle while climbing
-  - `mp-climb-up.glb` - Climbing upward
-  - `mp-climb-down.glb` - Climbing downward
-  - `mp-ledge-hanging-idle.glb` - Hanging from ledge (idle)
-  - `mp-ledge-hanging-moving.glb` - Moving while hanging from ledge
-  - `mp-air-dive.glb` - Diving through air
-  - `mp-wallslide.glb` - Sliding down wall
-  - Plus additional: dash, spin, brake, crawl, die, fall, gliding, big-flip, ledge-climb
-- **Modes Added**: GRINDING(13), CLIMBING(14), LEDGE_HANGING(15), AIR_DIVING(16), WALL_SLIDING(17)
-- **Configuration**: All added to `src/core/extras/playerEmotes.js` and `src/core/entities/PlayerLocal.js` Modes
-- **Dev Server Note**: Must restart dev server after adding new animations to see them load in console
-
-### Animation Library Examples
-- **Location**: `/src/examples/animLib/`
-- **Copied From**: `/hyperfy/examples/animLib/`
-- **Contents**: Example scripts for testing and working with VRM animations
-- **Usage**: Navigate to directory and run node scripts for animation testing
 
 ## Build and Debug Notes
 
@@ -381,16 +339,10 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
 - **Fix**: Add catch block that deletes failed promises from cache and logs errors
 
 ### Missing Platformer Animation Files - RESOLVED
-- **Error**: 404 errors for platformer animations: `mp-grinding.glb`, `mp-climb-idle.glb`, `mp-climb-up.glb`, `mp-climb-down.glb`, `mp-ledge-hanging-idle.glb`, `mp-ledge-hanging-moving.glb`, `mp-air-dive.glb`, `mp-wallslide.glb`
-- **Root Cause**: Platformer animation files in subdirectory `/home/blank/gamedev/src/world/assets/mp-platformer/` but dev server serves from `/home/blank/gamedev/src/world/assets/`
-- **Location**: `src/core/extras/playerEmotes.js:28-35`
-- **Problem**: Platformer animations configured at root level (`asset://mp-grinding.glb`) but files are in subdirectory
-- **Fix**: Move platformer animation files from subdirectory to main assets directory:
-  ```bash
-  mv /home/blank/gamedev/src/world/assets/mp-platformer/*.glb /home/blank/gamedev/src/world/assets/
-  ```
+- **Error**: 404 errors for platformer animations after moving files
+- **Root Cause**: Platformer animation files were in subdirectory but referenced at root level
+- **Fix**: Platformer animation files moved from subdirectory to main assets directory
 - **Status**: ✅ **RESOLVED** - All platformer animations now load successfully
-- **Note**: Basic animations work because they're directly in `/home/blank/gamedev/src/world/assets/` which is the `assetsDir`
 
 ### Missing Strafe Jump Animation Files
 - **Error**: 404 errors for `emote-jump-left.glb` and `emote-jump-right.glb`
@@ -398,27 +350,6 @@ vrm.setExpression('aa', 0.5)         // Set mouth shape
 - **Status**: ⚠️ **Files do not exist**
 - **Impact**: STRAFE_JUMP_LEFT and STRAFE_JUMP_RIGHT modes cannot load animations (non-critical, fallback animations work)
 - **Note**: These are optional strafe jump animations distinct from platformer mechanics
-
-### Unreachable Code After Return Statement
-- **Error**: `▲ [WARNING] The following expression is not returned because of an automatically-inserted semicolon [semicolon-after-return]`
-- **Location**: `src/core/extras/createVRMFactory.js:768`
-- **Problem**: Code after `return` statement is unreachable and causes build warnings
-  ```javascript
-  // ❌ WRONG - Unreachable code
-  if (currentEmote?.url === url) {
-    return
-    console.log("[VRM DEBUG] setEmote returning early - same emote already playing") // This never executes!
-  }
-
-  // ✅ CORRECT - Code before return
-  if (currentEmote?.url === url) {
-    console.log("[VRM DEBUG] setEmote returning early - same emote already playing")
-    return
-  }
-  ```
-- **Fix**: Move console.log or any code before the return statement
-- **Impact**: Build fails with warnings, server won't start
-- **Note**: JavaScript automatically inserts semicolons after return statements, making any code on the same line or immediately after unreachable
 
 ## Dev Server Issues
 
