@@ -221,15 +221,14 @@ export function Add({ world, hidden }) {
         position: transform.position,
         quaternion: transform.quaternion,
         scale: [1, 1, 1],
-        mover: world.network.id,
+        mover: null,
         uploader: null,
         pinned: false,
         props: {},
         state: {},
       }
-      const app = world.entities.add(data)
+      world.entities.add(data)
       world.admin.entityAdd(data, { ignoreNetworkId: world.network.id })
-      world.builder.select(app)
     }, 100)
   }
 
@@ -258,7 +257,6 @@ export function Add({ world, hidden }) {
     if (nextKeep) {
       const transform = world.builder.getSpawnTransform(true)
       world.builder.toggle(true)
-      world.builder.control.pointer.lock()
       setTimeout(() => {
         const data = {
           id: uuid(),
@@ -267,15 +265,14 @@ export function Add({ world, hidden }) {
           position: transform.position,
           quaternion: transform.quaternion,
           scale: [1, 1, 1],
-          mover: world.network.id,
+          mover: null,
           uploader: null,
           pinned: false,
           props: {},
           state: {},
         }
-        const app = world.entities.add(data)
+        world.entities.add(data)
         world.admin.entityAdd(data, { ignoreNetworkId: world.network.id })
-        world.builder.select(app)
       }, 100)
     }
   }

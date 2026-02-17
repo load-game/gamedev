@@ -1760,12 +1760,12 @@ export class ClientBuilder extends System {
   }
 
   getSpawnTransform(atReticle) {
+    this.world.camera.updateMatrixWorld()
     const hit = atReticle
       ? this.world.stage.raycastReticle()[0]
       : this.world.stage.raycastPointer(this.control.pointer.position)[0]
-    const position = hit ? hit.point.toArray() : [0, 0, 0]
-    let quaternion
     if (hit) {
+      const position = hit.point.toArray()
       e1.copy(this.world.rig.rotation).reorder('YXZ')
       e1.x = 0
       e1.z = 0
@@ -1773,11 +1773,15 @@ export class ClientBuilder extends System {
       const snappedDegrees = Math.round(degrees / SNAP_DEGREES) * SNAP_DEGREES
       e1.y = snappedDegrees * DEG2RAD
       q1.setFromEuler(e1)
-      quaternion = q1.toArray()
-    } else {
-      quaternion = [0, 0, 0, 1]
+      return { position, quaternion: q1.toArray() }
     }
-    return { position, quaternion }
+    // No hit — spawn in front of camera
+    const worldPos = v2
+    const worldQuat = q1
+    this.world.camera.getWorldPosition(worldPos)
+    this.world.camera.getWorldQuaternion(worldQuat)
+    v1.set(0, 0, -5).applyQuaternion(worldQuat).add(worldPos)
+    return { position: v1.toArray(), quaternion: [0, 0, 0, 1] }
   }
 
   destroy() {
