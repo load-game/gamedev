@@ -77,7 +77,8 @@ export function Add({ world, hidden }) {
         used.add(entity.data.blueprint)
       }
     }
-    const items = Array.from(world.blueprints.items.values()).filter(
+    const all = Array.from(world.blueprints.items.values())
+    const items = all.filter(
       bp => !bp.scene && !used.has(bp.id) && bp.keep !== true
     )
     return sortBy(items, bp => (bp.name || bp.id || '').toLowerCase())
@@ -247,11 +248,36 @@ export function Add({ world, hidden }) {
       })
   }
 
-  const toggleKeep = blueprint => {
+  const toggleKeep = async blueprint => {
     const nextKeep = !blueprint.keep
     const version = blueprint.version + 1
     world.blueprints.modify({ id: blueprint.id, version, keep: nextKeep })
     world.admin.blueprintModify({ id: blueprint.id, version, keep: nextKeep }, { ignoreNetworkId: world.network.id })
+
+    // When keeping, also spawn the app back into the world
+    if (nextKeep) {
+      const transform = world.builder.getSpawnTransform(true)
+      world.builder.toggle(true)
+      world.builder.control.pointer.lock()
+      setTimeout(() => {
+        const data = {
+          id: uuid(),
+          type: 'app',
+          blueprint: blueprint.id,
+          position: transform.position,
+          quaternion: transform.quaternion,
+          scale: [1, 1, 1],
+          mover: world.network.id,
+          uploader: null,
+          pinned: false,
+          props: {},
+          state: {},
+        }
+        const app = world.entities.add(data)
+        world.admin.entityAdd(data, { ignoreNetworkId: world.network.id })
+        world.builder.select(app)
+      }, 100)
+    }
   }
 
   const runClean = async () => {

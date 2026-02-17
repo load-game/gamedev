@@ -762,6 +762,13 @@ export class ClientBuilder extends System {
     if (destroy) {
       const entity = this.selected || this.getEntityAtBeam()
       if (entity?.isApp && !entity.data.pinned && !entity.blueprint.scene) {
+        // Reset keep so blueprint returns to trash tab
+        const bp = this.world.blueprints.items.get(entity.data.blueprint)
+        if (bp?.keep) {
+          const version = bp.version + 1
+          this.world.blueprints.modify({ id: bp.id, version, keep: false })
+          this.world.admin.blueprintModify({ id: bp.id, version, keep: false }, { ignoreNetworkId: this.world.network.id })
+        }
         // Destroy first to avoid any rebuilds triggered by deselection
         this.addUndo({
           name: 'add-entity',

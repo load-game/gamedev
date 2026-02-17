@@ -421,7 +421,16 @@ export function App({ world, hidden }) {
               className='app-btn'
               onClick={() => {
                 world.ui.setApp(null)
+                const blueprint = world.blueprints.items.get(app.data.blueprint)
+                if (blueprint?.keep) {
+                  const version = blueprint.version + 1
+                  world.blueprints.modify({ id: blueprint.id, version, keep: false })
+                  world.admin.blueprintModify({ id: blueprint.id, version, keep: false }, { ignoreNetworkId: world.network.id })
+                }
                 app.destroy(true)
+                // check state after destroy
+                const bpAfter = world.blueprints.items.get(app.data.blueprint)
+                console.log('[DELETE] after destroy — blueprint still exists:', !!bpAfter, 'keep:', bpAfter?.keep)
               }}
               onPointerEnter={() => setHint('Delete this app')}
               onPointerLeave={() => setHint(null)}
