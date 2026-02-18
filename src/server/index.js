@@ -2,7 +2,6 @@ import 'ses'
 import '../core/lockdown'
 import './bootstrap'
 
-import crypto from 'crypto'
 import fs from 'fs-extra'
 import path from 'path'
 import Fastify from 'fastify'
@@ -21,6 +20,7 @@ import { admin } from './admin'
 import { createRegistryState, getRegistryPublicStatus, registerWithRegistry } from './registry'
 import { resolveAuthRuntimeConfig } from './authModes'
 import { getMaxUploadSizeBytes } from './worldLimits.js'
+import { deriveRuntimeInternalApiKey } from './runtimeApiKeyDerivation.js'
 import { createJWT, verifyIdentityExchangeTokenWithLobby } from '../core/utils-server'
 import { Ranks } from '../core/extras/ranks'
 
@@ -94,14 +94,6 @@ function derivePublicWsUrlFromApiUrl(apiUrl) {
 
 function hasValue(value) {
   return typeof value === 'string' && value.trim().length > 0
-}
-
-function deriveRuntimeInternalApiKey(worldId, jwtSecret) {
-  if (!hasValue(worldId) || !hasValue(jwtSecret)) return null
-  return crypto
-    .createHmac('sha256', jwtSecret.trim())
-    .update(`runtime-internal:${worldId.trim()}`)
-    .digest('hex')
 }
 
 function normalizePublicUrl(value) {

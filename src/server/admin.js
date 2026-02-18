@@ -5,6 +5,7 @@ import { readPacket, writePacket } from '../core/packets.js'
 import { Ranks } from '../core/extras/ranks'
 import { readJWT } from '../core/utils-server.js'
 import { cleaner } from './cleaner'
+import { isRuntimeInternalApiKeyValid } from './runtimeApiKeyDerivation.js'
 import { getMaxUploadSizeBytes, getMaxUploadSizeMb } from './worldLimits.js'
 
 const SCRIPT_BLUEPRINT_FIELDS = new Set([
@@ -210,14 +211,27 @@ function getAuthTokenFromAuthorizationHeader(value) {
   return token || null
 }
 
-function getRuntimeAuthTokenFromRequest(req) {
+function getBearerTokenFromRequest(req) {
   const authHeader = normalizeHeader(req.headers.authorization)
-  const fromAuthHeader = getAuthTokenFromAuthorizationHeader(authHeader)
+  return getAuthTokenFromAuthorizationHeader(authHeader)
+}
+
+function getRuntimeAuthTokenFromRequest(req) {
+  const fromAuthHeader = getBearerTokenFromRequest(req)
   if (fromAuthHeader) return fromAuthHeader
   const tokenHeader = normalizeHeader(req.headers['x-runtime-auth-token'])
   if (typeof tokenHeader !== 'string') return null
   const token = tokenHeader.trim()
   return token || null
+}
+
+function getRuntimeInternalApiKeyFromRequest(req) {
+  const fromAuthHeader = getBearerTokenFromRequest(req)
+  if (fromAuthHeader) return fromAuthHeader
+  const keyHeader = normalizeHeader(req.headers['x-runtime-internal-key'])
+  if (typeof keyHeader !== 'string') return null
+  const key = keyHeader.trim()
+  return key || null
 }
 
 function parseUserRank(value) {
@@ -338,7 +352,21 @@ export async function admin(fastify, { world, assets, adminHtmlPath, onConnectio
     }
   }
 
+  function getCapabilitiesFromTrustedProxyCredential(req) {
+    const key = getRuntimeInternalApiKeyFromRequest(req)
+    if (!key) return { builder: false, deploy: false }
+    const worldId = world?.network?.worldId || process.env.WORLD_ID
+    if (!isRuntimeInternalApiKeyValid(worldId, process.env.JWT_SECRET, key)) {
+      return { builder: false, deploy: false }
+    }
+    return { builder: true, deploy: true }
+  }
+
   async function resolveRequestCapabilities(req) {
+    const trustedProxyCapabilities = getCapabilitiesFromTrustedProxyCredential(req)
+    if (trustedProxyCapabilities.builder && trustedProxyCapabilities.deploy) {
+      return trustedProxyCapabilities
+    }
     const codeCapabilities = getCapabilitiesFromAdminCode(getAdminCodeFromRequest(req))
     if (codeCapabilities.builder && codeCapabilities.deploy) {
       return codeCapabilities
@@ -745,9 +773,10 @@ export async function admin(fastify, { world, assets, adminHtmlPath, onConnectio
             ws.close()
             return
           }
+          const trustedProxyCapabilities = getCapabilitiesFromTrustedProxyCredential(req)
           const codeCapabilities = getCapabilitiesFromAdminCode(data?.code)
-          let builderOk = codeCapabilities.builder
-          let deployOk = codeCapabilities.deploy
+          let builderOk = trustedProxyCapabilities.builder || codeCapabilities.builder
+          let deployOk = trustedProxyCapabilities.deploy || codeCapabilities.deploy
           if (!builderOk || !deployOk) {
             const payloadToken = typeof data?.authToken === 'string' ? data.authToken.trim() : ''
             const headerToken = getRuntimeAuthTokenFromRequest(req) || ''

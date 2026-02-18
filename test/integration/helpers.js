@@ -204,6 +204,7 @@ export async function startWorldServer({ adminCode = 'admin' } = {}) {
   const port = await getAvailablePort()
   const worldDir = await createTempDir('hyperfy-world-')
   const worldId = `test-${crypto.randomUUID()}`
+  const jwtSecret = crypto.randomBytes(24).toString('base64url')
   const worldUrl = `http://127.0.0.1:${port}`
   const wsUrl = `${toWsUrl(worldUrl)}/ws`
   const env = {
@@ -213,7 +214,7 @@ export async function startWorldServer({ adminCode = 'admin' } = {}) {
     WORLD: worldDir,
     WORLD_ID: worldId,
     ADMIN_CODE: adminCode,
-    JWT_SECRET: crypto.randomBytes(24).toString('base64url'),
+    JWT_SECRET: jwtSecret,
     PUBLIC_WS_URL: wsUrl,
     PUBLIC_API_URL: `${worldUrl}/api`,
     PUBLIC_ADMIN_URL: `${worldUrl}/admin`,
@@ -261,6 +262,7 @@ export async function startWorldServer({ adminCode = 'admin' } = {}) {
     worldUrl,
     wsUrl,
     worldId,
+    jwtSecret,
     worldDir,
     adminCode,
     stop,
@@ -437,9 +439,17 @@ export async function stopAppServer(server) {
   } catch {}
 }
 
-export async function fetchJson(url, { adminCode, method = 'GET', body } = {}) {
-  const headers = {}
-  if (adminCode) headers['X-Admin-Code'] = adminCode
+export function deriveRuntimeInternalApiKey(worldId, jwtSecret) {
+  if (typeof worldId !== 'string' || !worldId.trim()) return null
+  if (typeof jwtSecret !== 'string' || !jwtSecret.trim()) return null
+  return crypto.createHmac('sha256', jwtSecret.trim()).update(`runtime-internal:${worldId.trim()}`).digest('hex')
+}
+
+export async function fetchJson(url, { adminCode, method = 'GET', body, headers: extraHeaders } = {}) {
+  const headers = { ...(extraHeaders || {}) }
+  if (adminCode && !headers['X-Admin-Code'] && !headers['x-admin-code']) {
+    headers['X-Admin-Code'] = adminCode
+  }
   if (body) headers['Content-Type'] = 'application/json'
   const res = await fetch(url, {
     method,

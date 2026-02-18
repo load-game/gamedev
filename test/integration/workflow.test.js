@@ -7,6 +7,7 @@ import { runAppCommand } from '../../app-server/commands.js'
 import {
   AdminWsClient,
   createTempDir,
+  deriveRuntimeInternalApiKey,
   fetchJson,
   readJsonFile,
   startWorldServer,
@@ -151,6 +152,31 @@ test('workflow vnext integrations (server/app-server)', { timeout: 120000 }, asy
         method: 'DELETE',
         body: { token: lock.token },
       })
+    })
+  })
+
+  await t.test('B2 runtime internal key grants admin endpoints', async () => {
+    await withWorldServer(async world => {
+      const runtimeInternalKey = deriveRuntimeInternalApiKey(world.worldId, world.jwtSecret)
+      assert.equal(typeof runtimeInternalKey, 'string')
+      assert.ok(runtimeInternalKey.length > 0)
+
+      const unauthorized = await fetchJson(`${world.worldUrl}/admin/deploy-lock`, {
+        method: 'POST',
+        body: { owner: 'proxy-test' },
+      })
+      assert.equal(unauthorized.res.status, 403)
+      assert.equal(unauthorized.data?.error, 'admin_required')
+
+      const authorized = await fetchJson(`${world.worldUrl}/admin/deploy-lock`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${runtimeInternalKey}`,
+        },
+        body: { owner: 'proxy-test' },
+      })
+      assert.equal(authorized.res.status, 200)
+      assert.ok(authorized.data?.token)
     })
   })
 
