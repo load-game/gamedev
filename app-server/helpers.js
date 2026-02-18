@@ -79,6 +79,62 @@ export function normalizeBaseUrl(url) {
   return url.replace(/\/+$/, '')
 }
 
+function normalizeUrlPathname(pathname) {
+  const normalized = typeof pathname === 'string' ? pathname.replace(/\/+$/, '') : ''
+  return normalized || '/'
+}
+
+function isLobbyHost(hostname) {
+  if (!hostname) return false
+  return hostname === 'lobby.ws' || hostname.endsWith('.lobby.ws')
+}
+
+function isPrettyWorldPath(pathname) {
+  return /^\/worlds\/[^/]+$/.test(pathname)
+}
+
+export function validateAppServerWorldUrl(worldUrl) {
+  const normalizedUrl = normalizeBaseUrl(worldUrl)
+  let parsed
+  try {
+    parsed = new URL(normalizedUrl)
+  } catch {
+    return {
+      ok: false,
+      normalizedUrl,
+      errors: ['WORLD_URL must be a full URL (for example: http://localhost:3000 or https://dev.lobby.ws/worlds/<slug>)'],
+      isPrettyWorldUrl: false,
+    }
+  }
+
+  const errors = []
+  const protocol = parsed.protocol.toLowerCase()
+  if (protocol !== 'http:' && protocol !== 'https:') {
+    errors.push(`WORLD_URL must use http:// or https:// (received ${parsed.protocol})`)
+  }
+
+  const pathname = normalizeUrlPathname(parsed.pathname)
+  if (/^\/(?:api|ws)(?:\/|$)/.test(pathname)) {
+    errors.push('WORLD_URL must point to the world base URL, not an /api or /ws endpoint')
+  }
+
+  const prettyWorldPath = isPrettyWorldPath(pathname)
+  if (isLobbyHost(parsed.hostname) && !prettyWorldPath) {
+    errors.push('Lobby host WORLD_URL values must use /worlds/<slug> (for example: https://dev.lobby.ws/worlds/my-world)')
+  }
+
+  if (pathname.startsWith('/worlds/') && !prettyWorldPath) {
+    errors.push('Invalid pretty world URL path. Expected /worlds/<slug> with no extra segments')
+  }
+
+  return {
+    ok: errors.length === 0,
+    normalizedUrl,
+    errors,
+    isPrettyWorldUrl: prettyWorldPath,
+  }
+}
+
 export function toWsUrl(httpUrl) {
   const url = normalizeBaseUrl(httpUrl)
   if (url.startsWith('ws://') || url.startsWith('wss://')) return url

@@ -9,6 +9,7 @@ import { customAlphabet } from 'nanoid'
 
 import { runAppCommand, runScriptCommand, runSyncCommand } from '../app-server/commands.js'
 import { DirectAppServer } from '../app-server/direct.js'
+import { validateAppServerWorldUrl } from '../app-server/helpers.js'
 import { scaffoldBaseProject, scaffoldBuiltins, updateBuiltins, writeManifest } from '../app-server/scaffold.js'
 import { applyTargetEnv, parseTargetArgs, resolveTarget } from '../app-server/targets.js'
 
@@ -436,6 +437,12 @@ async function startCommand(args = []) {
       WORLD_URL: target.worldUrl || env.WORLD_URL,
       WORLD_ID: target.worldId || env.WORLD_ID,
       ADMIN_CODE: typeof target.adminCode === 'string' ? target.adminCode : env.ADMIN_CODE,
+      WORLD_SERVICE_API_KEY:
+        typeof target.worldServiceApiKey === 'string'
+          ? target.worldServiceApiKey
+          : typeof target.apiKey === 'string'
+            ? target.apiKey
+            : env.WORLD_SERVICE_API_KEY,
     }
   }
 
@@ -448,6 +455,16 @@ async function startCommand(args = []) {
     console.error('Hint: Update .env and try again.')
     return 1
   }
+
+  const worldUrlValidation = validateAppServerWorldUrl(env.WORLD_URL)
+  if (!worldUrlValidation.ok) {
+    console.error('Error: WORLD_URL validation failed:')
+    for (const issue of worldUrlValidation.errors) {
+      console.error(`  - ${issue}`)
+    }
+    return 1
+  }
+  env.WORLD_URL = worldUrlValidation.normalizedUrl
 
   const derived = deriveUrls(env.WORLD_URL)
   if (!derived) {
@@ -550,6 +567,12 @@ async function appServerCommand(args = []) {
       WORLD_URL: target.worldUrl || env.WORLD_URL,
       WORLD_ID: target.worldId || env.WORLD_ID,
       ADMIN_CODE: typeof target.adminCode === 'string' ? target.adminCode : env.ADMIN_CODE,
+      WORLD_SERVICE_API_KEY:
+        typeof target.worldServiceApiKey === 'string'
+          ? target.worldServiceApiKey
+          : typeof target.apiKey === 'string'
+            ? target.apiKey
+            : env.WORLD_SERVICE_API_KEY,
     }
   }
 
@@ -562,6 +585,16 @@ async function appServerCommand(args = []) {
     console.error('Hint: Update .env and try again.')
     return 1
   }
+
+  const worldUrlValidation = validateAppServerWorldUrl(env.WORLD_URL)
+  if (!worldUrlValidation.ok) {
+    console.error('Error: WORLD_URL validation failed:')
+    for (const issue of worldUrlValidation.errors) {
+      console.error(`  - ${issue}`)
+    }
+    return 1
+  }
+  env.WORLD_URL = worldUrlValidation.normalizedUrl
 
   const localMode = isLocalWorld({ worldUrl: env.WORLD_URL, worldId: env.WORLD_ID })
 
@@ -822,9 +855,13 @@ async function syncCommand(args) {
   return runSyncCommand({ command, args: commandArgs, rootDir: projectDir, helpPrefix: 'gamedev sync' })
 }
 
-async function connectAdminServer({ worldUrl, adminCode, rootDir }) {
+async function connectAdminServer({ worldUrl, adminCode, worldServiceApiKey, rootDir }) {
   let code = adminCode || process.env.ADMIN_CODE || null
-  let server = new DirectAppServer({ worldUrl, adminCode: code, rootDir })
+  const apiKey =
+    typeof worldServiceApiKey === 'string'
+      ? worldServiceApiKey
+      : process.env.WORLD_SERVICE_API_KEY || null
+  let server = new DirectAppServer({ worldUrl, adminCode: code, worldServiceApiKey: apiKey, rootDir })
   try {
     await server.connect()
     return server
@@ -834,7 +871,7 @@ async function connectAdminServer({ worldUrl, adminCode, rootDir }) {
     if (!canRetry) throw err
     code = await promptValue('Enter ADMIN_CODE: ')
     if (!code) throw err
-    server = new DirectAppServer({ worldUrl, adminCode: code, rootDir })
+    server = new DirectAppServer({ worldUrl, adminCode: code, worldServiceApiKey: apiKey, rootDir })
     await server.connect()
     return server
   }
@@ -865,7 +902,12 @@ async function worldCommand(args) {
 
     let server
     try {
-      server = await connectAdminServer({ worldUrl, adminCode: env.ADMIN_CODE, rootDir: projectDir })
+      server = await connectAdminServer({
+        worldUrl,
+        adminCode: env.ADMIN_CODE,
+        worldServiceApiKey: env.WORLD_SERVICE_API_KEY,
+        rootDir: projectDir,
+      })
       if (action === 'export') {
         const includeBuiltScripts = args.includes('--include-built-scripts')
         await server.exportWorldToDisk(undefined, { includeBuiltScripts })

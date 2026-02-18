@@ -1,13 +1,18 @@
 import { EventEmitter } from 'events'
 import { uuid } from './utils.js'
 import { readPacket, writePacket } from '../src/core/packets.js'
-import { normalizeBaseUrl, toWsUrl, joinUrl, normalizePacketData } from './helpers.js'
+import { normalizeBaseUrl, toWsUrl, joinUrl, normalizePacketData, validateAppServerWorldUrl } from './helpers.js'
 
 export class WorldAdminClient extends EventEmitter {
-  constructor({ worldUrl, adminCode }) {
+  constructor({ worldUrl, adminCode, apiKey }) {
     super()
-    this.worldUrl = normalizeBaseUrl(worldUrl)
+    const validation = validateAppServerWorldUrl(worldUrl)
+    if (!validation.ok) {
+      throw new Error(validation.errors[0])
+    }
+    this.worldUrl = normalizeBaseUrl(validation.normalizedUrl || worldUrl)
     this.adminCode = adminCode || null
+    this.apiKey = typeof apiKey === 'string' && apiKey.trim() ? apiKey.trim() : null
     this.ws = null
     this.pending = new Map()
   }
@@ -27,6 +32,7 @@ export class WorldAdminClient extends EventEmitter {
   adminHeaders(extra = {}) {
     const headers = { ...extra }
     if (this.adminCode) headers['X-Admin-Code'] = this.adminCode
+    if (this.apiKey) headers['X-API-Key'] = this.apiKey
     return headers
   }
 
@@ -34,7 +40,11 @@ export class WorldAdminClient extends EventEmitter {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return
 
     await new Promise((resolve, reject) => {
-      const ws = new WebSocket(this.wsAdminUrl)
+      const ws = this.apiKey
+        ? new WebSocket(this.wsAdminUrl, {
+            headers: { 'x-api-key': this.apiKey },
+          })
+        : new WebSocket(this.wsAdminUrl)
       ws.binaryType = 'arraybuffer'
       this.ws = ws
 

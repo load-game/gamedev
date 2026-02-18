@@ -2,6 +2,13 @@
 
 Bidirectional sync between a local project directory and a remote Hyperfy world. Handles blueprints, entities, assets, scripts, file watching, and conflict resolution.
 
+## Target URL Guidance
+
+- Direct runtime target: `WORLD_URL=http://localhost:3000`
+- Platform pretty URL target: `WORLD_URL=https://dev.lobby.ws/worlds/<slug>`
+- Do not point `WORLD_URL` at `/api` or `/ws` endpoints.
+- For world-service dev auth, set `WORLD_SERVICE_API_KEY=<DEV_API_KEY>`.
+
 ## Public API
 
 | Method | Description |

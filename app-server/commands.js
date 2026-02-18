@@ -232,6 +232,12 @@ export class HyperfyCLI {
         : typeof process.env.ADMIN_CODE === 'string'
           ? process.env.ADMIN_CODE
           : null
+    this.worldServiceApiKey =
+      typeof overrides.worldServiceApiKey === 'string'
+        ? overrides.worldServiceApiKey
+        : typeof process.env.WORLD_SERVICE_API_KEY === 'string'
+          ? process.env.WORLD_SERVICE_API_KEY
+          : null
   }
 
   _requireWorldUrl() {
@@ -285,6 +291,7 @@ export class HyperfyCLI {
     const server = new DirectAppServer({
       worldUrl: this.worldUrl,
       adminCode,
+      worldServiceApiKey: this.worldServiceApiKey,
       rootDir: this.rootDir,
     })
     try {
@@ -299,6 +306,7 @@ export class HyperfyCLI {
       const retryServer = new DirectAppServer({
         worldUrl: this.worldUrl,
         adminCode,
+        worldServiceApiKey: this.worldServiceApiKey,
         rootDir: this.rootDir,
       })
       await retryServer.connect()
@@ -798,11 +806,12 @@ Environment:
   WORLD_URL                  World server base URL (e.g. http://localhost:3000)
   WORLD_ID                   World ID (must match remote worldId)
   ADMIN_CODE                 Admin code (if the world requires it)
+  WORLD_SERVICE_API_KEY      Optional x-api-key for world-service pretty URL proxy auth
 
 Notes:
   - Blueprints live at apps/<appName>/*.json with a shared index.js/js script.
   - Start the direct app-server for continuous sync:
-      WORLD_URL=... WORLD_ID=... ADMIN_CODE=... node <path-to-repo>/app-server/server.js
+      WORLD_URL=... WORLD_ID=... ADMIN_CODE=... WORLD_SERVICE_API_KEY=... node <path-to-repo>/app-server/server.js
 `)
   }
 }

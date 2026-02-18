@@ -92,10 +92,12 @@ import { isEqual } from 'lodash-es'
 import { uuid } from './utils.js'
 
 export class DirectAppServer {
-  constructor({ worldUrl, adminCode, rootDir = process.cwd() }) {
+  constructor({ worldUrl, adminCode, worldServiceApiKey, rootDir = process.cwd() }) {
     this.rootDir = rootDir
     this.worldUrl = normalizeBaseUrl(worldUrl)
     this.adminCode = adminCode || null
+    this.worldServiceApiKey =
+      typeof worldServiceApiKey === 'string' && worldServiceApiKey.trim() ? worldServiceApiKey.trim() : null
     this.lobbyDir = path.join(this.rootDir, '.lobby')
     this.appsDir = path.join(this.rootDir, 'apps')
     this.assetsDir = path.join(this.rootDir, 'assets')
@@ -110,6 +112,7 @@ export class DirectAppServer {
     this.client = new WorldAdminClient({
       worldUrl: this.worldUrl,
       adminCode: this.adminCode,
+      apiKey: this.worldServiceApiKey,
     })
     this.deployTimers = new Map()
     this.deployQueues = new Map()
