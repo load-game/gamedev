@@ -9,6 +9,15 @@ Bidirectional sync between a local project directory and a remote Hyperfy world.
 - Do not point `WORLD_URL` at `/api` or `/ws` endpoints.
 - For world-service dev auth, set `WORLD_SERVICE_API_KEY=<DEV_API_KEY>`.
 
+### Pretty URL `.env` example
+
+```bash
+WORLD_URL=https://dev.lobby.ws/worlds/my-world
+WORLD_ID=<world-id>
+ADMIN_CODE=
+WORLD_SERVICE_API_KEY=<dev-api-key>
+```
+
 ## Public API
 
 | Method | Description |
