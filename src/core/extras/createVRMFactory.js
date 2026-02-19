@@ -311,12 +311,12 @@ export function createVRMFactory(glb, setupMaterial) {
           updateLocomotion(delta)
         }
         if (loco.gazeDir && distance < MAX_GAZE_DISTANCE && (currentEmote ? currentEmote.gaze : true)) {
-          // aimBone('chest', loco.gazeDir, delta, {
-          //   minAngle: -90,
-          //   maxAngle: 90,
-          //   smoothing: 0.7,
-          //   weight: 0.7,
-          // })
+          aimBone('chest', loco.gazeDir, delta, {
+            minAngle: -90,
+            maxAngle: 90,
+            smoothing: 0.7,
+            weight: 0.7,
+          })
           aimBone('neck', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,
@@ -510,6 +510,15 @@ export function createVRMFactory(glb, setupMaterial) {
           rootToHips,
           version,
           getBoneName,
+        })
+        // remove neck/head tracks so locomotion animations
+        // never conflict with aimBone gaze overrides
+        const neckName = getBoneName('neck')
+        const headName = getBoneName('head')
+        const chestName = getBoneName('chest')
+        clip.tracks = clip.tracks.filter(track => {
+          const boneName = track.name.split('.')[0]
+          return boneName !== neckName && boneName !== headName && boneName !== chestName
         })
         pose.action = mixer.clipAction(clip)
         pose.action.timeScale = speed
