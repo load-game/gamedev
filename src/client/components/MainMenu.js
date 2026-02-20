@@ -14,6 +14,7 @@ import { sortBy } from 'lodash-es'
 import * as THREE from '../../core/extras/three'
 import { Ranks } from '../../core/extras/ranks'
 import { storage } from '../../core/storage'
+import { getAvatarRankLabel } from '../../core/extras/avatarRank'
 
 const shadowOptions = [
   { label: 'None', value: 'none' },
@@ -21,6 +22,11 @@ const shadowOptions = [
   { label: 'Med', value: 'med' },
   { label: 'High', value: 'high' },
 ]
+
+const minAvatarRankOptions = [1, 2, 3, 4, 5].map(rank => ({
+  label: `Rank ${rank} (${getAvatarRankLabel(rank)})`,
+  value: rank,
+}))
 
 export function MainMenu({ world, open, onClose }) {
   const player = world.entities.player
@@ -44,6 +50,7 @@ export function MainMenu({ world, open, onClose }) {
   const [music, setMusic] = useState(world.prefs.music)
   const [sfx, setSFX] = useState(world.prefs.sfx)
   const [voice, setVoice] = useState(world.prefs.voice)
+  const [minAvatarRank, setMinAvatarRank] = useState(world.prefs.minAvatarRank)
   const [ui, setUI] = useState(world.prefs.ui)
   const [canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
   const [actions, setActions] = useState(world.prefs.actions)
@@ -75,6 +82,7 @@ export function MainMenu({ world, open, onClose }) {
       if (changes.music) setMusic(changes.music.value)
       if (changes.sfx) setSFX(changes.sfx.value)
       if (changes.voice) setVoice(changes.voice.value)
+      if (changes.minAvatarRank) setMinAvatarRank(changes.minAvatarRank.value)
       if (changes.ui) setUI(changes.ui.value)
       if (changes.actions) setActions(changes.actions.value)
       if (changes.stats) setStats(changes.stats.value)
@@ -292,6 +300,13 @@ export function MainMenu({ world, open, onClose }) {
                   onChange={stats => world.prefs.setStats(stats)}
                   trueLabel='Visible'
                   falseLabel='Hidden'
+                />
+                <FieldSwitch
+                  label='Min Avatar Rank'
+                  hint='Remote avatars below this rank use a fallback avatar.'
+                  options={minAvatarRankOptions}
+                  value={minAvatarRank}
+                  onChange={rank => world.prefs.setMinAvatarRank(rank)}
                 />
                 {!isTouch && (
                   <FieldBtn

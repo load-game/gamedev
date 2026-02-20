@@ -1729,21 +1729,23 @@ export class ClientBuilder extends System {
           this.handleAdminError(err, 'Place failed')
         }
       },
-      onEquip: async () => {
+      onEquip: async previewInfo => {
         // close pane
         this.world.emit('avatar', null)
         // prep new user data
         const player = this.world.entities.player
         const prevUrl = player.data.avatar
+        const prevAvatarRank = player.data.avatarRank ?? null
+        const avatarRank = Number.isFinite(previewInfo?.rank) ? previewInfo.rank : null
         // update locally
-        player.modify({ avatar: url, sessionAvatar: null })
+        player.modify({ avatar: url, sessionAvatar: null, avatarRank })
         // upload
         try {
           await this.world.admin.upload(file)
         } catch (err) {
           console.error(err)
           // revert
-          player.modify({ avatar: prevUrl })
+          player.modify({ avatar: prevUrl, avatarRank: prevAvatarRank })
           this.handleAdminError(err, 'Avatar upload failed')
           return
         }
@@ -1754,6 +1756,7 @@ export class ClientBuilder extends System {
         this.world.network.send('entityModified', {
           id: player.data.id,
           avatar: url,
+          avatarRank,
         })
       },
     })

@@ -492,4 +492,12 @@ const migrations = [
       table.index(['objectUid'])
     })
   },
+  // add users.avatarRank field
+  async db => {
+    const hasColumn = await db.schema.hasColumn('users', 'avatarRank')
+    if (hasColumn) return
+    await db.schema.alterTable('users', table => {
+      table.integer('avatarRank').nullable()
+    })
+  },
 ]

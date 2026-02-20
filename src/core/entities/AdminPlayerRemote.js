@@ -4,6 +4,9 @@ import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3'
 import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion'
 import { hasRank, Ranks } from '../extras/ranks'
 
+const DEFAULT_AVATAR_URL = 'asset://avatar.vrm'
+const FALLBACK_AVATAR_URL = 'asset://fallback.vrm'
+
 export class AdminPlayerRemote extends Entity {
   constructor(world, data, local) {
     super(world, data, local)
@@ -50,29 +53,60 @@ export class AdminPlayerRemote extends Entity {
     this.aura.activate({ world: this.world, entity: this })
     this.base.activate({ world: this.world, entity: this })
 
+    this.avatarRequest = 0
     this.applyAvatar()
 
     this.position = new BufferedLerpVector3(this.base.position, this.world.networkRate * 1.5)
     this.quaternion = new BufferedLerpQuaternion(this.base.quaternion, this.world.networkRate * 1.5)
     this.teleport = 0
 
+    this.onPrefsChange = changes => {
+      if (changes.minAvatarRank) {
+        this.applyAvatar()
+      }
+    }
+    this.world.prefs?.on('change', this.onPrefsChange)
+
     this.world.setHot(this, true)
   }
 
+  resolveAvatarSourceUrl() {
+    return this.data.sessionAvatar || this.data.avatar || DEFAULT_AVATAR_URL
+  }
+
+  resolveAvatarUrl() {
+    const sourceUrl = this.resolveAvatarSourceUrl()
+    const avatarRank = this.data.avatarRank
+    if (!Number.isFinite(avatarRank)) return DEFAULT_AVATAR_URL
+    const minAvatarRank = this.world.prefs?.minAvatarRank ?? 1
+    if (avatarRank < minAvatarRank) return FALLBACK_AVATAR_URL
+    return sourceUrl
+  }
+
   applyAvatar() {
-    const avatarUrl = this.data.sessionAvatar || this.data.avatar || 'asset://avatar.vrm'
+    const avatarUrl = this.resolveAvatarUrl()
     if (this.avatarUrl === avatarUrl) return
-    this.world.loader.load('avatar', avatarUrl).then(src => {
-      if (this.avatar) this.avatar.deactivate()
-      this.avatar = src.toNodes().get('avatar')
-      this.base.add(this.avatar)
-      this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2
-      this.bubble.position.y = this.avatar.getHeadToHeight() + 0.2
-      if (!this.bubble.active) {
-        this.nametag.active = true
-      }
-      this.avatarUrl = avatarUrl
-    })
+    const avatarRequest = ++this.avatarRequest
+    let finalAvatarUrl = avatarUrl
+    this.world.loader
+      .load('avatar', avatarUrl)
+      .catch(err => {
+        if (avatarUrl === DEFAULT_AVATAR_URL) throw err
+        finalAvatarUrl = DEFAULT_AVATAR_URL
+        return this.world.loader.load('avatar', DEFAULT_AVATAR_URL)
+      })
+      .then(src => {
+        if (this.destroyed || avatarRequest !== this.avatarRequest) return
+        if (this.avatar) this.avatar.deactivate()
+        this.avatar = src.toNodes().get('avatar')
+        this.base.add(this.avatar)
+        this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2
+        this.bubble.position.y = this.avatar.getHeadToHeight() + 0.2
+        if (!this.bubble.active) {
+          this.nametag.active = true
+        }
+        this.avatarUrl = finalAvatarUrl
+      })
   }
 
   outranks(otherPlayer) {
@@ -138,6 +172,10 @@ export class AdminPlayerRemote extends Entity {
       this.data.sessionAvatar = data.sessionAvatar
       avatarChanged = true
     }
+    if (data.hasOwnProperty('avatarRank')) {
+      this.data.avatarRank = data.avatarRank
+      avatarChanged = true
+    }
     if (data.hasOwnProperty('rank')) {
       this.data.rank = data.rank
       this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })
@@ -166,6 +204,10 @@ export class AdminPlayerRemote extends Entity {
     if (this.destroyed) return
     this.destroyed = true
     clearTimeout(this.chatTimer)
+    if (this.onPrefsChange) {
+      this.world.prefs?.off('change', this.onPrefsChange)
+      this.onPrefsChange = null
+    }
     this.base?.deactivate()
     this.avatar = null
     this.world.setHot(this, false)

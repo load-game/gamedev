@@ -195,6 +195,7 @@ export class AdminNetwork extends System {
         name: player.name,
         avatar: player.avatar,
         sessionAvatar: player.sessionAvatar,
+        avatarRank: player.avatarRank,
         rank: player.rank,
         enteredAt: player.enteredAt,
       })
@@ -261,6 +262,7 @@ export class AdminNetwork extends System {
         name: data.name,
         avatar: data.avatar,
         sessionAvatar: data.sessionAvatar,
+        avatarRank: data.avatarRank,
         rank: data.rank,
         position: data.position,
         quaternion: data.quaternion,
@@ -276,6 +278,7 @@ export class AdminNetwork extends System {
       name: data.name,
       avatar: data.avatar,
       sessionAvatar: data.sessionAvatar,
+      avatarRank: data.avatarRank,
       rank: data.rank,
       enteredAt: data.enteredAt,
     })
@@ -285,14 +288,15 @@ export class AdminNetwork extends System {
     if (!data?.id) return
     const entity = this.world.entities.get(data.id)
     if (!entity) return
-    entity.modify({
-      position: data.position,
-      quaternion: data.quaternion,
-      name: data.name,
-      avatar: data.avatar,
-      sessionAvatar: data.sessionAvatar,
-      rank: data.rank,
-    })
+    const change = {}
+    if (data.hasOwnProperty('position')) change.position = data.position
+    if (data.hasOwnProperty('quaternion')) change.quaternion = data.quaternion
+    if (data.hasOwnProperty('name')) change.name = data.name
+    if (data.hasOwnProperty('avatar')) change.avatar = data.avatar
+    if (data.hasOwnProperty('sessionAvatar')) change.sessionAvatar = data.sessionAvatar
+    if (data.hasOwnProperty('avatarRank')) change.avatarRank = data.avatarRank
+    if (data.hasOwnProperty('rank')) change.rank = data.rank
+    entity.modify(change)
   }
 
   onPlayerLeft = data => {

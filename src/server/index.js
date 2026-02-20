@@ -332,6 +332,7 @@ fastify.post('/api/auth/exchange', async (req, reply) => {
       id: userId,
       name: 'Anonymous',
       avatar: null,
+      avatarRank: null,
       rank: 0,
       createdAt: new Date().toISOString(),
     })

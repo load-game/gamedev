@@ -44,7 +44,8 @@ function normalizeUserProjection(value) {
     typeof value.avatar === 'string' && value.avatar.trim()
       ? value.avatar.trim()
       : null
-  return { id, name, avatar }
+  const avatarRank = Number.isFinite(value.avatarRank) ? value.avatarRank : null
+  return { id, name, avatar, avatarRank }
 }
 
 export function createWorldServiceInternalClient({

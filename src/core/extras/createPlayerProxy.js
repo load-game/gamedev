@@ -72,13 +72,13 @@ export function createPlayerProxy(entity, player) {
     getBoneTransform(boneName) {
       return player.avatar?.getBoneTransform?.(boneName)
     },
-    setAvatar(url) {
+    setAvatar(url, avatarRank = null) {
       const avatar = url || null
       if (world.network.isServer) {
-        world.network.applyEntityModified({ id: player.data.id, avatar, sessionAvatar: null })
+        world.network.applyEntityModified({ id: player.data.id, avatar, sessionAvatar: null, avatarRank })
       } else if (player.data.owner === world.network.id) {
-        player.modify({ avatar, sessionAvatar: null })
-        world.network.send('playerAvatar', { avatar })
+        player.modify({ avatar, sessionAvatar: null, avatarRank })
+        world.network.send('playerAvatar', { avatar, avatarRank })
       } else {
         console.error('setAvatar can only be called on the local player from client scripts')
       }

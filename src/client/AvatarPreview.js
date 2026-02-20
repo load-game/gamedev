@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { isString } from 'lodash'
 import { Emotes } from '../core/extras/playerEmotes'
+import { AVATAR_RANK_SPECS, determineAvatarRank } from '../core/extras/avatarRank'
 
 const MAX_UPLOAD_SIZE = 1000000000000 // TODO
 const MAX_UPLOAD_SIZE_LABEL = '1LOLS'
@@ -304,13 +305,13 @@ export class AvatarPreview {
       value: bones,
       rank: this.determineRank(spec => spec.bones >= bones),
     }
-    // calculate final rank
-    let rank = 5
-    for (const key in stats) {
-      if (stats[key].rank < rank) {
-        rank = stats[key].rank
-      }
-    }
+    const rank = determineAvatarRank({
+      bounds,
+      triangles,
+      draws,
+      fileSize,
+      bones,
+    })
     this.info = {
       rank,
       stats,
@@ -320,7 +321,7 @@ export class AvatarPreview {
 
   determineRank(fn) {
     // if fn returns true it passes the spec
-    for (const spec of specs) {
+    for (const spec of AVATAR_RANK_SPECS) {
       if (fn(spec)) return spec.rank
     }
     return 1
@@ -352,50 +353,3 @@ export class AvatarPreview {
     this.renderer = null
   }
 }
-
-/**
- * The following are minimum specs to belong to a rank.
- * If a vrm doesn't fit into any of these ranks then it is ranked Very Poor (1)
- *
- * These specs closely follow VRChat Quest Limits:
- * https://docs.vrchat.com/docs/avatar-performance-ranking-system#quest-limits
- *
- */
-const specs = [
-  {
-    rank: 5,
-    // Perfect
-    fileSize: 5 * 1048576, // 5 MB
-    triangles: 4000,
-    draws: 1,
-    bones: 70,
-    bounds: [3, 3, 3],
-  },
-  {
-    rank: 4,
-    // Great
-    fileSize: 10 * 1048576, // 10 MB
-    triangles: 16000,
-    draws: 2,
-    bones: 100,
-    bounds: [3, 3, 3],
-  },
-  {
-    rank: 3,
-    // Good
-    fileSize: 15 * 1048576, // 15 MB
-    triangles: 32000,
-    draws: 4,
-    bones: 130,
-    bounds: [4, 4, 4],
-  },
-  {
-    rank: 2,
-    // Heavy
-    fileSize: 25 * 1048576, // 25 MB
-    triangles: 64000,
-    draws: 32,
-    bones: 160,
-    bounds: [7, 6, 4],
-  },
-]

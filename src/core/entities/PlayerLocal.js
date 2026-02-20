@@ -1296,6 +1296,10 @@ export class PlayerLocal extends Entity {
       this.data.sessionAvatar = data.sessionAvatar
       avatarChanged = true
     }
+    if (data.hasOwnProperty('avatarRank')) {
+      this.data.avatarRank = data.avatarRank
+      changed = true
+    }
     if (data.hasOwnProperty('ef')) {
       if (this.data.effect) {
         this.data.effect = null

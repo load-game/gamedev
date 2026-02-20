@@ -7,6 +7,7 @@ import { createJWT, readJWT, verifyWorldConnectionToken } from '../utils-server'
 import { isNumber } from 'lodash-es'
 import * as THREE from '../extras/three'
 import { Ranks } from '../extras/ranks'
+import { normalizeAvatarRank } from '../extras/avatarRank'
 import { validateBlueprintScriptFields } from '../blueprintValidation'
 import { ensureBlueprintSyncMetadata, ensureEntitySyncMetadata } from '../../server/syncMetadata.js'
 
@@ -48,6 +49,11 @@ const ROLE_TO_RANK = {
 function rankFromWorldRole(role) {
   if (typeof role !== 'string') return Ranks.VISITOR
   return ROLE_TO_RANK[role] ?? Ranks.VISITOR
+}
+
+function normalizeAvatarRankValue(value) {
+  if (!isNumber(value)) return null
+  return normalizeAvatarRank(value)
 }
 
 function normalizeUserName(value) {
@@ -125,6 +131,7 @@ function serializePlayerForAdmin(player) {
     position: player.data.position,
     quaternion: player.data.quaternion,
     rank: player.data.rank,
+    avatarRank: player.data.avatarRank ?? null,
     enteredAt: player.data.enteredAt,
   }
 }
@@ -658,17 +665,22 @@ export class ServerNetwork extends System {
           id: worldUser.user.id,
           name: normalizeUserName(worldUser.user.name),
           avatar: worldUser.user.avatar || null,
+          avatarRank: normalizeAvatarRankValue(worldUser.user.avatarRank),
           rank: rankFromWorldRole(worldUser.role),
           createdAt: moment().toISOString(),
+        }
+        const projectedUserMerge = {
+          name: projectedUser.name,
+          avatar: projectedUser.avatar,
+          rank: projectedUser.rank,
+        }
+        if (projectedUser.avatarRank !== null) {
+          projectedUserMerge.avatarRank = projectedUser.avatarRank
         }
         await this.db('users')
           .insert(projectedUser)
           .onConflict('id')
-          .merge({
-            name: projectedUser.name,
-            avatar: projectedUser.avatar,
-            rank: projectedUser.rank,
-          })
+          .merge(projectedUserMerge)
         user = await this.db('users').where('id', projectedUser.id).first()
         if (!user) {
           user = projectedUser
@@ -688,6 +700,7 @@ export class ServerNetwork extends System {
               id: userId,
               name: 'Anonymous',
               avatar: null,
+              avatarRank: null,
               rank: 0,
               createdAt: moment().toISOString(),
             }
@@ -722,6 +735,7 @@ export class ServerNetwork extends System {
           id: uuid(),
           name: 'Anonymous',
           avatar: null,
+          avatarRank: null,
           rank: 0,
           createdAt: moment().toISOString(),
         }
@@ -764,6 +778,7 @@ export class ServerNetwork extends System {
           health: HEALTH_MAX,
           avatar: user.avatar || this.world.settings.avatar?.url || 'asset://avatar.vrm',
           sessionAvatar: avatar || null,
+          avatarRank: avatar ? null : user.avatarRank ?? null,
           rank: user.rank,
           enteredAt: Date.now(),
         },
@@ -1132,6 +1147,16 @@ export class ServerNetwork extends System {
       nextData = { ...data }
       applySyncMetadata(nextData, merged)
     }
+    if (entity.isPlayer && nextData.hasOwnProperty('avatarRank')) {
+      nextData = { ...nextData, avatarRank: normalizeAvatarRankValue(nextData.avatarRank) }
+    }
+    if (
+      entity.isPlayer &&
+      (nextData.hasOwnProperty('avatar') || nextData.hasOwnProperty('sessionAvatar')) &&
+      !nextData.hasOwnProperty('avatarRank')
+    ) {
+      nextData = { ...nextData, avatarRank: null }
+    }
 
     entity.modify(nextData)
     if (entity.isApp) {
@@ -1160,6 +1185,10 @@ export class ServerNetwork extends System {
         changes.avatar = nextData.avatar
         changed = true
       }
+      if (nextData.hasOwnProperty('avatarRank')) {
+        changes.avatarRank = entity.data.avatarRank ?? null
+        changed = true
+      }
       if (changed) {
         await this.db('users').where('id', entity.data.userId).update(changes)
       }
@@ -1179,9 +1208,14 @@ export class ServerNetwork extends System {
         playerUpdate.name = entity.data.name
         hasPlayerUpdate = true
       }
-      if (nextData.hasOwnProperty('avatar') || nextData.hasOwnProperty('sessionAvatar')) {
+      if (
+        nextData.hasOwnProperty('avatar') ||
+        nextData.hasOwnProperty('sessionAvatar') ||
+        nextData.hasOwnProperty('avatarRank')
+      ) {
         playerUpdate.avatar = entity.data.avatar
         playerUpdate.sessionAvatar = entity.data.sessionAvatar
+        playerUpdate.avatarRank = entity.data.avatarRank ?? null
         hasPlayerUpdate = true
       }
       if (hasPlayerUpdate) {
@@ -1360,8 +1394,9 @@ export class ServerNetwork extends System {
   onPlayerAvatar = async (socket, data) => {
     const player = socket.player
     if (!player) return
+    const avatarRank = normalizeAvatarRankValue(data?.avatarRank)
     await this.applyEntityModified(
-      { id: player.data.id, avatar: data.avatar, sessionAvatar: null },
+      { id: player.data.id, avatar: data.avatar, sessionAvatar: null, avatarRank },
       { ignoreNetworkId: socket.id }
     )
   }

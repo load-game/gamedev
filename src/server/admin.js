@@ -209,6 +209,7 @@ function serializePlayersForAdmin(world) {
       name: player.data.name,
       avatar: player.data.avatar,
       sessionAvatar: player.data.sessionAvatar,
+      avatarRank: player.data.avatarRank ?? null,
       position: player.data.position,
       quaternion: player.data.quaternion,
       rank: player.data.rank,

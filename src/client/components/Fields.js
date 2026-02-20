@@ -170,6 +170,14 @@ export function FieldTextarea({ label, hint, placeholder, value, onChange }) {
 export function FieldSwitch({ label, hint, options, value, onChange }) {
   options = options || []
   const { setHint } = useContext(HintContext)
+  const textWidthCh = useMemo(() => {
+    let maxLength = 3
+    for (const option of options) {
+      const length = String(option?.label || '').length
+      if (length > maxLength) maxLength = length
+    }
+    return maxLength + 1
+  }, [options])
   const idx = options.findIndex(o => o.value === value)
   const selected = options[idx]
   const prev = () => {
@@ -214,6 +222,8 @@ export function FieldSwitch({ label, hint, options, value, onChange }) {
         .fieldswitch-text {
           font-size: 0.9375rem;
           line-height: 1;
+          text-align: center;
+          white-space: nowrap;
         }
         &:hover {
           padding: 0 0.275rem 0 1rem;
@@ -230,7 +240,9 @@ export function FieldSwitch({ label, hint, options, value, onChange }) {
       <div className='fieldswitch-btn left' onClick={prev}>
         <ChevronLeftIcon size='1.5rem' />
       </div>
-      <div className='fieldswitch-text'>{selected?.label || '???'}</div>
+      <div className='fieldswitch-text' style={{ width: `${textWidthCh}ch` }}>
+        {selected?.label || '???'}
+      </div>
       <div className='fieldswitch-btn right' onClick={next}>
         <ChevronRightIcon size='1.5rem' />
       </div>
