@@ -148,6 +148,23 @@ function readSolanaProviderAddress(provider) {
   return normalizeSolanaAddress(value)
 }
 
+function readSolanaProviderNetwork(provider) {
+  const candidates = [
+    provider?.network,
+    provider?.cluster,
+    provider?.connection?.rpcEndpoint,
+    provider?.rpcEndpoint,
+  ]
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue
+    const normalized = candidate.trim().toLowerCase()
+    if (!normalized) continue
+    if (normalized.includes('devnet')) return 'devnet'
+    if (normalized.includes('mainnet')) return 'mainnet'
+  }
+  return ''
+}
+
 function extractSolanaSignatureBytes(value) {
   if (!value) return null
   if (value.signature) {
@@ -641,6 +658,13 @@ function createInjectedRuntimeAuthBridge(authBaseUrl) {
       const accounts = await provider.request({ method: 'eth_accounts' }).catch(() => [])
       return normalizeSiweAddress(Array.isArray(accounts) ? accounts[0] : '')
     },
+    async getActiveWalletNetwork({ chain = 'ethereum' } = {}) {
+      const normalizedChain = normalizeWalletChain(chain)
+      if (normalizedChain !== 'solana') return null
+      const provider = getSolanaWalletProvider()
+      if (!provider) return null
+      return readSolanaProviderNetwork(provider) || null
+    },
     subscribeAccountChanges(listener, { chain = 'ethereum' } = {}) {
       if (typeof listener !== 'function') {
         return () => {}
@@ -793,6 +817,9 @@ function createPrivyRuntimeAuthBridge(state) {
     clearRuntimeAuthState,
     async getActiveWalletAddress() {
       return ''
+    },
+    async getActiveWalletNetwork() {
+      return null
     },
     subscribeAccountChanges() {
       return () => {}
