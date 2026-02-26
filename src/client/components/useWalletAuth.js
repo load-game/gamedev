@@ -5,6 +5,10 @@ const defaultWalletAuthState = {
   enabled: false,
   mode: null,
   providerAvailable: false,
+  providerAvailability: {
+    ethereum: false,
+    solana: false,
+  },
   connected: false,
   pending: false,
   address: null,
@@ -42,6 +46,17 @@ function hasPrivySiweResumeIntent() {
     return true
   } catch {
     return false
+  }
+}
+
+function resolveProviderAvailability(auth) {
+  const hasProvider = typeof auth?.hasWalletProvider === 'function' ? auth.hasWalletProvider.bind(auth) : null
+  const ethereum = !!(hasProvider?.('ethereum') || hasProvider?.())
+  const solana = !!hasProvider?.('solana')
+  return {
+    ethereum,
+    solana,
+    any: !!(hasProvider?.('any') || ethereum || solana),
   }
 }
 
@@ -97,11 +112,16 @@ export function useWalletAuth(world) {
 
     const verifyActiveWallet = async () => {
       const expectedAddress = sessionWalletRef.current
-      const providerAvailable = !!auth.hasWalletProvider?.()
+      const availability = resolveProviderAvailability(auth)
+      const providerAvailable = availability.any
       setAuthState({
         enabled: true,
         mode: auth.mode || null,
         providerAvailable,
+        providerAvailability: {
+          ethereum: availability.ethereum,
+          solana: availability.solana,
+        },
       })
       if (!expectedAddress) return
       if (auth.mode === 'privy') return
@@ -124,10 +144,15 @@ export function useWalletAuth(world) {
     }
 
     const initWalletAuth = async () => {
+      const availability = resolveProviderAvailability(auth)
       setAuthState({
         enabled: true,
         mode: auth.mode || null,
-        providerAvailable: !!auth.hasWalletProvider?.(),
+        providerAvailable: availability.any,
+        providerAvailability: {
+          ethereum: availability.ethereum,
+          solana: availability.solana,
+        },
       })
 
       const session = await auth.getSessionUser?.().catch(() => null)
@@ -189,7 +214,7 @@ export function useWalletAuth(world) {
     }
   }, [world])
 
-  const connectWallet = async () => {
+  const connectWallet = async (options = {}) => {
     const auth = globalThis.__runtimeAuth
     if (!auth?.enabled) return
     if (walletAuth.pending || walletAuth.connected) return
@@ -199,7 +224,7 @@ export function useWalletAuth(world) {
     }
     setWalletAuth(prev => ({ ...prev, pending: true }))
     try {
-      await auth.connectWalletSession?.()
+      await auth.connectWalletSession?.(options)
       if (shouldResumePrivySiwe) {
         clearPrivySiweResumeIntent()
       }

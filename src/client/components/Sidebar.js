@@ -25,6 +25,9 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
   const { isBuilder } = useRank(world, player)
   const activePane = ui.active ? ui.pane : null
   const [open, setOpen] = useState(false)
+  const [walletMenuOpen, setWalletMenuOpen] = useState(false)
+  const isPrivyAuth = walletAuth?.mode === 'privy'
+  const showWalletMenu = !!walletMenuOpen && !isPrivyAuth && !walletAuth?.connected
   const downloadApp = async () => {
     const app = ui.app
     if (!app?.blueprint) return
@@ -39,6 +42,11 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
   useEffect(() => {
     if (ui.app && !open) setOpen(true)
   }, [ui.app])
+  useEffect(() => {
+    if (isPrivyAuth || walletAuth?.connected) {
+      setWalletMenuOpen(false)
+    }
+  }, [isPrivyAuth, walletAuth?.connected])
   const selectPane = pane => {
     world.ui.togglePane(pane)
     if (!ui.active) setOpen(true)
@@ -66,6 +74,9 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
             align-items: center;
             gap: 0.5rem;
             pointer-events: auto;
+          }
+          .sidebar-wallet-wrap {
+            position: relative;
           }
           .sidebar-center {
             position: relative;
@@ -154,7 +165,29 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
       >
         <div className='sidebar-topbar'>
           <LogoBtn onClick={onOpenMenu} />
-          <WalletBtn auth={walletAuth} onClick={onConnectWallet} />
+          <div className='sidebar-wallet-wrap'>
+            <WalletBtn
+              auth={walletAuth}
+              onClick={() => {
+                if (walletAuth?.pending) return
+                if (isPrivyAuth || walletAuth?.connected) {
+                  onConnectWallet?.()
+                  return
+                }
+                setWalletMenuOpen(prev => !prev)
+              }}
+            />
+            {showWalletMenu && (
+              <WalletConnectMenu
+                auth={walletAuth}
+                onClose={() => setWalletMenuOpen(false)}
+                onSelect={selection => {
+                  setWalletMenuOpen(false)
+                  onConnectWallet?.(selection)
+                }}
+              />
+            )}
+          </div>
           <WalletDisconnectBtn auth={walletAuth} onClick={onDisconnectWallet} />
         </div>
         {isBuilder && (
@@ -499,6 +532,118 @@ function WalletDisconnectBtn({ auth, onClick }) {
       }}
     >
       Disconnect
+    </div>
+  )
+}
+
+function WalletConnectMenu({ auth, onClose, onSelect }) {
+  const availability = auth?.providerAvailability || {
+    ethereum: !!auth?.providerAvailable,
+    solana: false,
+  }
+  const options = [
+    {
+      key: 'ethereum',
+      label: 'Ethereum',
+      available: !!availability.ethereum,
+      selection: { chain: 'ethereum' },
+    },
+    {
+      key: 'solana-mainnet',
+      label: 'Solana (mainnet)',
+      available: !!availability.solana,
+      selection: { chain: 'solana', network: 'mainnet' },
+    },
+    {
+      key: 'solana-devnet',
+      label: 'Solana (devnet)',
+      available: !!availability.solana,
+      selection: { chain: 'solana', network: 'devnet' },
+    },
+  ]
+
+  return (
+    <div
+      className='sidebar-wallet-menu'
+      css={css`
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        left: 0;
+        width: 12.75rem;
+        background: ${theme.bgPanel};
+        border: 1px solid ${theme.border};
+        border-radius: ${theme.radius};
+        backdrop-filter: blur(8px);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+        z-index: 20;
+        .sidebar-wallet-menu-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.55rem 0.7rem;
+          font-size: 0.7rem;
+          color: rgba(255, 255, 255, 0.82);
+        }
+        .sidebar-wallet-menu-close {
+          cursor: pointer;
+          color: rgba(255, 255, 255, 0.62);
+          &:hover {
+            color: white;
+          }
+        }
+        .sidebar-wallet-menu-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          padding: 0.2rem 0.45rem 0.6rem;
+        }
+        .sidebar-wallet-menu-btn {
+          height: 2.1rem;
+          border: 1px solid ${theme.border};
+          border-radius: ${theme.radiusSmall};
+          background: rgba(255, 255, 255, 0.02);
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.72rem;
+          font-weight: 600;
+          text-align: left;
+          padding: 0 0.6rem;
+          cursor: pointer;
+          &:hover {
+            background: ${theme.bgHover};
+          }
+          &.disabled {
+            cursor: default;
+            color: rgba(255, 255, 255, 0.45);
+            border-color: ${theme.borderLight};
+            background: transparent;
+          }
+        }
+      `}
+    >
+      <div className='sidebar-wallet-menu-head'>
+        <span>Connect wallet</span>
+        <span className='sidebar-wallet-menu-close' onClick={() => onClose?.()}>
+          Close
+        </span>
+      </div>
+      <div className='sidebar-wallet-menu-actions'>
+        {options.map(option => {
+          const disabled = auth?.pending || !option.available
+          return (
+            <button
+              key={option.key}
+              type='button'
+              className={cls('sidebar-wallet-menu-btn', { disabled })}
+              onClick={() => {
+                if (disabled) return
+                onSelect?.(option.selection)
+              }}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

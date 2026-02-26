@@ -19,6 +19,7 @@ export function EditorLayout({ world, ui, children }) {
   const [buildMode, setBuildMode] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [exploreMenuOpen, setExploreMenuOpen] = useState(false)
+  const [walletPickerOpen, setWalletPickerOpen] = useState(false)
   const { walletAuth, connectWallet, disconnectWallet } = useWalletAuth(world)
   const isPrivyAuth = walletAuth.mode === 'privy'
   const hasApp = !!ui.app
@@ -59,6 +60,12 @@ export function EditorLayout({ world, ui, children }) {
     }
   }, [isPrivyAuth, walletAuth.connected, userMenuOpen])
 
+  useEffect(() => {
+    if (isPrivyAuth || walletAuth.connected) {
+      setWalletPickerOpen(false)
+    }
+  }, [isPrivyAuth, walletAuth.connected])
+
   const showEditor = ready && isBuilder && open && buildMode
 
   useEffect(() => {
@@ -66,13 +73,21 @@ export function EditorLayout({ world, ui, children }) {
   }, [showEditor])
   const showRight = showEditor && hasApp
   const showBottom = showEditor && hasApp
+  const showWalletPicker = ready && walletPickerOpen && !isPrivyAuth && !walletAuth.connected
   const onUserClick = () => {
     if (walletAuth.pending) return
     if (isPrivyAuth || walletAuth.connected) {
+      setWalletPickerOpen(false)
       setUserMenuOpen(true)
       return
     }
-    void connectWallet()
+    setUserMenuOpen(false)
+    setWalletPickerOpen(prev => !prev)
+  }
+  const connectWalletWithSelection = selection => {
+    if (walletAuth.pending) return
+    setWalletPickerOpen(false)
+    void connectWallet(selection)
   }
 
   return (
@@ -125,6 +140,13 @@ export function EditorLayout({ world, ui, children }) {
                 onExploreClick={() => setExploreMenuOpen(true)}
               />
             )}
+            {showWalletPicker && (
+              <WalletConnectPopover
+                auth={walletAuth}
+                onClose={() => setWalletPickerOpen(false)}
+                onSelect={connectWalletWithSelection}
+              />
+            )}
             {ready && (
               <EditorUserMenu
                 open={userMenuOpen}
@@ -150,6 +172,123 @@ export function EditorLayout({ world, ui, children }) {
         {showRight && <RightPanel world={world} />}
       </div>
     </HintProvider>
+  )
+}
+
+function WalletConnectPopover({ auth, onClose, onSelect }) {
+  const availability = auth?.providerAvailability || {
+    ethereum: !!auth?.providerAvailable,
+    solana: false,
+  }
+
+  const options = [
+    {
+      key: 'ethereum',
+      label: 'Ethereum',
+      available: !!availability.ethereum,
+      selection: { chain: 'ethereum' },
+    },
+    {
+      key: 'solana-mainnet',
+      label: 'Solana (mainnet)',
+      available: !!availability.solana,
+      selection: { chain: 'solana', network: 'mainnet' },
+    },
+    {
+      key: 'solana-devnet',
+      label: 'Solana (devnet)',
+      available: !!availability.solana,
+      selection: { chain: 'solana', network: 'devnet' },
+    },
+  ]
+
+  return (
+    <div
+      className='editor-wallet-picker'
+      css={css`
+        position: absolute;
+        top: calc(4.1rem + env(safe-area-inset-top));
+        left: calc(1rem + env(safe-area-inset-left));
+        width: 13rem;
+        background: ${theme.bgPanel};
+        border: 1px solid ${theme.border};
+        border-radius: ${theme.radius};
+        backdrop-filter: blur(8px);
+        z-index: 12;
+        pointer-events: auto;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+        .editor-wallet-picker-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.625rem 0.75rem 0.5rem;
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.85);
+          letter-spacing: 0.01em;
+        }
+        .editor-wallet-picker-close {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.65);
+          cursor: pointer;
+          user-select: none;
+          &:hover {
+            color: white;
+          }
+        }
+        .editor-wallet-picker-actions {
+          padding: 0.25rem 0.5rem 0.625rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.375rem;
+        }
+        .editor-wallet-picker-btn {
+          height: 2.2rem;
+          border: 1px solid ${theme.border};
+          border-radius: ${theme.radiusSmall};
+          background: rgba(255, 255, 255, 0.02);
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: left;
+          padding: 0 0.625rem;
+          &:hover {
+            background: ${theme.bgHover};
+          }
+          &.disabled {
+            cursor: default;
+            color: rgba(255, 255, 255, 0.45);
+            border-color: ${theme.borderLight};
+            background: transparent;
+          }
+        }
+      `}
+    >
+      <div className='editor-wallet-picker-head'>
+        <span>Connect wallet</span>
+        <span className='editor-wallet-picker-close' onClick={() => onClose?.()}>
+          Close
+        </span>
+      </div>
+      <div className='editor-wallet-picker-actions'>
+        {options.map(option => {
+          const disabled = auth?.pending || !option.available
+          return (
+            <button
+              key={option.key}
+              className={`editor-wallet-picker-btn${disabled ? ' disabled' : ''}`}
+              type='button'
+              onClick={() => {
+                if (disabled) return
+                onSelect?.(option.selection)
+              }}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
