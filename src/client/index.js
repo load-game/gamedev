@@ -64,11 +64,32 @@ function toHexString(value) {
   return `0x${[...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')}`
 }
 
-function getWalletProvider() {
+function getEthereumWalletProvider() {
   if (typeof window === 'undefined') return null
   const provider = window.ethereum
   if (!provider || typeof provider.request !== 'function') return null
   return provider
+}
+
+function getSolanaWalletProvider() {
+  if (typeof window === 'undefined') return null
+  const candidates = [
+    window.solana,
+    window.phantom?.solana,
+    window.backpack,
+    window.backpack?.solana,
+  ]
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'object') continue
+    const canConnect = typeof candidate.connect === 'function'
+    const canSign = typeof candidate.signMessage === 'function'
+    if (canConnect && canSign) return candidate
+  }
+  return null
+}
+
+function getWalletProvider(chain = 'ethereum') {
+  return chain === 'solana' ? getSolanaWalletProvider() : getEthereumWalletProvider()
 }
 
 function normalizeHexAddress(value) {
@@ -86,6 +107,55 @@ function normalizeSiweAddress(address) {
   }
 }
 
+function normalizeSolanaAddress(value) {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(normalized) ? normalized : ''
+}
+
+function normalizeWalletChain(chain) {
+  return chain === 'solana' ? 'solana' : 'ethereum'
+}
+
+function normalizeWalletAddressForChain(chain, address) {
+  return chain === 'solana' ? normalizeSolanaAddress(address) : normalizeSiweAddress(address)
+}
+
+function normalizeSolanaNetwork(network) {
+  return network === 'devnet' ? 'devnet' : 'mainnet'
+}
+
+function toUint8Array(value) {
+  if (!value) return null
+  if (value instanceof Uint8Array) return value
+  if (value instanceof ArrayBuffer) return new Uint8Array(value)
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+  if (Array.isArray(value)) return Uint8Array.from(value)
+  return null
+}
+
+function bytesToBase64(bytes) {
+  const chunkSize = 0x8000
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+  return btoa(binary)
+}
+
+function readSolanaProviderAddress(provider) {
+  const value = provider?.publicKey?.toBase58?.() || provider?.publicKey?.toString?.() || provider?.publicKey
+  return normalizeSolanaAddress(value)
+}
+
+function extractSolanaSignatureBytes(value) {
+  if (!value) return null
+  if (value.signature) {
+    return toUint8Array(value.signature)
+  }
+  return toUint8Array(value)
+}
+
 function buildSiweMessage({ domain, address, uri, chainId, nonce }) {
   return `${domain} wants you to sign in with your Ethereum account:
 ${address}
@@ -95,6 +165,19 @@ Sign in with Ethereum
 URI: ${uri}
 Version: 1
 Chain ID: ${chainId}
+Nonce: ${nonce}
+Issued At: ${new Date().toISOString()}`
+}
+
+function buildSiwsMessage({ domain, address, uri, nonce, network }) {
+  return `${domain} wants you to sign in with your Solana account:
+${address}
+
+Sign in with Solana
+
+URI: ${uri}
+Version: 1
+Network: ${network}
 Nonce: ${nonce}
 Issued At: ${new Date().toISOString()}`
 }
@@ -129,6 +212,40 @@ async function requestWalletAddress(provider) {
   return normalizeSiweAddress(address)
 }
 
+async function requestSolanaWalletAddress(provider) {
+  if (!provider || typeof provider.connect !== 'function') {
+    throw createAuthError('No Solana wallet provider found', 401, { skipAuth: true })
+  }
+
+  let address = readSolanaProviderAddress(provider)
+  if (address) {
+    return address
+  }
+
+  try {
+    await provider.connect({ onlyIfTrusted: true })
+    address = readSolanaProviderAddress(provider)
+    if (address) return address
+  } catch {
+    // Non-fatal: we can still request an interactive connect.
+  }
+
+  try {
+    await provider.connect()
+  } catch (err) {
+    if (err?.code === 4001 || err?.code === '4001') {
+      throw createAuthError('Wallet sign-in request was rejected', 401, { skipAuth: true })
+    }
+    throw err
+  }
+
+  address = readSolanaProviderAddress(provider)
+  if (!address) {
+    throw createAuthError('No Solana wallet account available', 401, { skipAuth: true })
+  }
+  return address
+}
+
 async function requestSiweNonce(authBaseUrl, address, { onStatus } = {}) {
   const endpoint = resolveAuthEndpoint(authBaseUrl, 'nonce')
   const res = await fetch(endpoint, {
@@ -152,6 +269,29 @@ async function requestSiweNonce(authBaseUrl, address, { onStatus } = {}) {
   return nonce
 }
 
+async function requestSiwsNonce(authBaseUrl, address, network, { onStatus } = {}) {
+  const endpoint = resolveAuthEndpoint(authBaseUrl, 'solana/nonce')
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({ address, network }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Unable to request SIWS nonce' }))
+    throw createAuthError(error.message || error.error || 'Unable to request SIWS nonce', res.status)
+  }
+  const data = await res.json()
+  const nonce = typeof data?.nonce === 'string' ? data.nonce.trim() : ''
+  if (!nonce) {
+    throw createAuthError('Missing SIWS nonce', 401)
+  }
+  onStatus?.('auth', 'Solana sign-in nonce received...')
+  return nonce
+}
+
 async function verifySiweMessage(authBaseUrl, message, signature, { onStatus } = {}) {
   const endpoint = resolveAuthEndpoint(authBaseUrl, 'verify')
   const res = await fetch(endpoint, {
@@ -172,6 +312,26 @@ async function verifySiweMessage(authBaseUrl, message, signature, { onStatus } =
   onStatus?.('auth', 'Wallet signature verified...')
 }
 
+async function verifySiwsMessage(authBaseUrl, message, signature, { onStatus } = {}) {
+  const endpoint = resolveAuthEndpoint(authBaseUrl, 'solana/verify')
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({ message, signature }),
+    credentials: 'include',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Unable to verify SIWS signature' }))
+    const statusError = createAuthError(error.message || error.error || 'Unable to verify SIWS signature', res.status)
+    if (res.status === 401) statusError.skipAuth = true
+    throw statusError
+  }
+  onStatus?.('auth', 'Solana signature verified...')
+}
+
 async function signSiwePayload(provider, address, message, { onStatus } = {}) {
   const encodedMessage = toHexString(message)
   try {
@@ -183,6 +343,24 @@ async function signSiwePayload(provider, address, message, { onStatus } = {}) {
       onStatus?.('error', firstError?.message || 'Wallet signature was rejected')
       throw createAuthError('Unable to sign SIWE payload', 401, { skipAuth: true })
     }
+  }
+}
+
+async function signSiwsPayload(provider, message, { onStatus } = {}) {
+  if (!provider || typeof provider.signMessage !== 'function') {
+    throw createAuthError('Solana message signing is unavailable', 401, { skipAuth: true })
+  }
+  const messageBytes = new TextEncoder().encode(message)
+  try {
+    const signed = await provider.signMessage(messageBytes, 'utf8')
+    const signatureBytes = extractSolanaSignatureBytes(signed)
+    if (!signatureBytes || !signatureBytes.length) {
+      throw new Error('Invalid SIWS signature payload')
+    }
+    return bytesToBase64(signatureBytes)
+  } catch (err) {
+    onStatus?.('error', err?.message || 'Wallet signature was rejected')
+    throw createAuthError('Unable to sign SIWS payload', 401, { skipAuth: true })
   }
 }
 
@@ -206,6 +384,29 @@ async function performSiweLoginWithProvider(provider, authBaseUrl, onStatus) {
 
   const signature = await signSiwePayload(provider, address, message, { onStatus })
   await verifySiweMessage(authBaseUrl, message, signature, { onStatus })
+  onStatus?.('auth', 'Wallet login complete')
+}
+
+async function performSiwsLoginWithProvider(provider, authBaseUrl, { network = 'mainnet' } = {}, onStatus) {
+  if (!provider || typeof provider.connect !== 'function') {
+    throw createAuthError('No Solana wallet provider found', 401, { skipAuth: true })
+  }
+  const normalizedNetwork = normalizeSolanaNetwork(network)
+  const address = await requestSolanaWalletAddress(provider)
+  onStatus?.('auth', `Signing in with Solana ${address.slice(0, 4)}...${address.slice(-4)}...`)
+
+  const nonce = await requestSiwsNonce(authBaseUrl, address, normalizedNetwork, { onStatus })
+  const parsedUrl = new URL(authBaseUrl.replace(/\/+$/, ''))
+  const message = buildSiwsMessage({
+    domain: parsedUrl.hostname,
+    address,
+    uri: `${parsedUrl.protocol}//${parsedUrl.host}`,
+    network: normalizedNetwork,
+    nonce,
+  })
+
+  const signature = await signSiwsPayload(provider, message, { onStatus })
+  await verifySiwsMessage(authBaseUrl, message, signature, { onStatus })
   onStatus?.('auth', 'Wallet login complete')
 }
 
@@ -375,20 +576,37 @@ function createInjectedRuntimeAuthBridge(authBaseUrl) {
   return {
     enabled: !!authBaseUrl,
     mode: 'injected',
-    hasWalletProvider() {
-      return !!getWalletProvider()
+    hasWalletProvider(chain) {
+      const normalizedChain = chain === 'any' ? 'any' : normalizeWalletChain(chain)
+      if (normalizedChain === 'any') {
+        return !!getEthereumWalletProvider() || !!getSolanaWalletProvider()
+      }
+      return !!getWalletProvider(normalizedChain)
     },
-    getWalletProvider,
+    getWalletProvider(chain = 'ethereum') {
+      return getWalletProvider(normalizeWalletChain(chain))
+    },
     normalizeSiweAddress,
-    async connectWalletSession({ onStatus } = {}) {
+    normalizeSolanaAddress,
+    normalizeWalletAddressForChain,
+    async connectWalletSession({ chain = 'ethereum', network = 'mainnet', onStatus } = {}) {
       if (!authBaseUrl) {
         throw createAuthError('Wallet auth is unavailable', 404, { skipAuth: true })
       }
-      const provider = getWalletProvider()
-      if (!provider) {
-        throw createAuthError('No wallet provider found', 401, { skipAuth: true })
+      const normalizedChain = normalizeWalletChain(chain)
+      if (normalizedChain === 'solana') {
+        const provider = getSolanaWalletProvider()
+        if (!provider) {
+          throw createAuthError('No Solana wallet provider found', 401, { skipAuth: true })
+        }
+        await performSiwsLoginWithProvider(provider, authBaseUrl, { network }, onStatus)
+      } else {
+        const provider = getEthereumWalletProvider()
+        if (!provider) {
+          throw createAuthError('No wallet provider found', 401, { skipAuth: true })
+        }
+        await performSiweLoginWithProvider(provider, authBaseUrl, onStatus)
       }
-      await performSiweLoginWithProvider(provider, authBaseUrl, onStatus)
       return fetchAuthMe(authBaseUrl).catch(() => null)
     },
     async ensureSession() {
@@ -411,17 +629,45 @@ function createInjectedRuntimeAuthBridge(authBaseUrl) {
       clearRuntimeAuthState()
     },
     clearRuntimeAuthState,
-    async getActiveWalletAddress() {
-      const provider = getWalletProvider()
+    async getActiveWalletAddress({ chain = 'ethereum' } = {}) {
+      const normalizedChain = normalizeWalletChain(chain)
+      if (normalizedChain === 'solana') {
+        const provider = getSolanaWalletProvider()
+        if (!provider) return ''
+        return readSolanaProviderAddress(provider)
+      }
+      const provider = getEthereumWalletProvider()
       if (!provider || typeof provider.request !== 'function') return ''
       const accounts = await provider.request({ method: 'eth_accounts' }).catch(() => [])
       return normalizeSiweAddress(Array.isArray(accounts) ? accounts[0] : '')
     },
-    subscribeAccountChanges(listener) {
-      const provider = getWalletProvider()
-      if (!provider || typeof provider.on !== 'function' || typeof listener !== 'function') {
+    subscribeAccountChanges(listener, { chain = 'ethereum' } = {}) {
+      if (typeof listener !== 'function') {
         return () => {}
       }
+
+      const normalizedChain = normalizeWalletChain(chain)
+      if (normalizedChain === 'solana') {
+        const provider = getSolanaWalletProvider()
+        if (!provider || typeof provider.on !== 'function') {
+          return () => {}
+        }
+
+        const onAccountChanged = publicKey => {
+          const nextAddress = normalizeSolanaAddress(publicKey?.toBase58?.() || publicKey?.toString?.() || publicKey || '')
+          listener(nextAddress)
+        }
+        provider.on('accountChanged', onAccountChanged)
+        return () => {
+          provider.removeListener?.('accountChanged', onAccountChanged)
+        }
+      }
+
+      const provider = getEthereumWalletProvider()
+      if (!provider || typeof provider.on !== 'function') {
+        return () => {}
+      }
+
       const onAccountsChanged = accounts => {
         const nextAddress = normalizeSiweAddress(Array.isArray(accounts) ? accounts[0] : '')
         listener(nextAddress)
@@ -518,6 +764,8 @@ function createPrivyRuntimeAuthBridge(state) {
       return null
     },
     normalizeSiweAddress,
+    normalizeSolanaAddress,
+    normalizeWalletAddressForChain,
     async connectWalletSession({ onStatus } = {}) {
       await ensurePrivySession(state, { onStatus, allowLogin: true })
       return fetchAuthMe(state.authBaseUrl).catch(() => null)
