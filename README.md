@@ -54,16 +54,6 @@ Run `gamedev help` for the full command list.
 - [Scripting API](docs/scripting/README.md)
 - [Docker Deployment](DOCKER.md)
 
-## Explore Friends (V1)
-
-The Explore panel includes a Friends tab powered by world-service `/friends*` APIs.
-
-Behavior:
-- Lists accepted friends.
-- Lists pending incoming and outgoing requests.
-- Supports add-by-name (`target_name`), accept incoming request, and unfriend.
-- Requires authenticated session cookie from world-service (`401` responses are surfaced as sign-in required in UI).
-
 ## Developing This Repository
 
 If you are working on the runtime/SDK itself (not just a world project):
