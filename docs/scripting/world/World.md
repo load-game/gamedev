@@ -80,6 +80,14 @@ Returns a player. If no `playerId` is provided it returns the local player.
 
 Returns an array of all players.
 
+### `.get(key)`: Any
+
+Gets a value from persistent world storage by key. Only available on the server.
+
+### `.set(key, value)`
+
+Sets a value in persistent world storage by key. Only available on the server. Values must be JSON-serializable.
+
 ### `.getQueryParam(key)`
 
 Gets a query parameter value from the browsers url
