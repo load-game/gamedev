@@ -161,6 +161,15 @@ export function createPlayerProxy(entity, player) {
     cancelEffect() {
       activeEffectConfig?.onEnd()
     },
+    ragdoll(enable, force) {
+      const forceArr = force?.toArray?.() || null
+      const msg = { id: player.data.id, r: enable ? 1 : 0 }
+      if (forceArr) msg.rf = forceArr
+      player.setRagdoll(enable, force || null)
+      if (world.network.isServer) {
+        world.network.send('entityModified', msg)
+      }
+    },
     push(force) {
       force = force.toArray()
       // player.applyForce(force)

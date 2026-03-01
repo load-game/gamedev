@@ -332,7 +332,10 @@ export function createVRMFactory(glb, setupMaterial) {
       // console.log('rate per second', 1 / rate)
     }
 
+    let paused = false
+
     const update = delta => {
+      if (paused) return
       elapsed += delta
       const should = rateCheck ? elapsed >= rate : true
       if (should) {
@@ -690,6 +693,9 @@ export function createVRMFactory(glb, setupMaterial) {
       raw: vrm,
       height,
       headToHeight,
+      findBone,
+      get paused() { return paused },
+      set paused(v) { paused = v },
       setEmote,
       setFirstPerson,
       update,

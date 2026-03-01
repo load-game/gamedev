@@ -6,6 +6,7 @@ import { LerpVector3 } from '../extras/LerpVector3'
 import { hasRank, Ranks } from '../extras/ranks'
 import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3'
 import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion'
+import { Ragdoll } from '../extras/Ragdoll'
 
 let capsuleGeometry
 {
@@ -146,6 +147,23 @@ export class PlayerRemote extends Entity {
   }
 
   update(delta) {
+    if (this._ragdoll) {
+      this._ragdoll.fixedUpdate(delta)
+      this._ragdoll.update(delta)
+      this._ragdoll.lateUpdate(delta)
+      const hipsPos = this._ragdoll.getHipsPosition()
+      if (hipsPos) {
+        this.base.position.set(hipsPos.x - this._ragdollHipsOffset.x, hipsPos.y - this._ragdollHipsOffset.y, hipsPos.z - this._ragdollHipsOffset.z)
+        this.base.clean()
+      }
+      if (!this._ragdoll.isActive()) {
+        this._ragdoll.destroy()
+        this._ragdoll = null
+        this._ragdollHipsOffset = null
+        this.body.active = true
+      }
+      return
+    }
     const anchor = this.getAnchorMatrix()
     if (!anchor) {
       this.position.update(delta)
@@ -156,6 +174,7 @@ export class PlayerRemote extends Entity {
   }
 
   lateUpdate(delta) {
+    if (this._ragdoll) return
     const anchor = this.getAnchorMatrix()
     if (anchor) {
       this.position.snap()
@@ -181,6 +200,34 @@ export class PlayerRemote extends Entity {
     this.data.effect = effect
     this.onEffectEnd = onEnd
     this.body.active = effect?.anchorId ? false : true
+  }
+
+  setRagdoll(enable, force) {
+    if (enable) {
+      if (this._ragdoll) return
+      if (!this.avatar?.instance) return
+      this.body.active = false
+      const hipsBone = this.avatar.instance.findBone('hips')
+      const hipsBoneWorldPos = hipsBone
+        ? new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().multiplyMatrices(this.base.matrixWorld, hipsBone.matrixWorld))
+        : this.base.position.clone()
+      this._ragdollHipsOffset = new THREE.Vector3(
+        hipsBoneWorldPos.x - this.base.position.x,
+        hipsBoneWorldPos.y - this.base.position.y,
+        hipsBoneWorldPos.z - this.base.position.z
+      )
+      const ragdoll = new Ragdoll(this.world, this.avatar.instance, this.base.matrixWorld, this.data.id)
+      ragdoll.build()
+      ragdoll.activate(force || null)
+      this._ragdoll = ragdoll
+    } else {
+      if (!this._ragdoll) return
+      this._ragdoll.destroy()
+      this._ragdoll = null
+      this._ragdollHipsOffset = null
+      if (this.avatar?.instance) this.avatar.instance.paused = false
+      this.body.active = true
+    }
   }
 
   setSpeaking(speaking) {
@@ -221,6 +268,14 @@ export class PlayerRemote extends Entity {
     }
     if (data.hasOwnProperty('ef')) {
       this.setEffect(data.ef)
+    }
+    if (data.hasOwnProperty('r')) {
+      if (data.r === 1) {
+        const force = data.rf ? new THREE.Vector3().fromArray(data.rf) : null
+        this.setRagdoll(true, force)
+      } else if (data.r === 0) {
+        this.setRagdoll(false)
+      }
     }
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name

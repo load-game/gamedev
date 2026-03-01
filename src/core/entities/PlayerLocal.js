@@ -11,6 +11,7 @@ import { Emotes } from '../extras/playerEmotes'
 import { ControlPriorities } from '../extras/ControlPriorities'
 import { isBoolean, isNumber } from 'lodash-es'
 import { hasRank, Ranks } from '../extras/ranks'
+import { Ragdoll } from '../extras/Ragdoll'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -278,6 +279,7 @@ export class PlayerLocal extends Entity {
     // disable gravity we'll add it ourselves
     this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_GRAVITY, true)
     this.capsule.attachShape(shape)
+    this.capsuleShape = shape
     // There's a weird issue where running directly at a wall the capsule won't generate contacts and instead
     // go straight through it. It has to be almost perfectly head on, a slight angle and everything works fine.
     // I spent days trying to figure out why, it's not CCD, it's not contact offsets, its just straight up bugged.
@@ -460,6 +462,10 @@ export class PlayerLocal extends Entity {
   }
 
   fixedUpdate(delta) {
+    if (this._ragdoll) {
+      this._ragdoll.fixedUpdate(delta)
+      return
+    }
     const xr = this.isXR
     const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
@@ -818,6 +824,20 @@ export class PlayerLocal extends Entity {
   }
 
   update(delta) {
+    if (this._ragdoll) {
+      this._ragdoll.update(delta)
+      const hipsPos = this._ragdoll.getHipsPosition()
+      if (hipsPos) {
+        this.base.position.set(hipsPos.x - this._ragdollHipsOffset.x, hipsPos.y - this._ragdollHipsOffset.y, hipsPos.z - this._ragdollHipsOffset.z)
+        this.base.matrix.compose(this.base.position, this.base.quaternion, this.base.scale)
+        if (this.base.parent) {
+          this.base.matrixWorld.multiplyMatrices(this.base.parent.matrixWorld, this.base.matrix)
+        } else {
+          this.base.matrixWorld.copy(this.base.matrix)
+        }
+      }
+      return
+    }
     const xr = this.isXR
     const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
@@ -1048,7 +1068,7 @@ export class PlayerLocal extends Entity {
     if (this.emote !== emote) {
       this.emote = emote
     }
-    this.avatar?.setEmote(this.emote)
+    if (!this._ragdoll) this.avatar?.setEmote(this.emote)
 
     // get locomotion mode
     let mode
@@ -1089,7 +1109,7 @@ export class PlayerLocal extends Entity {
     }
 
     // apply locomotion
-    this.avatar?.instance?.setLocomotion(this.mode, this.axis, this.gaze)
+    if (!this._ragdoll) this.avatar?.instance?.setLocomotion(this.mode, this.axis, this.gaze)
 
     // send network updates
     this.lastSendAt += delta
@@ -1155,6 +1175,22 @@ export class PlayerLocal extends Entity {
   }
 
   lateUpdate(delta) {
+    if (this._ragdoll) {
+      this._ragdoll.lateUpdate(delta)
+      this.cam.position.copy(this.base.position)
+      this.cam.position.y += this.camHeight
+      if (!this.firstPerson) {
+        const forward = v1.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+        const right = v2.crossVectors(forward, UP).normalize()
+        this.cam.position.add(right.multiplyScalar(0.3))
+      }
+      simpleCamLerp(this.world, this.control.camera, this.cam, delta)
+      if (this.avatar) {
+        const matrix = this.avatar.getBoneTransform('head')
+        if (matrix) this.aura.position.setFromMatrixPosition(matrix)
+      }
+      return
+    }
     const xr = this.isXR
     const anchor = this.getAnchorMatrix()
 
@@ -1255,6 +1291,39 @@ export class PlayerLocal extends Entity {
     else {
       this.pushForce = force.clone()
       this.pushForceInit = false
+    }
+  }
+
+  setRagdoll(enable, force) {
+    if (enable) {
+      if (this._ragdoll) return
+      if (!this.avatar?.instance) return
+      this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, true)
+      if (this.capsuleShape) this.capsuleShape.setFlag(PHYSX.PxShapeFlagEnum.eSCENE_QUERY_SHAPE, false)
+      this.capsuleDisabled = true
+      const hipsBone = this.avatar.instance.findBone('hips')
+      const hipsBoneWorldPos = hipsBone
+        ? v1.setFromMatrixPosition(m1.multiplyMatrices(this.base.matrixWorld, hipsBone.matrixWorld))
+        : this.base.position
+      this._ragdollHipsOffset = new THREE.Vector3(
+        hipsBoneWorldPos.x - this.base.position.x,
+        hipsBoneWorldPos.y - this.base.position.y,
+        hipsBoneWorldPos.z - this.base.position.z
+      )
+      const ragdoll = new Ragdoll(this.world, this.avatar.instance, this.base.matrixWorld, this.data.id)
+      ragdoll.build()
+      ragdoll.activate(force || null)
+      this._ragdoll = ragdoll
+    } else {
+      if (!this._ragdoll) return
+      this._ragdoll.destroy()
+      this._ragdoll = null
+      this._ragdollHipsOffset = null
+      if (this.avatar?.instance) this.avatar.instance.paused = false
+      this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, false)
+      if (this.capsuleShape) this.capsuleShape.setFlag(PHYSX.PxShapeFlagEnum.eSCENE_QUERY_SHAPE, true)
+      this.capsuleDisabled = false
+      this.capsule.setLinearVelocity(v1.set(0, 0, 0).toPxVec3())
     }
   }
 
