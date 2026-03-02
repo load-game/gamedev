@@ -3,7 +3,6 @@ import { BODY_SEGMENTS, JOINT_DEFINITIONS, RAGDOLL_DEFAULTS, ACTIVE_RAGDOLL_DEFA
          ARM_BODIES, LEFT_LEG_BODIES, RIGHT_LEG_BODIES, LOWER_BODY_NAMES, FLAIL_ARM_PARTS } from './RagdollConfig'
 import { Layers } from './Layers'
 import { DEG2RAD } from './general'
-import { applyArmOverridePose, tickArmOverrideBlend } from './ragdollArmOverride'
 
 export const State = {
   OFF: -1,
@@ -81,14 +80,6 @@ export class Ragdoll {
     this._armSwingTimer = 0      // seconds remaining for arm exemption
     this._armSwingActive = false  // true while arms are exempt from angular velocity zeroing
     this._prevMoveDir = new THREE.Vector3()
-
-    // reactive mode: arm IK override state (set by apps via player proxy)
-    this._armOverride = {
-      left:  { active: false, blend: 0, target: new THREE.Vector3(), wristRoll: 0,
-               prevUpperQ: new THREE.Quaternion(), prevLowerQ: new THREE.Quaternion(), hasPrev: false },
-      right: { active: false, blend: 0, target: new THREE.Vector3(), wristRoll: 0,
-               prevUpperQ: new THREE.Quaternion(), prevLowerQ: new THREE.Quaternion(), hasPrev: false },
-    }
 
     // landing: suppress leg physics blend and resync bodies each frame
     this._landingTimer = 0
@@ -940,13 +931,7 @@ export class Ragdoll {
     // 2. Physics writeback — overwrite bones with physics body poses
     this._writePhysicsToBones()
 
-    // 3. Tick arm override blend weights
-    tickArmOverrideBlend(this, delta)
-
-    // 5. Arm IK override (apps set targets via player proxy)
-    applyArmOverridePose(this, delta)
-
-    // 6. Update skeleton
+    // 3. Update skeleton
     this._updateSkeleton()
 
     // 7. During landing window, snap leg bodies to final bone poses so drives
@@ -983,12 +968,6 @@ export class Ragdoll {
     const blend = reactive ? REACTIVE_DEFAULTS.reactiveBlend : 1
     const blendLegs = (reactive && this._landingTimer > 0) ? 0 : (reactive ? REACTIVE_DEFAULTS.reactiveBlendLegs : 1)
 
-    // When arm overrides are active, stiffen upper body (reduce physics blend)
-    // so the aim pose is solid and arms don't wobble
-    const ao = this._armOverride
-    const aimActive = ao.left.blend > 0.01 || ao.right.blend > 0.01
-    const aimBlend = aimActive ? blend * 0.15 : blend  // ~85% stiffer upper body during aim
-
     for (const [name, body] of this.bodies) {
       const { bone, segment, correctionLocal, interpolated } = body
 
@@ -1012,10 +991,7 @@ export class Ragdoll {
         // legs use tighter blend (less physics) so they track animation better at speed
         const isLeg = name === 'leftUpperLeg' || name === 'leftLowerLeg' ||
                       name === 'rightUpperLeg' || name === 'rightLowerLeg'
-        const isUpperBody = name === 'chest' || name === 'head' ||
-                            name === 'leftUpperArm' || name === 'leftLowerArm' ||
-                            name === 'rightUpperArm' || name === 'rightLowerArm'
-        const b = isLeg ? blendLegs : (isUpperBody ? aimBlend : blend)
+        const b = isLeg ? blendLegs : blend
         bone.quaternion.slerp(_q4, b)
       } else {
         bone.quaternion.copy(_q4)
@@ -1431,31 +1407,6 @@ export class Ragdoll {
 
   getBodyActor(name) {
     return this.bodies.get(name)?.actor
-  }
-
-  /** Set arm IK override target (world space). Blend ramps up automatically.
-   *  opts.wristRoll — additional bone-local roll on the hand bone (radians, + = clockwise from arm's POV) */
-  setArmTarget(side, worldPos, opts) {
-    if (side === 'both') {
-      this.setArmTarget('left', worldPos, opts)
-      this.setArmTarget('right', worldPos, opts)
-      return
-    }
-    const s = side === 'left' ? this._armOverride.left : this._armOverride.right
-    s.target.set(worldPos.x, worldPos.y, worldPos.z)
-    s.wristRoll = opts?.wristRoll || 0
-    s.active = true
-  }
-
-  /** Clear arm IK override. Blend ramps down automatically. */
-  clearArmTarget(side) {
-    if (side === 'both') {
-      this._armOverride.left.active = false
-      this._armOverride.right.active = false
-      return
-    }
-    const s = side === 'left' ? this._armOverride.left : this._armOverride.right
-    s.active = false
   }
 
   applyImpulse(boneName, force) {

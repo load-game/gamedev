@@ -144,12 +144,3 @@ export const BODY_SEGMENTS = [
     steeringForce: 30,            // per-body horizontal force via WASD while ragdolling (applied to all 11 bodies)
   }
   
-  export const ARM_OVERRIDE_DEFAULTS = {
-    blendInRate: 6,              // exponential blend-in speed (snappy aim raise)
-    blendOutRate: 4,             // exponential blend-out speed (smooth lower)
-    upperArmBlend: 0.95,         // how much upperArm rotates toward elbow hint
-    lowerArmBlend: 1.0,          // how much lowerArm rotates toward hand target (1.0 = fully locked)
-    elbowDrop: 0.20,             // how far below hand target the elbow hint sits (meters)
-    elbowOut: 0.15,              // how far outward from body center the elbow pushes (meters)
-  }
-  
