@@ -1176,7 +1176,6 @@ export class PlayerLocal extends Entity {
 
   lateUpdate(delta) {
     if (this._ragdoll) {
-      this._ragdoll.lateUpdate(delta)
       this.cam.position.copy(this.base.position)
       this.cam.position.y += this.camHeight
       if (!this.firstPerson) {

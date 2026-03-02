@@ -150,7 +150,6 @@ export class PlayerRemote extends Entity {
     if (this._ragdoll) {
       this._ragdoll.fixedUpdate(delta)
       this._ragdoll.update(delta)
-      this._ragdoll.lateUpdate(delta)
       const hipsPos = this._ragdoll.getHipsPosition()
       if (hipsPos) {
         this.base.position.set(hipsPos.x - this._ragdollHipsOffset.x, hipsPos.y - this._ragdollHipsOffset.y, hipsPos.z - this._ragdollHipsOffset.z)
