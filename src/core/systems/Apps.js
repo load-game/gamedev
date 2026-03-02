@@ -150,6 +150,7 @@ export class Apps extends System {
             distance: 0,
             tag: null,
             playerId: null,
+            bone: null,
           }
         }
         self.raycastHit.point.copy(hit.point)
@@ -157,6 +158,7 @@ export class Apps extends System {
         self.raycastHit.distance = hit.distance
         self.raycastHit.tag = hit.handle?.tag
         self.raycastHit.playerId = hit.handle?.playerId
+        self.raycastHit.bone = hit.handle?.bone || null
         return self.raycastHit
       },
       overlapSphere(entity, radius, origin, layerMask) {

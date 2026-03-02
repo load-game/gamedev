@@ -1306,6 +1306,13 @@ export class PlayerLocal extends Entity {
     }
   }
 
+  pushBone(boneName, force, point) {
+    if (!this._ragdoll) return
+    if (Array.isArray(force)) force = v1.fromArray(force)
+    if (Array.isArray(point)) point = v2.fromArray(point)
+    this._ragdoll.pushBone(boneName, force, point)
+  }
+
   setRagdoll(enable, force, opts) {
     if (enable) {
       if (this._ragdoll) return

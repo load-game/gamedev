@@ -171,18 +171,22 @@ export function createPlayerProxy(entity, player) {
         world.network.send('entityModified', msg)
       }
     },
-    push(force) {
-      force = force.toArray()
-      // player.applyForce(force)
+    push(force, opts) {
+      const bone = opts?.bone
+      const point = opts?.point
+      // Bone pushes always apply to the local ragdoll simulation directly
+      if (bone) {
+        player.pushBone(bone, force.toArray(), point ? point.toArray() : null)
+        return
+      }
+      // Non-bone push: route through network as before
+      const msg = { networkId: player.data.owner, force: force.toArray() }
       if (player.data.owner === world.network.id) {
-        // if player is local we can set directly
-        player.push(force)
+        player.push(msg.force)
       } else if (world.network.isClient) {
-        // if we're a client we need to notify server
-        world.network.send('playerPush', { networkId: player.data.owner, force })
+        world.network.send('playerPush', msg)
       } else {
-        // if we're the server we need to notify the player
-        world.network.sendTo(player.data.owner, 'playerPush', { force })
+        world.network.sendTo(player.data.owner, 'playerPush', msg)
       }
     },
     replaceAnimations(newEmotes, reset = false) {

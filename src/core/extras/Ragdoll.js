@@ -202,6 +202,7 @@ export class Ragdoll {
       const handle = this.world.physics.addActor(actor, {
         tag: 'ragdoll',
         playerId: this.playerId,
+        bone: segment.name,
         onInterpolate: (position, quaternion) => {
           interpolated.position.copy(position)
           interpolated.quaternion.copy(quaternion)
@@ -219,7 +220,27 @@ export class Ragdoll {
     PHYSX.destroy(shapeFlags)
     PHYSX.destroy(filterData)
 
+    this._pv1 = new PHYSX.PxVec3()
+    this._pv2 = new PHYSX.PxVec3()
+
     this.built = true
+  }
+
+  pushBone(boneName, force, point) {
+    console.log('[pushBone]', boneName, 'force:', force?.x, force?.y, force?.z, 'point:', point?.x, point?.y, point?.z, 'bodies:', this.bodies.size)
+    const body = this.bodies.get(boneName)
+    if (!body) return console.log('[pushBone] no body for', boneName)
+    console.log('[pushBone] applying to actor, kinematic:', body.actor.getRigidBodyFlags().isSet(PHYSX.PxRigidBodyFlagEnum.eKINEMATIC))
+    body.actor.wakeUp()
+    if (point) {
+      const pxForce = force.toPxVec3(this._pv1)
+      const pxPos = point.toPxVec3(this._pv2)
+      PHYSX.PxRigidBodyExt.prototype.addForceAtPos(
+        body.actor, pxForce, pxPos, PHYSX.PxForceModeEnum.eIMPULSE
+      )
+    } else {
+      body.actor.addForce(force.toPxVec3(this._pv1), PHYSX.PxForceModeEnum.eIMPULSE, true)
+    }
   }
 
   _buildJoints() {
@@ -723,6 +744,14 @@ export class Ragdoll {
     if (this.driveTargetTransform) {
       PHYSX.destroy(this.driveTargetTransform)
       this.driveTargetTransform = null
+    }
+    if (this._pv1) {
+      PHYSX.destroy(this._pv1)
+      this._pv1 = null
+    }
+    if (this._pv2) {
+      PHYSX.destroy(this._pv2)
+      this._pv2 = null
     }
 
     for (const [, body] of this.bodies) {

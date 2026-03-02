@@ -195,6 +195,13 @@ export class PlayerRemote extends Entity {
     this.body.active = effect?.anchorId ? false : true
   }
 
+  pushBone(boneName, force, point) {
+    if (!this._ragdoll) return
+    if (Array.isArray(force)) force = new THREE.Vector3().fromArray(force)
+    if (Array.isArray(point)) point = new THREE.Vector3().fromArray(point)
+    this._ragdoll.pushBone(boneName, force, point)
+  }
+
   setRagdoll(enable, force, opts) {
     if (enable) {
       if (this._ragdoll) return
