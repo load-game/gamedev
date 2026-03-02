@@ -204,7 +204,7 @@ Must be called on the server for security reasons.
 Enables or disables ragdoll physics on the player. When enabled, the player's avatar collapses into a fully dynamic physics simulation — all animations are suppressed and the body falls under gravity with realistic joint constraints. When disabled, normal animation and movement resume.
 
 - **enable**: `true` to activate ragdoll, `false` to deactivate.
-- **force**: optional `Vector3` impulse applied to the hips on activation, useful for knockback or death direction.
+- **force**:  optional Vector3 applied as initial velocity to all body segments on activation, useful for knockback direction
 - **opts**: optional ragdoll tuning object:
   - `stiffness` (`Number`, default `1`): scales active-ragdoll joint drive strength. `0` is fully limp.
   - `damping` (`Number`, default `1`): scales linear/angular damping on ragdoll bodies.

@@ -109,6 +109,7 @@ export class PlayerRemote extends Entity {
       this.avatar = src.toNodes().get('avatar')
       this.avatar.onLoad = () => {
         this.avatar?.instance?.replaceLocomotionEmotes?.(this.locomotionEmotes, true)
+        this.world.events.emit('avatarLoaded', { playerId: this.data.id })
       }
       this.base.add(this.avatar)
       this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2

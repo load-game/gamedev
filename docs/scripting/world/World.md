@@ -57,6 +57,14 @@ model.traverse(node => {
 
 Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
 
+**Engine events:**
+
+| event | data | notes |
+|---|---|---|
+| `enter` | `{ playerId }` | fires when a player joins; avatar is not yet loaded |
+| `leave` | `{ playerId }` | fires when a player leaves |
+| `avatarLoaded` | `{ playerId }` | fires when a remote player's avatar finishes loading and is ready (eg. safe to call `player.ragdoll()`) |
+
 ### `.off(event, callback)`
 
 Unsubscribes from world events.
