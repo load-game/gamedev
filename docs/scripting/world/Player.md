@@ -199,19 +199,37 @@ Calling `player.setVoiceLevel(null)` removes the current apps override and rever
 
 Must be called on the server for security reasons.
 
-### `.ragdoll(enable, force?)`
+### `.ragdoll(enable, force?, opts?)`
 
 Enables or disables ragdoll physics on the player. When enabled, the player's avatar collapses into a fully dynamic physics simulation — all animations are suppressed and the body falls under gravity with realistic joint constraints. When disabled, normal animation and movement resume.
 
 - **enable**: `true` to activate ragdoll, `false` to deactivate.
 - **force**: optional `Vector3` impulse applied to the hips on activation, useful for knockback or death direction.
+- **opts**: optional ragdoll tuning object:
+  - `stiffness` (`Number`, default `1`): scales active-ragdoll joint drive strength. `0` is fully limp.
+  - `damping` (`Number`, default `1`): scales linear/angular damping on ragdoll bodies.
+  - `bounce` (`Number`, default material value): restitution override, clamped to `0..1`.
+  - `gravity` (`Number`, default `1`): gravity scale. `0` = zero gravity, `2` = 2x gravity.
+  - `duration` (`Number`, default `null`): auto-disable ragdoll after this many seconds.
+  - `flailDuration` (`Number`, default `1.2`): how long the initial arm/head flail impulses are applied.
+  - `muscleFadeDuration` (`Number`, default `3.5`): how long active ragdoll muscle stiffness takes to decay.
 
-Must be called on the server. The state is automatically synced to all clients.
+Can be called on:
+- **Server**: applies ragdoll to the target player and syncs to all clients.
+- **Client (local player only)**: applies ragdoll locally for that client only (not network-synced).
 
 Example:
 ```js
 // Enable ragdoll with an upward impulse.
-player.ragdoll(true, new Vector3(0, 4, 0))
+player.ragdoll(true, new Vector3(0, 4, 0), {
+  stiffness: 0.6,
+  damping: 0.25,
+  gravity: 1.2,
+  bounce: 0.15,
+  flailDuration: 1.8,
+  muscleFadeDuration: 0.4,
+  duration: 2,
+})
 
 // Later, reset back to normal control/animation.
 player.ragdoll(false)

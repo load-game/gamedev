@@ -155,12 +155,6 @@ export class PlayerRemote extends Entity {
         this.base.position.set(hipsPos.x - this._ragdollHipsOffset.x, hipsPos.y - this._ragdollHipsOffset.y, hipsPos.z - this._ragdollHipsOffset.z)
         this.base.clean()
       }
-      if (!this._ragdoll.isActive()) {
-        this._ragdoll.destroy()
-        this._ragdoll = null
-        this._ragdollHipsOffset = null
-        this.body.active = true
-      }
       return
     }
     const anchor = this.getAnchorMatrix()
@@ -221,6 +215,8 @@ export class PlayerRemote extends Entity {
       this._ragdoll = ragdoll
     } else {
       if (!this._ragdoll) return
+      this.position.snap()
+      this.quaternion.snap()
       this._ragdoll.destroy()
       this._ragdoll = null
       this._ragdollHipsOffset = null

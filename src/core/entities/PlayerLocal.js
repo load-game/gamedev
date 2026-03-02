@@ -836,6 +836,13 @@ export class PlayerLocal extends Entity {
           this.base.matrixWorld.copy(this.base.matrix)
         }
       }
+      // tick effect duration even during ragdoll (normally skipped by early return)
+      if (this.data.effect?.duration) {
+        this.data.effect.duration -= delta
+        if (this.data.effect.duration <= 0) {
+          this.setEffect(null)
+        }
+      }
       return
     }
     const xr = this.isXR
@@ -1319,10 +1326,22 @@ export class PlayerLocal extends Entity {
       this._ragdoll = null
       this._ragdollHipsOffset = null
       if (this.avatar?.instance) this.avatar.instance.paused = false
+      // move capsule to where ragdoll ended (base.position was updated by hips tracking)
+      const pose = this.capsule.getGlobalPose()
+      this.base.position.toPxTransform(pose)
+      this.capsuleHandle.snap(pose)
       this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, false)
       if (this.capsuleShape) this.capsuleShape.setFlag(PHYSX.PxShapeFlagEnum.eSCENE_QUERY_SHAPE, true)
       this.capsuleDisabled = false
       this.capsule.setLinearVelocity(v1.set(0, 0, 0).toPxVec3())
+      // send teleport so remotes snap to final ragdoll position
+      this.world.network.send('entityModified', {
+        id: this.data.id,
+        r: 0,
+        p: this.base.position.toArray(),
+        q: this.base.quaternion.toArray(),
+        t: true,
+      })
     }
   }
 
