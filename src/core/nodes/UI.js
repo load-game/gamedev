@@ -188,14 +188,24 @@ export class UI extends Node {
           hit = null
           world.pointer.setScreenHit(null)
         }
+        const onPointerDown = e => {
+          this.ctx.world.controls.viewport.dispatchEvent(new PointerEvent('pointerdown', e))
+        }
+        const onPointerUp = e => {
+          this.ctx.world.controls.viewport.dispatchEvent(new PointerEvent('pointerup', e))
+        }
         canvas.addEventListener('pointerenter', onPointerEnter)
         canvas.addEventListener('pointermove', onPointerMove)
         canvas.addEventListener('pointerleave', onPointerLeave)
+        canvas.addEventListener('pointerdown', onPointerDown)
+        canvas.addEventListener('pointerup', onPointerUp)
         this.cleanupPointer = () => {
           if (hit) world.pointer.setScreenHit(null)
           canvas.removeEventListener('pointerenter', onPointerEnter)
           canvas.removeEventListener('pointermove', onPointerMove)
           canvas.removeEventListener('pointerleave', onPointerLeave)
+          canvas.removeEventListener('pointerdown', onPointerDown)
+          canvas.removeEventListener('pointerup', onPointerUp)
         }
       }
       this.ctx.world.pointer.ui.prepend(this.canvas)

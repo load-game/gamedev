@@ -1293,7 +1293,7 @@ export class PlayerLocal extends Entity {
     }
   }
 
-  setRagdoll(enable, force) {
+  setRagdoll(enable, force, opts) {
     if (enable) {
       if (this._ragdoll) return
       if (!this.avatar?.instance) return
@@ -1311,7 +1311,7 @@ export class PlayerLocal extends Entity {
       )
       const ragdoll = new Ragdoll(this.world, this.avatar.instance, this.base.matrixWorld, this.data.id)
       ragdoll.build()
-      ragdoll.activate(force || null)
+      ragdoll.activate(force || null, opts)
       this._ragdoll = ragdoll
     } else {
       if (!this._ragdoll) return
@@ -1386,7 +1386,7 @@ export class PlayerLocal extends Entity {
     if (data.hasOwnProperty('r')) {
       if (data.r === 1) {
         const force = data.rf ? new THREE.Vector3().fromArray(data.rf) : null
-        this.setRagdoll(true, force)
+        this.setRagdoll(true, force, data.ro || null)
       } else if (data.r === 0) {
         this.setRagdoll(false)
       }

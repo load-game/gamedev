@@ -113,6 +113,9 @@ export class Ragdoll {
     // opts from activate()
     this.muscleFadeDuration = DEFAULTS.muscleFadeDuration
     this.flailDuration = DEFAULTS.flailDuration
+    this.stiffnessScale = 1
+    this.gravityScale = 1
+    this.duration = null
   }
 
   build() {
@@ -422,6 +425,9 @@ export class Ragdoll {
 
     this.muscleFadeDuration = opts?.muscleFadeDuration ?? DEFAULTS.muscleFadeDuration
     this.flailDuration = opts?.flailDuration ?? DEFAULTS.flailDuration
+    this.stiffnessScale = Math.max(0, opts?.stiffness ?? 1)
+    this.gravityScale = opts?.gravity ?? 1
+    this.duration = opts?.duration ?? null
 
     // pause VRM animation
     this.vrm.paused = true
@@ -441,10 +447,28 @@ export class Ragdoll {
     this.flailTimer = 0
     this._setupDrives()
 
-    // switch to dynamic and apply velocity
+    // apply damping override
+    const dampingScale = Math.max(0, opts?.damping ?? 1)
+    const linDamp = DEFAULTS.linearDamping * dampingScale
+    const angDamp = DEFAULTS.angularDamping * dampingScale
+
+    // apply bounce (restitution) override
+    const bounce = opts?.bounce ?? null
+    if (bounce != null) {
+      this.material.setRestitution(Math.max(0, Math.min(1, bounce)))
+    }
+
+    // apply gravity scale — disable PhysX gravity and apply custom force per tick
+    if (this.gravityScale !== 1) {
+      this._configureBodyFlags({ gravity: false })
+    }
+
+    // switch to dynamic and apply velocity + damping
     for (const [, body] of this.bodies) {
       body.actor.setRigidBodyFlag(PHYSX.PxRigidBodyFlagEnum.eKINEMATIC, false)
       body.actor.setRigidBodyFlag(PHYSX.PxRigidBodyFlagEnum.eENABLE_CCD, true)
+      body.actor.setLinearDamping(linDamp)
+      body.actor.setAngularDamping(angDamp)
       if (velocity) {
         body.actor.setLinearVelocity(velocity.toPxVec3())
       }
@@ -472,8 +496,8 @@ export class Ragdoll {
       if (!def || !def.drive) continue
 
       const groupMult = groupMultipliers[def.drive.group] || 1.0
-      const stiffness = def.drive.stiffness * groupMult
-      const damping = def.drive.damping * groupMult
+      const stiffness = def.drive.stiffness * groupMult * this.stiffnessScale
+      const damping = def.drive.damping * groupMult * this.stiffnessScale
 
       const drive = new PHYSX.PxD6JointDrive(stiffness, damping, def.drive.forceLimit, true)
 
@@ -538,8 +562,8 @@ export class Ragdoll {
     for (const [i, entry] of this.jointDrives) {
       const groupMod = groupFadeMultipliers[entry.group] || this.muscleMultiplier
 
-      const newStiffness = entry.baseDriveStiffness * groupMod
-      const newDamping = entry.baseDriveDamping * groupMod
+      const newStiffness = entry.baseDriveStiffness * groupMod * this.stiffnessScale
+      const newDamping = entry.baseDriveDamping * groupMod * this.stiffnessScale
 
       if (Math.abs(newStiffness - entry.lastStiffness) > 1) {
         entry.drive.stiffness = newStiffness
@@ -649,6 +673,22 @@ export class Ragdoll {
 
   update(delta) {
     if (this.state !== State.RAGDOLL) return
+
+    // duration auto-disable
+    if (this.duration != null && this.activeTimer >= this.duration) {
+      this.state = State.OFF
+      return
+    }
+
+    // custom gravity — apply scaled gravity force to all bodies each tick
+    if (this.gravityScale !== 1) {
+      for (const [, body] of this.bodies) {
+        const mass = body.actor.getMass()
+        _v1.set(0, -9.81 * this.gravityScale * mass, 0)
+        body.actor.addForce(_v1.toPxVec3(), PHYSX.PxForceModeEnum.eFORCE, true)
+      }
+    }
+
     this._updateDrives(delta)
     this._writePhysicsToBones()
     this._updateSkeleton()

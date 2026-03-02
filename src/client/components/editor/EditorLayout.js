@@ -60,6 +60,10 @@ export function EditorLayout({ world, ui, children }) {
   }, [isPrivyAuth, walletAuth.connected, userMenuOpen])
 
   const showEditor = ready && isBuilder && open && buildMode
+
+  useEffect(() => {
+    world.ui.toggleVisible(!showEditor)
+  }, [showEditor])
   const showRight = showEditor && hasApp
   const showBottom = showEditor && hasApp
   const onUserClick = () => {
