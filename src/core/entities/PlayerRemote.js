@@ -227,7 +227,10 @@ export class PlayerRemote extends Entity {
       this._ragdoll.destroy()
       this._ragdoll = null
       this._ragdollHipsOffset = null
-      if (this.avatar?.instance) this.avatar.instance.paused = false
+      if (this.avatar?.instance) {
+        this.avatar.instance.resetPose?.()
+        this.avatar.instance.paused = false
+      }
       this.body.active = true
     }
   }

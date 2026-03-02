@@ -227,10 +227,8 @@ export class Ragdoll {
   }
 
   pushBone(boneName, force, point) {
-    console.log('[pushBone]', boneName, 'force:', force?.x, force?.y, force?.z, 'point:', point?.x, point?.y, point?.z, 'bodies:', this.bodies.size)
     const body = this.bodies.get(boneName)
     if (!body) return console.log('[pushBone] no body for', boneName)
-    console.log('[pushBone] applying to actor, kinematic:', body.actor.getRigidBodyFlags().isSet(PHYSX.PxRigidBodyFlagEnum.eKINEMATIC))
     body.actor.wakeUp()
     if (point) {
       const pxForce = force.toPxVec3(this._pv1)
