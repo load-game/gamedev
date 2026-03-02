@@ -693,6 +693,7 @@ export function createVRMFactory(glb, setupMaterial) {
       raw: vrm,
       height,
       headToHeight,
+      skeleton,
       findBone,
       get paused() { return paused },
       set paused(v) { paused = v },

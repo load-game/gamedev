@@ -923,9 +923,6 @@ export class Ragdoll {
     // --- 8. Drive targets from animation ---
     this._updateDriveTargetsFromAnimation()
 
-    // --- 9. Wall touch detection ---
-    updateWallDetection(this, delta, isMoving, capsuleVelocity, grounded, this.world)
-
     if (this._debug) this._debug.update(this.bodies)
   }
 
