@@ -61,11 +61,15 @@ Subscribes to both engine events (eg when players `enter` or `leave` the world) 
 
 Unsubscribes from world events.
 
-### `.raycast(origin: Vector3, direction: Vector3, maxDistance: ?Number, layerMask: ?Number)`
+### `.raycast(origin: Vector3, direction: Vector3, maxDistance: ?Number, layerMask: ?Number, opts: ?Object)`
 
 Raycasts the physics scene.
 If `maxDistance` is not specified, max distance is infinite.
 If `layerMask` is not specified, it will hit anything.
+
+**opts fields:**
+- `ignoreLocalPlayer`: Boolean — if `true`, ignores the local player's capsule collider
+- `ignorePlayerId`: String — ignores the capsule collider of the player with this ID
 
 ### `.createLayerMask(...groups)`
 

@@ -464,7 +464,7 @@ export class Physics extends System {
     this.ignoreSetGlobalPose = false
   }
 
-  raycast(origin, direction, maxDistance = Infinity, layerMask) {
+  raycast(origin, direction, maxDistance = Infinity, layerMask, ignorePlayerId) {
     origin = origin.toPxVec3(this._pv1)
     direction = direction.toPxVec3(this._pv2)
     // this.queryFilterData.flags |= PHYSX.PxQueryFlagEnum.ePREFILTER | PHYSX.PxQueryFlagEnum.ePOSTFILTER // prettier-ignore
@@ -483,10 +483,15 @@ export class Physics extends System {
       let hit
       for (let n = 0; n < numHits; n++) {
         const nHit = this.raycastResult.getAnyHit(n)
+        if (ignorePlayerId) {
+          const handle = this.handles.get(nHit.actor.ptr)
+          if (handle?.playerId === ignorePlayerId) continue
+        }
         if (!hit || hit.distance > nHit.distance) {
           hit = nHit
         }
       }
+      if (!hit) return
       _raycastHit.handle = this.handles.get(hit.actor.ptr)
       _raycastHit.point.set(hit.position.x, hit.position.y, hit.position.z)
       _raycastHit.normal.set(hit.normal.x, hit.normal.y, hit.normal.z)

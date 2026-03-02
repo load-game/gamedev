@@ -132,7 +132,7 @@ export class Apps extends System {
         }
         return mask
       },
-      raycast(entity, origin, direction, maxDistance, layerMask) {
+      raycast(entity, origin, direction, maxDistance, layerMask, opts) {
         if (!origin?.isVector3) throw new Error('[raycast] origin must be Vector3')
         if (!direction?.isVector3) throw new Error('[raycast] direction must be Vector3')
         if (maxDistance !== undefined && maxDistance !== null && !isNumber(maxDistance)) {
@@ -141,7 +141,8 @@ export class Apps extends System {
         if (layerMask !== undefined && layerMask !== null && !isNumber(layerMask)) {
           throw new Error('[raycast] layerMask must be number')
         }
-        const hit = world.physics.raycast(origin, direction, maxDistance, layerMask)
+        const ignorePlayerId = opts?.ignoreLocalPlayer ? world.network.id : opts?.ignorePlayerId
+        const hit = world.physics.raycast(origin, direction, maxDistance, layerMask, ignorePlayerId)
         if (!hit) return null
         if (!self.raycastHit) {
           self.raycastHit = {
