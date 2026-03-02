@@ -198,3 +198,22 @@ Calling `player.setVoiceLevel(null)` removes the current apps override and rever
 **NOTE:** Changes stack with priority, so if two apps have set a voice level, the higher priority level takes precendence. Global is the highest priority.
 
 Must be called on the server for security reasons.
+
+### `.ragdoll(enable, force?)`
+
+Enables or disables ragdoll physics on the player. When enabled, the player's avatar collapses into a fully dynamic physics simulation — all animations are suppressed and the body falls under gravity with realistic joint constraints. When disabled, normal animation and movement resume.
+
+- **enable**: `true` to activate ragdoll, `false` to deactivate.
+- **force**: optional `Vector3` impulse applied to the hips on activation, useful for knockback or death direction.
+
+Must be called on the server. The state is automatically synced to all clients.
+
+Example:
+```js
+// Kill the player and ragdoll them with a knockback force
+player.damage(player.health)
+player.ragdoll(true, new Vector3(0, 4, -6))
+
+// Restore after 5 seconds
+setTimeout(() => player.ragdoll(false), 5000)
+```

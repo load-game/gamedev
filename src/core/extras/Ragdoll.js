@@ -210,14 +210,22 @@ export class Ragdoll {
       actor.setAngularDamping(RAGDOLL_DEFAULTS.angularDamping)
       actor.setSolverIterationCounts(8, 4)
 
-      // add to physics world
-      const handle = this.world.physics.addActor(actor, { tag: 'ragdoll', playerId: this.playerId })
+      // add to physics world with interpolation callback
+      const interpolated = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion() }
+      const handle = this.world.physics.addActor(actor, {
+        tag: 'ragdoll',
+        playerId: this.playerId,
+        onInterpolate: (position, quaternion) => {
+          interpolated.position.copy(position)
+          interpolated.quaternion.copy(quaternion)
+        },
+      })
 
       // disable simulation and scene queries until ragdoll activates
       actor.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, true)
       shape.setFlag(PHYSX.PxShapeFlagEnum.eSCENE_QUERY_SHAPE, false)
 
-      this.bodies.set(segment.name, { actor, bone, segment, handle, shape, correctionLocal })
+      this.bodies.set(segment.name, { actor, bone, segment, handle, shape, correctionLocal, interpolated })
 
       PHYSX.destroy(transform)
     }
@@ -435,6 +443,8 @@ export class Ragdoll {
       _v1.toPxTransform(pose)
       _q1.toPxTransform(pose)
       body.actor.setGlobalPose(pose)
+      body.interpolated.position.copy(_v1)
+      body.interpolated.quaternion.copy(_q1)
     }
   }
 
@@ -989,10 +999,9 @@ export class Ragdoll {
     const aimBlend = aimActive ? blend * 0.15 : blend  // ~85% stiffer upper body during aim
 
     for (const [name, body] of this.bodies) {
-      const { actor, bone, segment, correctionLocal } = body
+      const { bone, segment, correctionLocal, interpolated } = body
 
-      const pose = actor.getGlobalPose()
-      const worldQuat = _q1.set(pose.q.x, pose.q.y, pose.q.z, pose.q.w)
+      const worldQuat = _q1.copy(interpolated.quaternion)
 
       // remove limb correction
       if (correctionLocal) _q1.multiply(_q3.copy(correctionLocal).invert())
@@ -1022,11 +1031,11 @@ export class Ragdoll {
       }
 
       if (!reactive) {
-        const worldPos = _v1.set(pose.p.x, pose.p.y, pose.p.z)
+        const worldPos = _v1.copy(interpolated.position)
 
         // remove segment offset
         _v2.set(segment.offset.x, correctionLocal ? -segment.offset.y : segment.offset.y, segment.offset.z)
-        _v2.applyQuaternion(_q1.set(pose.q.x, pose.q.y, pose.q.z, pose.q.w))
+        _v2.applyQuaternion(_q1.copy(interpolated.quaternion))
         worldPos.sub(_v2)
 
         _v5.subVectors(worldPos, _v4)
@@ -1420,8 +1429,7 @@ export class Ragdoll {
   getHipsPosition() {
     const hipsBody = this.bodies.get('hips')
     if (!hipsBody) return null
-    const pose = hipsBody.actor.getGlobalPose()
-    return _v1.set(pose.p.x, pose.p.y, pose.p.z)
+    return hipsBody.interpolated.position
   }
 
   getState() {
