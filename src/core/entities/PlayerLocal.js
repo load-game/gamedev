@@ -824,6 +824,72 @@ export class PlayerLocal extends Entity {
   }
 
   update(delta) {
+    const xr = this.isXR
+
+    const updateCameraInput = () => {
+      // update cam look direction
+      if (xr) {
+        // in xr clear camera rotation (handled internally)
+        // in xr we only track turn here, which is added to the xr camera later on
+        // this.cam.rotation.x = 0
+        // this.cam.rotation.z = 0
+        if (this.control.xrRightStick.value.x === 0 && this.didSnapTurn) {
+          this.didSnapTurn = false
+        } else if (this.control.xrRightStick.value.x > 0 && !this.didSnapTurn) {
+          this.turnXRRigAtPlayer(-45)
+          this.didSnapTurn = true
+        } else if (this.control.xrRightStick.value.x < 0 && !this.didSnapTurn) {
+          this.turnXRRigAtPlayer(45)
+          this.didSnapTurn = true
+        }
+        // if we did snap turn, we need to refresh the hmd position to cancel it out
+        if (this.didSnapTurn) {
+          this.world.camera.getWorldPosition(v1)
+          v1.y = 0
+          v2.copy(this.xrRig.position)
+          v2.y = 0
+          v3.copy(v1).sub(v2)
+          this.hmdLast.copy(v3)
+        }
+      } else if (this.control.pointer.locked) {
+        // or pointer lock, rotate camera with pointer movement
+        this.cam.rotation.x += -this.control.pointer.delta.y * POINTER_LOOK_SPEED * delta
+        this.cam.rotation.y += -this.control.pointer.delta.x * POINTER_LOOK_SPEED * delta
+        this.cam.rotation.z = 0
+      } else if (this.pan) {
+        // or when touch panning
+        this.cam.rotation.x += -this.pan.delta.y * PAN_LOOK_SPEED * delta
+        this.cam.rotation.y += -this.pan.delta.x * PAN_LOOK_SPEED * delta
+        this.cam.rotation.z = 0
+      }
+
+      // ensure we can't look too far up/down
+      if (!xr) {
+        this.cam.rotation.x = clamp(this.cam.rotation.x, -89 * DEG2RAD, 89 * DEG2RAD)
+      }
+
+      // zoom camera if scrolling wheel
+      if (!xr) {
+        this.cam.zoom += -this.control.scrollDelta.value * ZOOM_SPEED * delta
+        this.cam.zoom = clamp(this.cam.zoom, MIN_ZOOM, MAX_ZOOM)
+      }
+
+      if (this.firstPersonForced) {
+        this.cam.zoom = 0
+      }
+
+      // transition in and out of first person
+      if (this.cam.zoom < 1 && !this.firstPerson) {
+        this.cam.zoom = 0
+        this.firstPerson = true
+        this.avatar.visible = false
+      } else if (this.cam.zoom > 0 && this.firstPerson) {
+        this.cam.zoom = 1
+        this.firstPerson = false
+        this.avatar.visible = true
+      }
+    }
+
     if (this._ragdoll) {
       this._ragdoll.update(delta)
       const hipsPos = this._ragdoll.getHipsPosition()
@@ -836,6 +902,7 @@ export class PlayerLocal extends Entity {
           this.base.matrixWorld.copy(this.base.matrix)
         }
       }
+      updateCameraInput()
       // tick effect duration even during ragdoll (normally skipped by early return)
       if (this.data.effect?.duration) {
         this.data.effect.duration -= delta
@@ -845,7 +912,6 @@ export class PlayerLocal extends Entity {
       }
       return
     }
-    const xr = this.isXR
     const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
 
@@ -870,67 +936,7 @@ export class PlayerLocal extends Entity {
       this.capsule.setGlobalPose(pose)
     }
 
-    // update cam look direction
-    if (xr) {
-      // in xr clear camera rotation (handled internally)
-      // in xr we only track turn here, which is added to the xr camera later on
-      // this.cam.rotation.x = 0
-      // this.cam.rotation.z = 0
-      if (this.control.xrRightStick.value.x === 0 && this.didSnapTurn) {
-        this.didSnapTurn = false
-      } else if (this.control.xrRightStick.value.x > 0 && !this.didSnapTurn) {
-        this.turnXRRigAtPlayer(-45)
-        this.didSnapTurn = true
-      } else if (this.control.xrRightStick.value.x < 0 && !this.didSnapTurn) {
-        this.turnXRRigAtPlayer(45)
-        this.didSnapTurn = true
-      }
-      // if we did snap turn, we need to refresh the hmd position to cancel it out
-      if (this.didSnapTurn) {
-        this.world.camera.getWorldPosition(v1)
-        v1.y = 0
-        v2.copy(this.xrRig.position)
-        v2.y = 0
-        v3.copy(v1).sub(v2)
-        this.hmdLast.copy(v3)
-      }
-    } else if (this.control.pointer.locked) {
-      // or pointer lock, rotate camera with pointer movement
-      this.cam.rotation.x += -this.control.pointer.delta.y * POINTER_LOOK_SPEED * delta
-      this.cam.rotation.y += -this.control.pointer.delta.x * POINTER_LOOK_SPEED * delta
-      this.cam.rotation.z = 0
-    } else if (this.pan) {
-      // or when touch panning
-      this.cam.rotation.x += -this.pan.delta.y * PAN_LOOK_SPEED * delta
-      this.cam.rotation.y += -this.pan.delta.x * PAN_LOOK_SPEED * delta
-      this.cam.rotation.z = 0
-    }
-
-    // ensure we can't look too far up/down
-    if (!xr) {
-      this.cam.rotation.x = clamp(this.cam.rotation.x, -89 * DEG2RAD, 89 * DEG2RAD)
-    }
-
-    // zoom camera if scrolling wheel
-    if (!xr) {
-      this.cam.zoom += -this.control.scrollDelta.value * ZOOM_SPEED * delta
-      this.cam.zoom = clamp(this.cam.zoom, MIN_ZOOM, MAX_ZOOM)
-    }
-
-    if (this.firstPersonForced) {
-      this.cam.zoom = 0
-    }
-
-    // transition in and out of first person
-    if (this.cam.zoom < 1 && !this.firstPerson) {
-      this.cam.zoom = 0
-      this.firstPerson = true
-      this.avatar.visible = false
-    } else if (this.cam.zoom > 0 && this.firstPerson) {
-      this.cam.zoom = 1
-      this.firstPerson = false
-      this.avatar.visible = true
-    }
+    updateCameraInput()
 
     // stick movement threshold
     if (this.stick && !this.stick.active) {
