@@ -1384,6 +1384,14 @@ export class PlayerLocal extends Entity {
       }
       this.data.effect = data.ef
     }
+    if (data.hasOwnProperty('r')) {
+      if (data.r === 1) {
+        const force = data.rf ? new THREE.Vector3().fromArray(data.rf) : null
+        this.setRagdoll(true, force)
+      } else if (data.r === 0) {
+        this.setRagdoll(false)
+      }
+    }
     if (data.hasOwnProperty('rank')) {
       this.data.rank = data.rank
       this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })

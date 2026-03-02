@@ -207,13 +207,3 @@ Enables or disables ragdoll physics on the player. When enabled, the player's av
 - **force**: optional `Vector3` impulse applied to the hips on activation, useful for knockback or death direction.
 
 Must be called on the server. The state is automatically synced to all clients.
-
-Example:
-```js
-// Kill the player and ragdoll them with a knockback force
-player.damage(player.health)
-player.ragdoll(true, new Vector3(0, 4, -6))
-
-// Restore after 5 seconds
-setTimeout(() => player.ragdoll(false), 5000)
-```

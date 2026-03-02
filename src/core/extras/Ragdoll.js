@@ -1,7 +1,6 @@
 import * as THREE from './three'
 import { BODY_SEGMENTS, JOINT_DEFINITIONS, RAGDOLL_DEFAULTS, ACTIVE_RAGDOLL_DEFAULTS, REACTIVE_DEFAULTS,
          ARM_BODIES, LEFT_LEG_BODIES, RIGHT_LEG_BODIES, LOWER_BODY_NAMES, FLAIL_ARM_PARTS } from './RagdollConfig'
-import { RagdollDebug } from './RagdollDebug'
 import { Layers } from './Layers'
 import { DEG2RAD } from './general'
 import { applyArmOverridePose, tickArmOverrideBlend } from './ragdollArmOverride'
@@ -102,8 +101,6 @@ export class Ragdoll {
     this.anchorDriveLinear = null
     this.anchorDriveSlerp = null
 
-    // debug visualization
-    this._debug = null
   }
 
   build() {
@@ -239,7 +236,6 @@ export class Ragdoll {
     this.built = true
     this._buildAnchor()
 
-    if (this._debug) this._debug.create(this.bodies)
   }
 
   _buildJoints() {
@@ -923,7 +919,6 @@ export class Ragdoll {
     // --- 8. Drive targets from animation ---
     this._updateDriveTargetsFromAnimation()
 
-    if (this._debug) this._debug.update(this.bodies)
   }
 
   // --- Step 6e: Late update for REACTIVE state ---
@@ -976,7 +971,6 @@ export class Ragdoll {
       }
     }
 
-    if (this._debug) this._debug.update(this.bodies)
   }
 
   // --- Step 6f: Extracted physics-to-bone writeback ---
@@ -1355,7 +1349,6 @@ export class Ragdoll {
       body.actor.setKinematicTarget(pose)
     }
 
-    if (this._debug) this._debug.update(this.bodies)
   }
 
   update(delta) {
@@ -1364,7 +1357,6 @@ export class Ragdoll {
     } else if (this.state === State.RECOVERING) {
       this._updateRecovery(delta)
     }
-    if (this._debug) this._debug.update(this.bodies)
   }
 
   _updateRagdoll(delta) {
@@ -1824,18 +1816,6 @@ export class Ragdoll {
     this.hitBone = null
   }
 
-  setDebug(enabled) {
-    enabled = !!enabled
-    if (enabled && !this._debug) {
-      this._debug = new RagdollDebug(this.world)
-      this._debug.create(this.bodies)
-      this._debug.update(this.bodies)
-    } else if (!enabled && this._debug) {
-      this._debug.destroy()
-      this._debug = null
-    }
-  }
-
   _destroyJoints() {
     for (const joint of this.joints) {
       joint.release()
@@ -1848,11 +1828,6 @@ export class Ragdoll {
   }
 
   destroy() {
-    if (this._debug) {
-      this._debug.destroy()
-      this._debug = null
-    }
-
     // resume VRM animation
     if (this.vrm) {
       this.vrm.paused = false
