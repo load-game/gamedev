@@ -18,8 +18,7 @@ Last updated: 2026-02-26
 2. Click wallet/user button.
 3. Verify popover options are shown:
    - `Ethereum`
-   - `Solana (mainnet)`
-   - `Solana (devnet)`
+   - `Solana`
 
 ## SIWE Regression
 
@@ -32,21 +31,12 @@ Last updated: 2026-02-26
 
 ## SIWS Mainnet
 
-1. Choose `Solana (mainnet)`.
+1. Choose `Solana`.
 2. Complete SIWS signature.
 3. Verify:
    - Session is created and world connects authenticated.
    - Wallet metadata includes `type=solana`, `solana_network=mainnet`.
    - Changing/disconnecting the active Solana wallet invalidates the session.
-
-## SIWS Devnet
-
-1. Choose `Solana (devnet)`.
-2. Complete SIWS signature.
-3. Verify:
-   - Session is created and world connects authenticated.
-   - Wallet metadata includes `type=solana`, `solana_network=devnet`.
-   - Session wallet continuity checks behave the same as mainnet path.
 
 ## Guest Fallback
 

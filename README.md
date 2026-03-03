@@ -79,7 +79,7 @@ npm run smoke:matrix
 When `PUBLIC_AUTH_URL` is set and `PUBLIC_PRIVY_APP_ID` is not set, runtime uses the injected wallet bridge:
 
 - Ethereum SIWE flow
-- Solana SIWS flow (`mainnet` / `devnet`)
+- Solana SIWS flow (`mainnet`)
 - chain/network chooser popover from the wallet button
 
 See `docs/Auth-smoke-checklist.md` for manual validation paths.

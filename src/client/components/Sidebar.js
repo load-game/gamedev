@@ -550,15 +550,9 @@ function WalletConnectMenu({ auth, onClose, onSelect }) {
     },
     {
       key: 'solana-mainnet',
-      label: 'Solana (mainnet)',
+      label: 'Solana',
       available: !!availability.solana,
       selection: { chain: 'solana', network: 'mainnet' },
-    },
-    {
-      key: 'solana-devnet',
-      label: 'Solana (devnet)',
-      available: !!availability.solana,
-      selection: { chain: 'solana', network: 'devnet' },
     },
   ]
 
