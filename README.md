@@ -53,7 +53,6 @@ Run `gamedev help` for the full command list.
 - [App-server](docs/App-server.md)
 - [Scripting API](docs/scripting/README.md)
 - [Docker Deployment](DOCKER.md)
-- [Auth Smoke Checklist](docs/Auth-smoke-checklist.md)
 
 ## Developing This Repository
 
@@ -71,18 +70,7 @@ Useful commands:
 npm run build
 npm run test
 npm run lint
-npm run smoke:matrix
 ```
-
-## Non-Privy Wallet Auth
-
-When `PUBLIC_AUTH_URL` is set and `PUBLIC_PRIVY_APP_ID` is not set, runtime uses the injected wallet bridge:
-
-- Ethereum SIWE flow
-- Solana SIWS flow (`mainnet`)
-- chain/network chooser popover from the wallet button
-
-See `docs/Auth-smoke-checklist.md` for manual validation paths.
 
 ## Contributing
 
