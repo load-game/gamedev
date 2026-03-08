@@ -54,3 +54,15 @@ if (world.isServer) {
 3. App 2 (server) listens for `cross-app-ping` via `world.on`, emits `cross-app-pong`.
 4. App 1 (server) listens for `cross-app-pong` via `world.on`, sends `end` to itself.
 5. App 1 (client) receives `end` via `app.on`, completing the loop.
+
+## Wallet Sync Events
+
+Player wallet state is network-synced through the player entity data model, so scripts can react to it without polling.
+
+```js
+world.on('solanaWallet', ({ playerId, solanaWallet }) => {
+  console.log('wallet changed', playerId, solanaWallet)
+})
+```
+
+`solanaWallet` is the verified in-world Solana address for that player, or `null` after disconnect.

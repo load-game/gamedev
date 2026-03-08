@@ -1431,6 +1431,14 @@ export class PlayerLocal extends Entity {
       this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })
       changed = true
     }
+    if (data.hasOwnProperty('solanaWallet')) {
+      this.data.solanaWallet = data.solanaWallet || null
+      this.world.events.emit('solanaWallet', {
+        playerId: this.data.id,
+        solanaWallet: this.data.solanaWallet,
+      })
+      changed = true
+    }
     if (data.hasOwnProperty('locomotionEmotes')) {
       if (data.locomotionEmotes && typeof data.locomotionEmotes === 'object' && !Array.isArray(data.locomotionEmotes)) {
         this.locomotionEmotes = { ...data.locomotionEmotes }

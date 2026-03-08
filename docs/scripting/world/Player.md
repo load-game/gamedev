@@ -20,6 +20,10 @@ Whether the player is local to this client.
 
 Whether the player is an admin in this world.
 
+### `.solanaWallet`: String | null
+
+The player's verified Solana wallet address, or `null` if they have not connected one in-world.
+
 ### `.position`: Vector3
 
 The players position in the world.
@@ -185,6 +189,32 @@ Temporarily overrides the player's avatar for the current session. The session a
 - **url**: A URL to a VRM avatar file. Pass `null` to clear the session avatar and revert to the player's default avatar.
 
 This change is synced across the network to all clients.
+
+### `.connectSolana()`
+
+Requests an in-world Solana wallet connection for this player.
+
+On the client, this only works for the local player. On the server, use it to prompt a connected player to complete the wallet challenge flow.
+
+### `.disconnectSolana()`
+
+Disconnects the player's in-world Solana wallet and clears `player.solanaWallet`.
+
+### `.depositTokens(amount)`
+
+Requests a token deposit from the player's connected Solana wallet into the configured world token account.
+
+- **amount**: decimal token amount as a number or string
+
+Returns a promise that resolves with the submitted Solana transaction signature.
+
+### `.withdrawTokens(amount)`
+
+Requests a token withdrawal from the world token account back to the player's connected Solana wallet.
+
+- **amount**: decimal token amount as a number or string
+
+Returns a promise that resolves with the submitted Solana transaction signature.
 
 
 ### `.setVoiceLevel(level)`

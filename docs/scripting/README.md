@@ -37,6 +37,16 @@ Certain node [types](./nodes/types/) can also be created and used on the fly usi
 
 The [World](./world/World.md) API access methods and properties outside of the Apps, like players, networking or managing nodes outside of the local hierarchy. 
 
+## Solana
+
+The current Solana runtime path covers in-world wallet connect, wallet sync, balance queries, and world-token deposit/withdraw.
+
+- Player helpers live on [Player](./world/Player.md): `player.solanaWallet`, `player.connectSolana()`, `player.disconnectSolana()`, `player.depositTokens(amount)`, and `player.withdrawTokens(amount)`.
+- World helpers live on [World](./world/World.md): `world.solana()`, including address, connection, SOL balance, and world-token balance helpers.
+- Client wallet support works with the Privy-backed Solana path and the non-Privy injected-wallet path restored in phase 2.
+- The user menu now exposes the in-world Solana panel for connect, disconnect, balance display, deposit, and withdraw flows.
+- Server-side transfers require `RPC_URL`, `WORLD_PUBLIC_KEY`, `WORLD_PRIVATE_KEY`, and `WORLD_TOKEN_MINT_ADDRESS`.
+
 ## Utils 
 
 The [Utils](./utils.md) documentation provides a set of miscellaneous globals available in the scripting environment, like a random number generator and access to some `three.js` methods.

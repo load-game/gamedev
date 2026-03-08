@@ -73,14 +73,20 @@ function getEthereumWalletProvider() {
 
 function getSolanaWalletProvider() {
   if (typeof window === 'undefined') return null
+  const seen = new Set()
   const candidates = [
     window.solana,
     window.phantom?.solana,
-    window.backpack,
     window.backpack?.solana,
+    window.backpack,
+    window.solflare,
+    window.solflare?.solana,
+    window.glowSolana,
+    window.glow?.solana,
   ]
   for (const candidate of candidates) {
-    if (!candidate || typeof candidate !== 'object') continue
+    if (!candidate || typeof candidate !== 'object' || seen.has(candidate)) continue
+    seen.add(candidate)
     const canConnect = typeof candidate.connect === 'function'
     const canSign = typeof candidate.signMessage === 'function'
     if (canConnect && canSign) return candidate

@@ -90,3 +90,13 @@ npm run world:entities -- add --template-id k3sbGG4iq4 --transforms tmp/run-001.
 # 3) Remove temp file
 rm tmp/run-001.json
 ```
+
+## Runtime Player Wallet Sync
+
+This CLI only edits `world.json`, but runtime player snapshots and incremental player updates also include a `solanaWallet` field.
+
+Use the scripting runtime to react to those changes:
+
+- Read `player.solanaWallet` from the player API.
+- Listen for `world.on('solanaWallet', ({ playerId, solanaWallet }) => { ... })` when you need change notifications.
+- Use the user menu's Solana panel for client-side balance checks and world-token deposit/withdraw flows; those actions do not modify `world.json`.

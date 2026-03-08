@@ -305,6 +305,13 @@ export class PlayerRemote extends Entity {
       this.data.rank = data.rank
       this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })
     }
+    if (data.hasOwnProperty('solanaWallet')) {
+      this.data.solanaWallet = data.solanaWallet || null
+      this.world.events.emit('solanaWallet', {
+        playerId: this.data.id,
+        solanaWallet: this.data.solanaWallet,
+      })
+    }
     if (data.hasOwnProperty('locomotionEmotes')) {
       if (data.locomotionEmotes && typeof data.locomotionEmotes === 'object' && !Array.isArray(data.locomotionEmotes)) {
         this.locomotionEmotes = { ...data.locomotionEmotes }

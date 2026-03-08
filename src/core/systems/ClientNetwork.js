@@ -277,6 +277,34 @@ export class ClientNetwork extends System {
     this.world.livekit.setMuted(data.playerId, data.muted)
   }
 
+  onSolanaConnectRequest = data => {
+    this.world.solana?.onSolanaConnectRequest?.(data)
+  }
+
+  onSolanaConnectChallenge = data => {
+    this.world.solana?.onSolanaConnectChallenge?.(data)
+  }
+
+  onSolanaDisconnectRequest = data => {
+    this.world.solana?.onSolanaDisconnectRequest?.(data)
+  }
+
+  onSolanaDepositSignatureRequest = data => {
+    this.world.solana?.onSolanaDepositSignatureRequest?.(data)
+  }
+
+  onSolanaDepositResult = data => {
+    this.world.solana?.onSolanaDepositResult?.(data)
+  }
+
+  onSolanaWithdrawSignatureRequest = data => {
+    this.world.solana?.onSolanaWithdrawSignatureRequest?.(data)
+  }
+
+  onSolanaWithdrawResult = data => {
+    this.world.solana?.onSolanaWithdrawResult?.(data)
+  }
+
   onServerLog = data => {
     this.world.logs?.add('server', data.level, data.args)
   }

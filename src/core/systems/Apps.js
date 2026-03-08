@@ -86,6 +86,28 @@ export class Apps extends System {
           transferUSDC: (to, amount) => evm.transferUSDC(to, amount),
         }
       },
+      solana(entity) {
+        const solana = world.solana
+        const resolvePlayer = player => {
+          if (!player) return world.entities.player
+          if (player?.data?.id) return player
+          if (typeof player?.id === 'string') {
+            return world.entities.getPlayer(player.id) || null
+          }
+          return null
+        }
+        return {
+          getAddress: () => solana.getAddress(),
+          isConnected: () => solana.isConnected(),
+          getNativeBalance: address => solana.getNativeBalance(address),
+          getTokenBalance: (mintAddress, address) => solana.getTokenBalance(mintAddress, address),
+          getWorldTokenBalance: address => solana.getWorldTokenBalance(address),
+          connect: player => solana.connect(resolvePlayer(player)),
+          disconnect: player => solana.disconnect(resolvePlayer(player)),
+          deposit: (player, amount) => solana.deposit(entity, resolvePlayer(player), amount),
+          withdraw: (player, amount) => solana.withdraw(entity, resolvePlayer(player), amount),
+        }
+      },
       add(entity, pNode) {
         const node = getRef(pNode)
         if (!node) return

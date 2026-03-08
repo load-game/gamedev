@@ -64,6 +64,7 @@ function serializePlayerForAdmin(player) {
     name: player.data.name,
     avatar: player.data.avatar,
     sessionAvatar: player.data.sessionAvatar,
+    solanaWallet: player.data.solanaWallet || null,
     position: player.data.position,
     quaternion: player.data.quaternion,
     rank: player.data.rank,
@@ -543,6 +544,7 @@ export class ServerNetwork extends System {
           health: HEALTH_MAX,
           avatar: user.avatar || this.world.settings.avatar?.url || 'asset://avatar.vrm',
           sessionAvatar: avatar || null,
+          solanaWallet: null,
           rank: user.rank,
           enteredAt: Date.now(),
         },
@@ -960,6 +962,10 @@ export class ServerNetwork extends System {
         playerUpdate.sessionAvatar = entity.data.sessionAvatar
         hasPlayerUpdate = true
       }
+      if (nextData.hasOwnProperty('solanaWallet')) {
+        playerUpdate.solanaWallet = entity.data.solanaWallet || null
+        hasPlayerUpdate = true
+      }
       if (hasPlayerUpdate) {
         this.emit('playerUpdated', playerUpdate)
       }
@@ -1168,6 +1174,34 @@ export class ServerNetwork extends System {
     socket.send('pong', time)
   }
 
+  onSolanaConnectChallengeRequest = (socket, data) => {
+    this.world.solana.onSolanaConnectChallengeRequest(socket, data)
+  }
+
+  onSolanaConnectResponse = (socket, data) => {
+    this.world.solana.onSolanaConnectResponse(socket, data)
+  }
+
+  onSolanaDisconnect = socket => {
+    this.world.solana.onSolanaDisconnect(socket)
+  }
+
+  onSolanaDepositRequest = (socket, data) => {
+    this.world.solana.onSolanaDepositRequest(socket, data)
+  }
+
+  onSolanaDepositSignatureResponse = (socket, data) => {
+    this.world.solana.onSolanaDepositSignatureResponse(socket, data)
+  }
+
+  onSolanaWithdrawRequest = (socket, data) => {
+    this.world.solana.onSolanaWithdrawRequest(socket, data)
+  }
+
+  onSolanaWithdrawSignatureResponse = (socket, data) => {
+    this.world.solana.onSolanaWithdrawSignatureResponse(socket, data)
+  }
+
   destroy() {
     if (this.socketIntervalId) {
       clearInterval(this.socketIntervalId)
@@ -1182,6 +1216,7 @@ export class ServerNetwork extends System {
   onDisconnect = (socket, code) => {
     this.logSubscribers.delete(socket.id)
     this.world.livekit.clearModifiers(socket.id)
+    this.world.solana?.onSocketDisconnect?.(socket)
     socket.player.destroy(true)
     this.sockets.delete(socket.id)
     const playerId = socket.player?.data?.id

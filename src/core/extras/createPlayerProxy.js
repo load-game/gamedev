@@ -37,6 +37,9 @@ export function createPlayerProxy(entity, player) {
     get name() {
       return player.data.name
     },
+    get solanaWallet() {
+      return player.data.solanaWallet || null
+    },
     get health() {
       return player.data.health
     },
@@ -215,6 +218,18 @@ export function createPlayerProxy(entity, player) {
         return console.error('screenshare can only be called on local player')
       }
       world.livekit.setScreenShareTarget(targetId)
+    },
+    connectSolana() {
+      return world.solana.connect(player)
+    },
+    disconnectSolana() {
+      return world.solana.disconnect(player)
+    },
+    depositTokens(amount) {
+      return world.solana.deposit(entity, player, amount)
+    },
+    withdrawTokens(amount) {
+      return world.solana.withdraw(entity, player, amount)
     },
     setVoiceLevel(level) {
       if (!world.network.isServer) {

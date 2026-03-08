@@ -98,6 +98,7 @@ export function CoreUI({ world, connectionStatus }) {
     >
       {disconnected && <Disconnected />}
       {!ui.reticleSuppressors && <Reticle world={world} />}
+      {ready && <SolanaOperationToasts world={world} />}
       {<Toast world={world} />}
       {ready && <MainMenu world={world} open={menuOpen} onClose={() => setMenuOpen(false)} />}
       {ready && <Chat world={world} />}
@@ -113,6 +114,37 @@ export function CoreUI({ world, connectionStatus }) {
       <div id='core-ui-portal' />
     </div>
   )
+}
+
+function SolanaOperationToasts({ world }) {
+  const lastToastKeyRef = useRef('')
+
+  useEffect(() => {
+    if (!world?.solana?.on || !world?.solana?.off) return () => {}
+
+    const onOperation = operation => {
+      if (!operation?.requestId) return
+      if (operation.status !== 'confirmed' && operation.status !== 'failed') return
+
+      const toastKey = `${operation.requestId}:${operation.status}:${operation.signature || ''}:${operation.error || ''}`
+      if (toastKey === lastToastKeyRef.current) return
+      lastToastKeyRef.current = toastKey
+
+      if (operation.status === 'confirmed') {
+        world.emit('toast', operation.kind === 'withdraw' ? 'Solana withdraw confirmed' : 'Solana deposit confirmed')
+        return
+      }
+
+      world.emit('toast', operation.error || (operation.kind === 'withdraw' ? 'Solana withdraw failed' : 'Solana deposit failed'))
+    }
+
+    world.solana.on('operation', onOperation)
+    return () => {
+      world.solana.off('operation', onOperation)
+    }
+  }, [world])
+
+  return null
 }
 
 // function Side({ world, menu }) {

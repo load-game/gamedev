@@ -23,3 +23,13 @@ Sets your player name.
 ### `/chat clear`
 
 Clears all chat messages. Requires builder rank. 
+
+## Solana
+
+There are no Solana-specific chat commands in this runtime.
+
+Use the user menu instead:
+
+- Open `Wallets`.
+- Use `Solana In World` to connect or disconnect the in-world wallet.
+- Use the world token transfer panel there to deposit or withdraw after connecting.

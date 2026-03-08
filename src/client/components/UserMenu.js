@@ -124,6 +124,38 @@ function getWalletChainLabel(chainType) {
   return 'Wallet'
 }
 
+function getSolanaClusterLabel(cluster) {
+  if (cluster === 'devnet') return 'Devnet'
+  if (cluster === 'testnet') return 'Testnet'
+  return 'Mainnet'
+}
+
+function getSolanaExplorerUrl(signature, cluster) {
+  if (typeof signature !== 'string' || !signature.trim()) return ''
+  const url = new URL(`https://explorer.solana.com/tx/${signature.trim()}`)
+  if (cluster === 'devnet' || cluster === 'testnet') {
+    url.searchParams.set('cluster', cluster)
+  }
+  return url.toString()
+}
+
+function getSolanaTransferStatusLabel(status) {
+  if (status === 'pending') return 'Pending'
+  if (status === 'signed') return 'Signed'
+  if (status === 'confirmed') return 'Confirmed'
+  if (status === 'failed') return 'Failed'
+  return 'Idle'
+}
+
+function getSolanaTransferStatusMessage(operation) {
+  if (!operation) return ''
+  if (operation.status === 'pending') return 'Waiting for wallet approval.'
+  if (operation.status === 'signed') return 'Signed in wallet. Awaiting confirmation.'
+  if (operation.status === 'confirmed') return 'Transaction confirmed on Solana.'
+  if (operation.status === 'failed') return operation.error || 'Transaction failed.'
+  return ''
+}
+
 async function copyToClipboard(text) {
   const value = typeof text === 'string' ? text.trim() : ''
   if (!value) return false
@@ -197,6 +229,14 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
   const [transferError, setTransferError] = useState('')
   const [transferTxHash, setTransferTxHash] = useState('')
   const [copiedTxHash, setCopiedTxHash] = useState(false)
+  const [solanaNativeBalance, setSolanaNativeBalance] = useState(null)
+  const [solanaTokenBalance, setSolanaTokenBalance] = useState(null)
+  const [solanaBalancesPending, setSolanaBalancesPending] = useState(false)
+  const [solanaBalancesError, setSolanaBalancesError] = useState('')
+  const [solanaBalanceVersion, setSolanaBalanceVersion] = useState(0)
+  const [solanaTransferKind, setSolanaTransferKind] = useState('deposit')
+  const [solanaTransferAmount, setSolanaTransferAmount] = useState('')
+  const [solanaTransferState, setSolanaTransferState] = useState(null)
 
   const setFeedbackError = useCallback(message => setFeedback({ type: 'error', message }), [])
   const setFeedbackSuccess = useCallback(message => setFeedback({ type: 'success', message }), [])
@@ -208,6 +248,10 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
   const [runtimeResolvedWallet, setRuntimeResolvedWallet] = useState(() => {
     if (typeof globalThis === 'undefined') return null
     return globalThis.__runtimeResolvedWallet || null
+  })
+  const [runtimeResolvedSolanaWallet, setRuntimeResolvedSolanaWallet] = useState(() => {
+    if (typeof globalThis === 'undefined') return null
+    return globalThis.__runtimeResolvedSolanaWallet || null
   })
 
   const { login } = useLogin({
@@ -249,6 +293,24 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
     window.addEventListener('runtime-wallet-snapshot', onRuntimeWalletSnapshot)
     return () => {
       window.removeEventListener('runtime-wallet-snapshot', onRuntimeWalletSnapshot)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return () => {}
+
+    const setFromGlobal = () => {
+      setRuntimeResolvedSolanaWallet(globalThis.__runtimeResolvedSolanaWallet || null)
+    }
+    const onRuntimeSolanaWalletSnapshot = event => {
+      const nextSnapshot = event?.detail || null
+      setRuntimeResolvedSolanaWallet(nextSnapshot)
+    }
+
+    setFromGlobal()
+    window.addEventListener('runtime-solana-wallet-snapshot', onRuntimeSolanaWalletSnapshot)
+    return () => {
+      window.removeEventListener('runtime-solana-wallet-snapshot', onRuntimeSolanaWalletSnapshot)
     }
   }, [])
 
@@ -294,6 +356,87 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
 
     return getLatestConnectedWallet(connectedSolanaWallets)
   }, [activePrivyWallet, connectedSolanaWallets])
+
+  const worldSolanaAddress = typeof runtimeResolvedSolanaWallet?.address === 'string' ? runtimeResolvedSolanaWallet.address : ''
+  const worldSolanaConnected = !!runtimeResolvedSolanaWallet?.connected
+  const worldSolanaAvailable = !!runtimeResolvedSolanaWallet?.available
+  const worldSolanaCluster = typeof runtimeResolvedSolanaWallet?.cluster === 'string' ? runtimeResolvedSolanaWallet.cluster : 'mainnet'
+  const solanaTransferBusy = solanaTransferState?.status === 'pending' || solanaTransferState?.status === 'signed'
+  const solanaTransferExplorerUrl = getSolanaExplorerUrl(solanaTransferState?.signature, worldSolanaCluster)
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!world?.solana || !worldSolanaConnected || !worldSolanaAddress) {
+      setSolanaNativeBalance(null)
+      setSolanaTokenBalance(null)
+      setSolanaBalancesPending(false)
+      setSolanaBalancesError('')
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const loadBalances = async () => {
+      setSolanaBalancesPending(true)
+      setSolanaBalancesError('')
+
+      try {
+        const nativeBalance = await world.solana.getNativeBalance(worldSolanaAddress)
+        let tokenBalance = null
+        try {
+          tokenBalance = await world.solana.getWorldTokenBalance(worldSolanaAddress)
+        } catch (error) {
+          const message = error?.message || ''
+          if (message !== 'World token mint address not configured' && message !== 'Invalid world token mint address') {
+            throw error
+          }
+        }
+
+        if (cancelled) return
+        setSolanaNativeBalance(nativeBalance)
+        setSolanaTokenBalance(tokenBalance)
+      } catch (error) {
+        if (cancelled) return
+        setSolanaNativeBalance(null)
+        setSolanaTokenBalance(null)
+        setSolanaBalancesError(error?.message || 'Unable to load Solana balances.')
+      } finally {
+        if (!cancelled) {
+          setSolanaBalancesPending(false)
+        }
+      }
+    }
+
+    void loadBalances()
+
+    return () => {
+      cancelled = true
+    }
+  }, [world, worldSolanaConnected, worldSolanaAddress, worldSolanaCluster, solanaBalanceVersion])
+
+  useEffect(() => {
+    if (!world?.solana?.on || !world?.solana?.off) return () => {}
+
+    const onOperation = operation => {
+      setSolanaTransferState(operation || null)
+      if (operation?.status === 'confirmed') {
+        setSolanaTransferAmount('')
+        setSolanaBalanceVersion(version => version + 1)
+      }
+    }
+
+    world.solana.on('operation', onOperation)
+    return () => {
+      world.solana.off('operation', onOperation)
+    }
+  }, [world])
+
+  useEffect(() => {
+    if (worldSolanaConnected) return
+    setSolanaTransferState(null)
+    setSolanaTransferAmount('')
+  }, [worldSolanaConnected])
 
   const connectedSiteWalletRows = useMemo(() => {
     const rows = []
@@ -530,11 +673,106 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
     setFeedbackSuccess,
   ])
 
+  const runWorldSolanaConnect = useCallback(async () => {
+    if (pendingAction === 'world-solana-connect' || pendingAction === 'world-solana-disconnect') return
+    clearFeedback()
+    if (!world?.solana) {
+      setFeedbackError('Solana wallet controls are unavailable.')
+      return
+    }
+    setPendingAction('world-solana-connect')
+    try {
+      await world.solana.connect()
+    } catch (error) {
+      setFeedbackError(toPrivyErrorMessage(error, 'Unable to connect Solana wallet.'))
+    } finally {
+      setPendingAction(current => (current === 'world-solana-connect' ? '' : current))
+    }
+  }, [clearFeedback, pendingAction, setFeedbackError, world])
+
+  const runWorldSolanaDisconnect = useCallback(async () => {
+    if (pendingAction === 'world-solana-connect' || pendingAction === 'world-solana-disconnect') return
+    clearFeedback()
+    if (!world?.solana) {
+      setFeedbackError('Solana wallet controls are unavailable.')
+      return
+    }
+    setPendingAction('world-solana-disconnect')
+    try {
+      await world.solana.disconnect()
+    } catch (error) {
+      setFeedbackError(toPrivyErrorMessage(error, 'Unable to disconnect Solana wallet.'))
+    } finally {
+      setPendingAction(current => (current === 'world-solana-disconnect' ? '' : current))
+    }
+  }, [clearFeedback, pendingAction, setFeedbackError, world])
+
+  const submitWorldSolanaTransfer = useCallback(async () => {
+    if (solanaTransferBusy) return
+    clearFeedback()
+
+    if (!world?.solana) {
+      setFeedbackError('Solana wallet controls are unavailable.')
+      return
+    }
+    if (!worldSolanaConnected) {
+      setFeedbackError('Connect a Solana wallet first.')
+      return
+    }
+
+    const amountValue = solanaTransferAmount.trim()
+    if (!amountValue) {
+      setFeedbackError('Enter an amount.')
+      return
+    }
+    const parsedAmount = Number(amountValue)
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setFeedbackError('Amount must be greater than 0.')
+      return
+    }
+
+    try {
+      if (solanaTransferKind === 'deposit') {
+        await world.solana.deposit(amountValue)
+      } else {
+        await world.solana.withdraw(amountValue)
+      }
+    } catch (error) {
+      const message = toPrivyErrorMessage(
+        error,
+        `Unable to ${solanaTransferKind === 'deposit' ? 'deposit' : 'withdraw'} world token.`
+      )
+      setSolanaTransferState(current =>
+        current?.status === 'failed'
+          ? current
+          : {
+              requestId: `local-${Date.now()}`,
+              kind: solanaTransferKind,
+              amount: amountValue,
+              status: 'failed',
+              signature: null,
+              error: message,
+            }
+      )
+      setFeedbackError(message)
+    }
+  }, [
+    clearFeedback,
+    setFeedbackError,
+    solanaTransferAmount,
+    solanaTransferBusy,
+    solanaTransferKind,
+    world,
+    worldSolanaConnected,
+  ])
+
   const isAuthenticated = ready && authenticated && user
 
   const renderWalletsSection = () => {
     const linkingEvm = pendingAction === 'link-wallet-evm'
     const linkingSolana = pendingAction === 'link-wallet-solana'
+    const connectingWorldSolana = pendingAction === 'world-solana-connect'
+    const disconnectingWorldSolana = pendingAction === 'world-solana-disconnect'
 
     return (
       <div className='usermenu-section'>
@@ -671,6 +909,165 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
             </div>
           </div>
         )}
+
+        <div className='usermenu-subsection-label'>Solana In World</div>
+        <div className='usermenu-solana-panel'>
+          <div className='usermenu-row'>
+            <div className='usermenu-row-label'>Status</div>
+            <div className='usermenu-row-value'>
+              <div className='usermenu-wallet-row'>
+                <span className={cls('usermenu-chip', { active: worldSolanaConnected })}>
+                  {worldSolanaConnected ? 'Connected' : worldSolanaAvailable ? 'Disconnected' : 'Unavailable'}
+                </span>
+                {(worldSolanaAvailable || worldSolanaConnected) && (
+                  <span className='usermenu-chip'>{getSolanaClusterLabel(worldSolanaCluster)}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className='usermenu-row'>
+            <div className='usermenu-row-label'>Wallet</div>
+            <div className='usermenu-row-value mono'>
+              {worldSolanaAddress ? truncateAddress(worldSolanaAddress) : 'Not connected'}
+            </div>
+          </div>
+          <div className='usermenu-row'>
+            <div className='usermenu-row-label'>Native</div>
+            <div className='usermenu-row-value'>
+              {!worldSolanaConnected
+                ? 'Not connected'
+                : solanaBalancesPending
+                  ? 'Loading...'
+                  : `${formatBalance(solanaNativeBalance, 6)} SOL`}
+            </div>
+          </div>
+          <div className='usermenu-row'>
+            <div className='usermenu-row-label'>World Token</div>
+            <div className='usermenu-row-value'>
+              {!worldSolanaConnected
+                ? 'Not connected'
+                : solanaBalancesPending
+                ? 'Loading...'
+                : solanaTokenBalance === null
+                  ? 'Not configured'
+                  : formatBalance(solanaTokenBalance, 6)}
+            </div>
+          </div>
+          {solanaBalancesError && <div className='usermenu-error'>{solanaBalancesError}</div>}
+          {!worldSolanaAvailable && <div className='usermenu-muted'>Link or enable a Solana wallet first.</div>}
+          <div className='usermenu-inlineactions'>
+            <button
+              className='usermenu-linkbtn'
+              disabled={!world?.solana || !worldSolanaAvailable || worldSolanaConnected || disconnectingWorldSolana}
+              onClick={() => {
+                void runWorldSolanaConnect()
+              }}
+            >
+              {connectingWorldSolana ? 'Connecting...' : 'Connect'}
+            </button>
+            <button
+              className='usermenu-linkbtn'
+              disabled={!world?.solana || !worldSolanaConnected || connectingWorldSolana}
+              onClick={() => {
+                void runWorldSolanaDisconnect()
+              }}
+            >
+              {disconnectingWorldSolana ? 'Disconnecting...' : 'Disconnect'}
+            </button>
+          </div>
+          {worldSolanaConnected && (
+            <div className='usermenu-transfer-panel'>
+              <div className='usermenu-transfer-head'>
+                <div className='usermenu-transfer-title'>World Token Transfer</div>
+                <div className='usermenu-inlineactions'>
+                  <button
+                    className={cls('usermenu-chipbtn', { active: solanaTransferKind === 'deposit' })}
+                    disabled={solanaTransferBusy}
+                    onClick={() => {
+                      setSolanaTransferKind('deposit')
+                    }}
+                  >
+                    Deposit
+                  </button>
+                  <button
+                    className={cls('usermenu-chipbtn', { active: solanaTransferKind === 'withdraw' })}
+                    disabled={solanaTransferBusy}
+                    onClick={() => {
+                      setSolanaTransferKind('withdraw')
+                    }}
+                  >
+                    Withdraw
+                  </button>
+                </div>
+              </div>
+              <div className='usermenu-transfer-grid'>
+                <label className='usermenu-field'>
+                  <span className='usermenu-label'>Amount</span>
+                  <input
+                    className='usermenu-input'
+                    value={solanaTransferAmount}
+                    onInput={event => {
+                      setSolanaTransferAmount(event.currentTarget.value)
+                    }}
+                    placeholder='0.00'
+                    inputMode='decimal'
+                  />
+                </label>
+              </div>
+              <div className='usermenu-inlineactions'>
+                <button
+                  className='usermenu-linkbtn'
+                  disabled={solanaTransferBusy}
+                  onClick={() => {
+                    void submitWorldSolanaTransfer()
+                  }}
+                >
+                  {solanaTransferBusy
+                    ? solanaTransferState?.status === 'signed'
+                      ? 'Confirming...'
+                      : 'Awaiting Signature...'
+                    : solanaTransferKind === 'deposit'
+                      ? 'Deposit'
+                      : 'Withdraw'}
+                </button>
+              </div>
+              {solanaTransferState && (
+                <div className='usermenu-solana-transfer-status'>
+                  <div className='usermenu-transfer-tx'>
+                    <div className='usermenu-wallet-row'>
+                      <span
+                        className={cls('usermenu-chip', {
+                          active:
+                            solanaTransferState.status === 'pending' ||
+                            solanaTransferState.status === 'signed' ||
+                            solanaTransferState.status === 'confirmed',
+                        })}
+                      >
+                        {getSolanaTransferStatusLabel(solanaTransferState.status)}
+                      </span>
+                    </div>
+                    {solanaTransferExplorerUrl && (
+                      <a className='usermenu-linkbtn' href={solanaTransferExplorerUrl} target='_blank' rel='noreferrer'>
+                        View Tx
+                      </a>
+                    )}
+                  </div>
+                  <div className='usermenu-transfer-meta'>
+                    {solanaTransferState.kind === 'withdraw' ? 'Withdraw' : 'Deposit'} {solanaTransferState.amount}
+                  </div>
+                  <div
+                    className={cls({
+                      'usermenu-error': solanaTransferState.status === 'failed',
+                      'usermenu-muted': solanaTransferState.status !== 'failed',
+                    })}
+                  >
+                    {getSolanaTransferStatusMessage(solanaTransferState)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className='usermenu-subsection-label'>Linked To Account</div>
         {!isAuthenticated ? (
@@ -1320,6 +1717,11 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
             background: rgba(255, 255, 255, 0.02);
           }
         }
+        .usermenu-chipbtn.active {
+          border-color: rgba(110, 255, 163, 0.45);
+          color: rgba(156, 255, 193, 0.96);
+          background: rgba(58, 130, 84, 0.22);
+        }
         .usermenu-transfer-panel {
           margin-top: 0.5rem;
           border: 1px solid ${theme.borderLight};
@@ -1329,6 +1731,25 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
           display: flex;
           flex-direction: column;
           gap: 0.45rem;
+        }
+        .usermenu-solana-panel {
+          margin-top: 0.35rem;
+          border: 1px solid ${theme.borderLight};
+          border-radius: ${theme.radiusSmall};
+          background: rgba(0, 0, 0, 0.16);
+          padding: 0.55rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+        }
+        .usermenu-solana-transfer-status {
+          border: 1px solid ${theme.borderLight};
+          border-radius: ${theme.radiusSmall};
+          background: rgba(255, 255, 255, 0.03);
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
         }
         .usermenu-transfer-head {
           display: flex;

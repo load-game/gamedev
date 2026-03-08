@@ -27,6 +27,7 @@ import { Wind } from './systems/Wind'
 import { XR } from './systems/XR'
 import { EVM } from './systems/EVMClient'
 import { Hyperliquid } from './systems/HyperliquidClient'
+import { ClientSolana } from './systems/ClientSolana'
 
 export function createClientWorld() {
   const world = new World()
@@ -57,5 +58,6 @@ export function createClientWorld() {
   world.register('xr', XR)
   world.register('evm', EVM)
   world.register('hyperliquid', Hyperliquid)
+  world.register('solana', ClientSolana)
   return world
 }
