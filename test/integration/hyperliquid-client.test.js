@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { getAddress } from 'viem'
 
 import { EVM } from '../../src/core/systems/EVMClient.js'
 import { Hyperliquid } from '../../src/core/systems/HyperliquidClient.js'
@@ -15,6 +16,29 @@ test('EVM client tracks bound wallet state', () => {
 
   assert.equal(evm.getAddress(), '0x00000000000000000000000000000000000000AA')
   assert.equal(evm.isConnected(), true)
+})
+
+test('EVM client injects world and player APIs', () => {
+  let injected = null
+  const world = {
+    inject(runtime) {
+      injected = runtime
+    },
+  }
+
+  const evm = new EVM(world)
+  evm.init()
+  const runtime = injected.world.evm()
+
+  assert.equal(typeof injected.world.evm, 'function')
+  assert.equal(runtime.connect, undefined)
+  assert.equal(runtime.disconnect, undefined)
+  assert.equal(
+    injected.player.evm.get({ data: { custom: { evm: '0x00000000000000000000000000000000000000AA' } } }),
+    '0x00000000000000000000000000000000000000AA'
+  )
+  assert.equal(injected.player.evm.get({ data: { custom: { evm: null } } }), null)
+  assert.equal(injected.player.evm.get({ data: { custom: null } }), null)
 })
 
 test('EVM client transfers native token via wallet adapter', async () => {
@@ -71,6 +95,163 @@ test('EVM client transfers USDC via ERC20 transfer', async () => {
   assert.equal(calls[0][1].args[1], 1500000n)
   assert.equal(calls[1][0], 'waitForTransactionReceipt')
   assert.equal(calls[1][1], '0xusdchash')
+})
+
+test('EVM client syncs connected wallet state into player custom data', () => {
+  const sent = []
+  const modified = []
+  const player = {
+    data: {
+      id: 'player-1',
+      custom: {
+        nickname: 'tester',
+      },
+    },
+    modify(patch) {
+      modified.push(patch)
+      this.data = { ...this.data, ...patch }
+    },
+  }
+  const evm = new EVM({
+    network: {
+      id: 'player-1',
+      isClient: true,
+      ws: { readyState: 1 },
+      send(name, data) {
+        sent.push([name, data])
+      },
+    },
+    entities: { player },
+  })
+
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    walletAdapter: {},
+    chainId: 42161,
+  })
+
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000BB',
+    isConnected: true,
+    walletAdapter: {},
+    chainId: 42161,
+  })
+
+  assert.deepEqual(modified[0], {
+    custom: {
+      nickname: 'tester',
+      evm: getAddress('0x00000000000000000000000000000000000000AA'),
+    },
+  })
+  assert.deepEqual(sent[0], [
+    'entityModified',
+    {
+      id: 'player-1',
+      custom: {
+        nickname: 'tester',
+        evm: getAddress('0x00000000000000000000000000000000000000AA'),
+      },
+    },
+  ])
+
+  assert.deepEqual(modified[1], {
+    custom: {
+      nickname: 'tester',
+      evm: '0x00000000000000000000000000000000000000BB',
+    },
+  })
+  assert.deepEqual(sent[1], [
+    'entityModified',
+    {
+      id: 'player-1',
+      custom: {
+        nickname: 'tester',
+        evm: '0x00000000000000000000000000000000000000BB',
+      },
+    },
+  ])
+
+  evm.bind({
+    address: null,
+    isConnected: false,
+    walletAdapter: {},
+    chainId: null,
+  })
+
+  assert.deepEqual(modified[2], {
+    custom: {
+      nickname: 'tester',
+      evm: null,
+    },
+  })
+  assert.deepEqual(sent[2], [
+    'entityModified',
+    {
+      id: 'player-1',
+      custom: {
+        nickname: 'tester',
+        evm: null,
+      },
+    },
+  ])
+})
+
+test('EVM client does not resync when wallet address is unchanged', () => {
+  const sent = []
+  const modified = []
+  const player = {
+    data: {
+      id: 'player-1',
+      custom: null,
+    },
+    modify(patch) {
+      modified.push(patch)
+      this.data = { ...this.data, ...patch }
+    },
+  }
+  const evm = new EVM({
+    network: {
+      id: 'player-1',
+      isClient: true,
+      ws: { readyState: 1 },
+      send(name, data) {
+        sent.push([name, data])
+      },
+    },
+    entities: { player },
+  })
+
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    walletAdapter: {},
+    chainId: 42161,
+  })
+
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    walletAdapter: {},
+    chainId: 42161,
+  })
+
+  assert.deepEqual(modified[0], {
+    custom: {
+      evm: getAddress('0x00000000000000000000000000000000000000AA'),
+    },
+  })
+  assert.deepEqual(sent[0], [
+    'entityModified',
+    {
+      id: 'player-1',
+      custom: {
+        evm: getAddress('0x00000000000000000000000000000000000000AA'),
+      },
+    },
+  ])
+  assert.equal(modified.length, 1)
+  assert.equal(sent.length, 1)
 })
 
 test('Hyperliquid returns sorted ticker list', async () => {

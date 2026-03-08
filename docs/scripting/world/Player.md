@@ -16,6 +16,12 @@ The players name.
 
 Whether the player is local to this client.
 
+### `.evm`: String | null
+
+The player's replicated EVM wallet address, or `null`.
+
+This is injected by the EVM system and backed by replicated player state, so it works for local and remote players.
+
 ### `.admin`: Boolean
 
 Whether the player is an admin in this world.

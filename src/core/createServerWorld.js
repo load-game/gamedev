@@ -8,6 +8,7 @@ import { ServerEnvironment } from './systems/ServerEnvironment'
 import { ServerMonitor } from './systems/ServerMonitor'
 import { ServerAIScripts } from './systems/ServerAIScripts'
 import { ServerAI } from './systems/ServerAI'
+import { EVM } from './systems/EVMServer'
 
 export function createServerWorld() {
   const world = new World()
@@ -19,5 +20,6 @@ export function createServerWorld() {
   world.register('aiScripts', ServerAIScripts)
   world.register('environment', ServerEnvironment)
   world.register('monitor', ServerMonitor)
+  world.register('evm', EVM)
   return world
 }

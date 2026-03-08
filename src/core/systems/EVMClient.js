@@ -4,6 +4,25 @@ import { formatEther, formatUnits, getAddress, parseUnits } from 'viem'
 const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
 const USDC_DECIMALS = 6
 
+function getPlayerCustom(player) {
+  const custom = player?.data?.custom
+  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
+  return custom
+}
+
+function getPlayerEvmAddress(player) {
+  const value = getPlayerCustom(player)?.evm
+  return typeof value === 'string' && value ? value : null
+}
+
+function buildPlayerCustomPatch(player, address) {
+  const current = getPlayerCustom(player)
+  return {
+    ...(current || {}),
+    evm: address || null,
+  }
+}
+
 const ERC20_ABI = [
   {
     name: 'balanceOf',
@@ -29,28 +48,84 @@ export class EVM extends System {
     super(world)
     this.walletAdapter = null
     this.address = null
-    this.connected = false
+    this.connected = null
+    this.chainId = null
+    this.pendingPlayerSync = false
+    this.pendingNetworkSync = false
+    this.networkAddress = null
+    this.utils = { formatEther, formatUnits, getAddress, parseUnits }
+    this.abis = {
+      erc20: ERC20_ABI,
+      erc721: null,
+    }
+    this.actions = {
+      getBalance: params => this._requireWalletAdapter().getBalance(params),
+      readContract: params => this._requireWalletAdapter().readContract(params),
+      sendTransaction: params => this._requireWalletAdapter().sendTransaction(params),
+      writeContract: params => this._requireWalletAdapter().writeContract(params),
+      waitForTransactionReceipt: params => this._requireWalletAdapter().waitForTransactionReceipt(params),
+      getChainId: params => this._requireWalletAdapter().getChainId(params),
+      switchChain: params => this._requireWalletAdapter().switchChain(params),
+      signTypedData: params => this._requireWalletAdapter().signTypedData(params),
+    }
   }
 
   init() {
-    this.world.inject({
+    this.world.inject?.({
       world: {
-        evm: () => ({
-          getAddress: () => this.getAddress(),
-          isConnected: () => this.isConnected(),
-          getNativeBalance: address => this.getNativeBalance(address),
-          getTokenBalance: (tokenAddress, address, decimals) => this.getTokenBalance(tokenAddress, address, decimals),
-          getUSDCBalance: address => this.getUSDCBalance(address),
-          transferNative: (to, amount) => this.transferNative(to, amount),
-          transferToken: (tokenAddress, to, amount, decimals) =>
-            this.transferToken(tokenAddress, to, amount, decimals),
-          transferUSDC: (to, amount) => this.transferUSDC(to, amount),
-        }),
+        evm: () => this.getRuntimeAPI(),
+      },
+      player: {
+        evm: {
+          get: player => getPlayerEvmAddress(player),
+        },
       },
     })
   }
 
-  bind({ walletAdapter, address, isConnected } = {}) {
+  getRuntimeAPI() {
+    return {
+      actions: this.actions,
+      utils: this.utils,
+      abis: this.abis,
+      getAddress: () => this.getAddress(),
+      isConnected: () => this.isConnected(),
+      getChainId: params => this.getChainId?.(params),
+      readContract: params => this.readContract?.(params),
+      sendTransaction: params => this.sendTransaction?.(params),
+      writeContract: params => this.writeContract?.(params),
+      waitForTransactionReceipt: params => this.waitForTransactionReceipt?.(params),
+      switchChain: params => this.switchChain?.(params),
+      getNativeBalance: address => this.getNativeBalance(address),
+      getTokenBalance: (tokenAddress, address, decimals) => this.getTokenBalance(tokenAddress, address, decimals),
+      getUSDCBalance: address => this.getUSDCBalance(address),
+      transferNative: (to, amount) => this.transferNative(to, amount),
+      transferToken: (tokenAddress, to, amount, decimals) => this.transferToken(tokenAddress, to, amount, decimals),
+      transferUSDC: (to, amount) => this.transferUSDC(to, amount),
+    }
+  }
+
+  start() {
+    this.world.on?.('ready', this.onReady)
+  }
+
+  update() {
+    this._syncPlayerState()
+    this._syncNetworkState()
+  }
+
+  destroy() {
+    this.world.off?.('ready', this.onReady)
+  }
+
+  onReady = () => {
+    this.pendingPlayerSync = true
+    this.pendingNetworkSync = true
+    this._syncPlayerState()
+    this._syncNetworkState()
+  }
+
+  bind({ walletAdapter, address, isConnected, chainId } = {}) {
     this.walletAdapter = walletAdapter || null
 
     if (typeof address === 'string' && address) {
@@ -62,8 +137,19 @@ export class EVM extends System {
     if (typeof isConnected === 'boolean') {
       this.connected = isConnected
     } else {
-      this.connected = !!this.walletAdapter?.isConnected?.()
+      this.connected = this.walletAdapter?.isConnected?.() ?? null
     }
+
+    if (Number.isInteger(chainId) && chainId > 0) {
+      this.chainId = chainId
+    } else {
+      this.chainId = null
+    }
+
+    this.pendingPlayerSync = true
+    this.pendingNetworkSync = true
+    this._syncPlayerState()
+    this._syncNetworkState()
   }
 
   getAddress() {
@@ -71,8 +157,15 @@ export class EVM extends System {
   }
 
   isConnected() {
-    if (this.connected) return true
+    if (typeof this.connected === 'boolean') return this.connected
     return !!this.walletAdapter?.isConnected?.()
+  }
+
+  async getChainId({ request = false } = {}) {
+    if (Number.isInteger(this.chainId) && this.chainId > 0) {
+      return this.chainId
+    }
+    return this._requireWalletAdapter().getChainId({ request })
   }
 
   _requireWalletAdapter() {
@@ -110,6 +203,75 @@ export class EVM extends System {
     } catch {
       throw new Error(`Invalid ${fieldName}`)
     }
+  }
+
+  _syncPlayerState() {
+    if (!this.pendingPlayerSync) return
+    const player = this.world?.entities?.player
+    if (!player || typeof player.modify !== 'function') return
+
+    const nextAddress = this.isConnected() ? this.getAddress() : null
+    const currentAddress = getPlayerEvmAddress(player)
+    const sameAddress =
+      (!currentAddress && !nextAddress) ||
+      (currentAddress &&
+        nextAddress &&
+        currentAddress.toLowerCase() === nextAddress.toLowerCase())
+
+    if (!sameAddress) {
+      player.modify({ custom: buildPlayerCustomPatch(player, nextAddress) })
+    }
+
+    this.pendingPlayerSync = false
+  }
+
+  _syncNetworkState() {
+    if (!this.pendingNetworkSync) return
+
+    const network = this.world?.network
+    const ws = network?.ws
+    if (!network?.isClient || !ws || ws.readyState !== 1) return
+    const player = this.world?.entities?.player
+    if (!player?.data?.id) return
+
+    const nextAddress = this.isConnected() ? this.getAddress() : null
+    const sameAddress =
+      (!this.networkAddress && !nextAddress) ||
+      (this.networkAddress &&
+        nextAddress &&
+        this.networkAddress.toLowerCase() === nextAddress.toLowerCase())
+
+    if (!sameAddress) {
+      network.send('entityModified', {
+        id: player.data.id,
+        custom: buildPlayerCustomPatch(player, nextAddress),
+      })
+    }
+
+    this.networkAddress = nextAddress
+    this.pendingNetworkSync = false
+  }
+
+  async readContract(params) {
+    return this._requireWalletAdapter().readContract(params)
+  }
+
+  async sendTransaction(params) {
+    return this._requireWalletAdapter().sendTransaction(params)
+  }
+
+  async writeContract(params) {
+    return this._requireWalletAdapter().writeContract(params)
+  }
+
+  async waitForTransactionReceipt(params) {
+    return this._requireWalletAdapter().waitForTransactionReceipt(params)
+  }
+
+  async switchChain(params) {
+    const result = await this._requireWalletAdapter().switchChain(params)
+    this.chainId = Number.isInteger(result?.id) ? result.id : this.chainId
+    return result
   }
 
   async getNativeBalance(address = this.getAddress()) {

@@ -195,6 +195,7 @@ export class AdminNetwork extends System {
         name: player.name,
         avatar: player.avatar,
         sessionAvatar: player.sessionAvatar,
+        custom: player.custom,
         rank: player.rank,
         enteredAt: player.enteredAt,
       })
@@ -261,6 +262,7 @@ export class AdminNetwork extends System {
         name: data.name,
         avatar: data.avatar,
         sessionAvatar: data.sessionAvatar,
+        custom: data.custom,
         rank: data.rank,
         position: data.position,
         quaternion: data.quaternion,
@@ -276,6 +278,7 @@ export class AdminNetwork extends System {
       name: data.name,
       avatar: data.avatar,
       sessionAvatar: data.sessionAvatar,
+      custom: data.custom,
       rank: data.rank,
       enteredAt: data.enteredAt,
     })
@@ -291,6 +294,7 @@ export class AdminNetwork extends System {
       name: data.name,
       avatar: data.avatar,
       sessionAvatar: data.sessionAvatar,
+      custom: data.custom,
       rank: data.rank,
     })
   }

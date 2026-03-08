@@ -58,10 +58,8 @@ export function Client({ wsUrl, apiUrl, authUrl, connectionStatus, onSetup }) {
     const publishRuntimeWalletSnapshot = snapshot => {
       if (typeof globalThis === 'undefined') return
       const normalized = {
-        source: snapshot?.source || null,
         address: snapshot?.address || null,
         connected: !!snapshot?.connected,
-        chainId: snapshot?.chainId ?? null,
         updatedAt: Date.now(),
       }
       globalThis.__runtimeResolvedWallet = normalized
@@ -80,9 +78,14 @@ export function Client({ wsUrl, apiUrl, authUrl, connectionStatus, onSetup }) {
         walletAdapter,
         address: snapshot?.address || null,
         isConnected: !!snapshot?.connected,
+        chainId: snapshot?.chainId ?? null,
       }
       world.evm?.bind?.(binding)
-      world.hyperliquid?.bind?.(binding)
+      world.hyperliquid?.bind?.({
+        walletAdapter,
+        address: binding.address,
+        isConnected: binding.isConnected,
+      })
     }
 
     applyWalletBinding(walletAdapter.getSnapshot())

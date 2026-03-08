@@ -35,6 +35,12 @@ function normalizeUserName(value) {
   return trimmed
 }
 
+function getPlayerCustomData(data) {
+  const custom = data?.custom
+  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
+  return custom
+}
+
 function deriveAdminUrlFromEnv() {
   return (
     (process.env.PUBLIC_WS_URL || '').replace(/^wss:/, 'https:').replace(/^ws:/, 'http:').replace(/\/ws\/?$/, '') ||
@@ -64,6 +70,7 @@ function serializePlayerForAdmin(player) {
     name: player.data.name,
     avatar: player.data.avatar,
     sessionAvatar: player.data.sessionAvatar,
+    custom: getPlayerCustomData(player.data),
     position: player.data.position,
     quaternion: player.data.quaternion,
     rank: player.data.rank,
@@ -958,6 +965,10 @@ export class ServerNetwork extends System {
       if (nextData.hasOwnProperty('avatar') || nextData.hasOwnProperty('sessionAvatar')) {
         playerUpdate.avatar = entity.data.avatar
         playerUpdate.sessionAvatar = entity.data.sessionAvatar
+        hasPlayerUpdate = true
+      }
+      if (nextData.hasOwnProperty('custom')) {
+        playerUpdate.custom = getPlayerCustomData(entity.data)
         hasPlayerUpdate = true
       }
       if (hasPlayerUpdate) {

@@ -230,6 +230,12 @@ function parseUserRank(value) {
   return Number.isFinite(rank) ? rank : Ranks.VISITOR
 }
 
+function getPlayerCustomData(data) {
+  const custom = data?.custom
+  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
+  return custom
+}
+
 function sendPacket(ws, name, payload) {
   try {
     ws.send(writePacket(name, payload))
@@ -246,6 +252,7 @@ function serializePlayersForAdmin(world) {
       name: player.data.name,
       avatar: player.data.avatar,
       sessionAvatar: player.data.sessionAvatar,
+      custom: getPlayerCustomData(player.data),
       position: player.data.position,
       quaternion: player.data.quaternion,
       rank: player.data.rank,
