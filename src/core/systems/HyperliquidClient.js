@@ -67,6 +67,26 @@ export class Hyperliquid extends System {
     this.pendingDeposit = false
   }
 
+  init() {
+    this.world.inject({
+      world: {
+        hyperliquid: () => ({
+          getPrice: ticker => this.getPrice(ticker),
+          getBalance: () => this.getBalance(),
+          getPositions: () => this.getPositions(),
+          getAvailableTickers: () => this.getAvailableTickers(),
+          buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
+          sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
+          closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
+          hasAgentKey: () => this.hasAgentKey(),
+          setupAgentKey: name => this.setupAgentKey(name),
+          deposit: amount => this.deposit(amount),
+          withdraw: (amount, destination) => this.withdraw(amount, destination),
+        }),
+      },
+    })
+  }
+
   bind({ address, walletAdapter, isConnected } = {}) {
     this.address = address || null
     this.walletAdapter = walletAdapter || null

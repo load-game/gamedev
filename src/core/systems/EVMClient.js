@@ -32,6 +32,24 @@ export class EVM extends System {
     this.connected = false
   }
 
+  init() {
+    this.world.inject({
+      world: {
+        evm: () => ({
+          getAddress: () => this.getAddress(),
+          isConnected: () => this.isConnected(),
+          getNativeBalance: address => this.getNativeBalance(address),
+          getTokenBalance: (tokenAddress, address, decimals) => this.getTokenBalance(tokenAddress, address, decimals),
+          getUSDCBalance: address => this.getUSDCBalance(address),
+          transferNative: (to, amount) => this.transferNative(to, amount),
+          transferToken: (tokenAddress, to, amount, decimals) =>
+            this.transferToken(tokenAddress, to, amount, decimals),
+          transferUSDC: (to, amount) => this.transferUSDC(to, amount),
+        }),
+      },
+    })
+  }
+
   bind({ walletAdapter, address, isConnected } = {}) {
     this.walletAdapter = walletAdapter || null
 
