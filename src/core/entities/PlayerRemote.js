@@ -314,6 +314,9 @@ export class PlayerRemote extends Entity {
       this.data.locomotionEmotes = this.locomotionEmotes
       this.avatar?.instance?.replaceLocomotionEmotes?.(this.locomotionEmotes, true)
     }
+    if (data.hasOwnProperty('custom')) {
+      this.data.custom = data.custom
+    }
     if (avatarChanged) {
       this.applyAvatar()
     }

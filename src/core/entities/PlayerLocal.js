@@ -1440,6 +1440,11 @@ export class PlayerLocal extends Entity {
       this.data.locomotionEmotes = this.locomotionEmotes
       this.avatar?.instance?.replaceLocomotionEmotes?.(this.locomotionEmotes, true)
     }
+    // Handle custom data for injected properties
+    if (data.hasOwnProperty('custom')) {
+      this.data.custom = data.custom
+      changed = true
+    }
     if (avatarChanged) {
       this.applyAvatar()
     }
