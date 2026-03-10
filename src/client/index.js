@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth'
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
+import { arbitrum } from '@privy-io/chains'
 
 import { storage } from '../core/storage'
 import { Client } from './world-client'
@@ -58,6 +59,9 @@ function createAuthError(message, status, { skipAuth = false } = {}) {
   if (skipAuth) err.skipAuth = true
   return err
 }
+
+const DEFAULT_EVM_CHAIN = arbitrum
+const DEFAULT_EVM_CHAIN_ID = DEFAULT_EVM_CHAIN.id
 
 function toHexString(value) {
   const bytes = new TextEncoder().encode(String(value))
@@ -204,9 +208,9 @@ function getProviderChainId(provider) {
     .request({ method: 'eth_chainId' })
     .then(chainId => {
       const parsed = Number.parseInt(chainId, 16)
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_EVM_CHAIN_ID
     })
-    .catch(() => 1)
+    .catch(() => DEFAULT_EVM_CHAIN_ID)
 }
 
 async function requestWalletAddress(provider) {
@@ -992,6 +996,8 @@ function RootApp() {
     <PrivyProvider
       appId={privyAppId}
       config={{
+        supportedChains: [DEFAULT_EVM_CHAIN],
+        defaultChain: DEFAULT_EVM_CHAIN,
         appearance: {
           walletChainType: 'ethereum-and-solana',
         },
