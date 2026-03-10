@@ -112,12 +112,13 @@ Sets a query parameter in the browsers url
 
 Opens a link, defaults to new tab.
 
-### `.evm()`
+### `.evm(chainId?)`
 
 Returns the EVM helper API.
 
 ```js
 const evm = world.evm()
+const arbitrum = world.evm(42161)
 ```
 
 The API is available on both client and server, but it is not identical in both places:
@@ -125,7 +126,22 @@ The API is available on both client and server, but it is not identical in both 
 - On the client, it exposes wallet-backed read and write methods.
 - On the server, it is read-only and backed by a public viem client.
 
-`player.evm` is the replicated player wallet address. On the local player, when an EVM wallet is connected, it typically matches `world.evm().getAddress()`.
+If `chainId` is provided, the API is bound to that chain. On the client, write methods on a bound API will switch the wallet first when needed.
+
+If `chainId` is omitted:
+
+- On the client, it uses the active wallet chain when an EVM wallet is connected, otherwise Ethereum mainnet (`1`).
+- On the server, it defaults to Ethereum mainnet (`1`).
+
+Built-in supported chains:
+
+- Ethereum mainnet (`1`)
+- Optimism (`10`)
+- Polygon (`137`)
+- Arbitrum (`42161`)
+- Base (`8453`)
+
+`player.evm` is the replicated player wallet address, and `player.evmChainId` is the replicated active EVM chain id. On the local player, when an EVM wallet is connected, they typically match `world.evm().getAddress()` and `world.evm().getChainId()`.
 
 #### `utils`
 
@@ -149,7 +165,7 @@ On the server this currently returns `false`.
 
 #### `getChainId()`
 
-Returns the active chain id.
+Returns the current target chain id for this EVM API instance.
 
 #### `readContract(params)`
 
@@ -173,7 +189,7 @@ On the client, `address` defaults to the active wallet. On the server, you shoul
 
 #### `getUSDCBalance(address?)`
 
-Returns Arbitrum USDC balance (`0xaf88...5831`) as a number.
+Returns USDC balance for the selected chain using the built-in token mapping.
 
 On the client, `address` defaults to the active wallet. On the server, you should pass an address explicitly.
 
@@ -188,6 +204,8 @@ Client-only. Sends a contract write through the connected wallet.
 #### `switchChain(params)`
 
 Client-only. Switches the connected wallet to a different chain.
+
+On `world.evm(chainId)`, calling `switchChain()` with no args switches to the bound chain.
 
 #### `transferNative(to, amount)`
 
@@ -214,7 +232,7 @@ Returns:
 
 #### `transferUSDC(to, amount)`
 
-Client-only. Sends Arbitrum USDC (`0xaf88...5831`) using 6 decimals.
+Client-only. Sends USDC for the selected chain using the built-in token mapping.
 
 Returns:
 

@@ -19,7 +19,7 @@ test('EVM client tracks bound wallet state', () => {
   assert.equal(evm.isConnected(), true)
 })
 
-test('EVM client injects world and player APIs', () => {
+test('EVM client injects world and player APIs', async () => {
   let injected = null
   const world = {
     inject(runtime) {
@@ -30,16 +30,21 @@ test('EVM client injects world and player APIs', () => {
   const evm = new EVM(world)
   evm.init()
   const runtime = injected.world.evm()
+  const arbitrumRuntime = injected.world.evm(42161)
 
   assert.equal(typeof injected.world.evm, 'function')
   assert.equal(injected.world.evm(), runtime)
+  assert.equal(injected.world.evm(42161), arbitrumRuntime)
   assert.equal(runtime.actions, undefined)
   assert.equal(runtime.connect, undefined)
   assert.equal(runtime.disconnect, undefined)
+  assert.equal(await runtime.getChainId(), 1)
+  assert.equal(await arbitrumRuntime.getChainId(), 42161)
   assert.equal(
     injected.player.evm.get({ data: { custom: { evm: '0x00000000000000000000000000000000000000AA' } } }),
     '0x00000000000000000000000000000000000000AA'
   )
+  assert.equal(injected.player.evmChainId.get({ data: { custom: { evmChainId: 42161 } } }), 42161)
   assert.equal(injected.player.evm.get({ data: { custom: { evm: null } } }), null)
   assert.equal(injected.player.evm.get({ data: { custom: null } }), null)
 })
@@ -55,18 +60,207 @@ test('EVM server injects world and player APIs', async () => {
   const evm = new ServerEVM(world)
   evm.init()
   const runtime = injected.world.evm()
+  const arbitrumRuntime = injected.world.evm(42161)
 
   assert.equal(typeof injected.world.evm, 'function')
   assert.equal(injected.world.evm(), runtime)
+  assert.equal(injected.world.evm(42161), arbitrumRuntime)
   assert.equal(runtime.actions, undefined)
   assert.equal(runtime.sendTransaction, undefined)
   assert.equal(runtime.writeContract, undefined)
   assert.equal(runtime.switchChain, undefined)
-  assert.equal(await runtime.getChainId(), evm.chain.id)
+  assert.equal(await runtime.getChainId(), 1)
+  assert.equal(await arbitrumRuntime.getChainId(), 42161)
   assert.equal(
     injected.player.evm.get({ data: { custom: { evm: '0x00000000000000000000000000000000000000AA' } } }),
     '0x00000000000000000000000000000000000000AA'
   )
+  assert.equal(injected.player.evmChainId.get({ data: { custom: { evmChainId: 42161 } } }), 42161)
+})
+
+test('EVM client uses fixed-chain public clients for multichain reads', async () => {
+  const calls = []
+  const evm = new EVM({})
+  evm.publicClients.set(42161, {
+    async getBalance({ address }) {
+      calls.push(['getBalance', address])
+      return 1500000000000000000n
+    },
+    async readContract(params) {
+      calls.push(['readContract', params])
+      return 2500000n
+    },
+    async waitForTransactionReceipt({ hash }) {
+      calls.push(['waitForTransactionReceipt', hash])
+      return { transactionHash: hash }
+    },
+  })
+
+  const runtime = evm.getRuntimeAPI(42161)
+  const address = '0x00000000000000000000000000000000000000AA'
+
+  assert.equal(await runtime.getChainId(), 42161)
+  assert.equal(await runtime.getNativeBalance(address), 1.5)
+  assert.equal(await runtime.getUSDCBalance(address), 2.5)
+  assert.equal(calls[0][0], 'getBalance')
+  assert.equal(calls[1][0], 'readContract')
+  assert.equal(calls[1][1].address.toLowerCase(), '0xaf88d065e77c8cc2239327c5edb3a432268e5831')
+})
+
+test('EVM client keeps unbound reads wallet-backed while chain state is unresolved', async () => {
+  const calls = []
+  const evm = new EVM({})
+  evm.publicClients.set(1, {
+    async getBalance() {
+      throw new Error('unexpected mainnet balance read')
+    },
+    async readContract() {
+      throw new Error('unexpected mainnet contract read')
+    },
+    async waitForTransactionReceipt() {
+      throw new Error('unexpected mainnet receipt read')
+    },
+  })
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    chainId: null,
+    walletAdapter: {
+      async getBalance({ address, request }) {
+        calls.push(['getBalance', address, request])
+        return 500000000000000000n
+      },
+      async readContract(params) {
+        calls.push(['readContract', params])
+        return 25n
+      },
+      async waitForTransactionReceipt({ hash }) {
+        calls.push(['waitForTransactionReceipt', hash])
+        return { transactionHash: hash }
+      },
+    },
+  })
+
+  const address = '0x00000000000000000000000000000000000000AA'
+  assert.equal(await evm.getNativeBalance(address), 0.5)
+  assert.equal(await evm.readContract({ address, abi: [], functionName: 'balanceOf', args: [address] }), 25n)
+  assert.equal((await evm.waitForTransactionReceipt({ hash: '0xhash' })).transactionHash, '0xhash')
+  assert.deepEqual(
+    calls.map(call => call[0]),
+    ['getBalance', 'readContract', 'waitForTransactionReceipt']
+  )
+})
+
+test('EVM client resolves wallet chain before unbound USDC reads', async () => {
+  const calls = []
+  const evm = new EVM({})
+  evm.publicClients.set(42161, {
+    async readContract(params) {
+      calls.push(['readContract', params])
+      return 3500000n
+    },
+  })
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    chainId: null,
+    walletAdapter: {
+      async getChainId({ request }) {
+        calls.push(['getChainId', request])
+        return 42161
+      },
+    },
+  })
+
+  const runtime = evm.getRuntimeAPI()
+  const address = '0x00000000000000000000000000000000000000AA'
+
+  assert.equal(await runtime.getUSDCBalance(address), 3.5)
+  assert.equal(await runtime.getChainId(), 42161)
+  assert.deepEqual(
+    calls.map(call => call[0]),
+    ['getChainId', 'readContract']
+  )
+  assert.equal(calls[1][1].address.toLowerCase(), '0xaf88d065e77c8cc2239327c5edb3a432268e5831')
+})
+
+test('EVM client fixed-chain writes switch wallet before sending', async () => {
+  const calls = []
+  let currentChainId = 1
+  const evm = new EVM({})
+  evm.publicClients.set(42161, {
+    async waitForTransactionReceipt({ hash }) {
+      calls.push(['waitForTransactionReceipt', hash])
+      return { transactionHash: hash }
+    },
+  })
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    chainId: currentChainId,
+    walletAdapter: {
+      async getChainId() {
+        calls.push(['getChainId', currentChainId])
+        return currentChainId
+      },
+      async switchChain({ chainId }) {
+        calls.push(['switchChain', chainId])
+        currentChainId = chainId
+        return { id: chainId }
+      },
+      async sendTransaction(params) {
+        calls.push(['sendTransaction', params])
+        return '0xnativehash'
+      },
+    },
+  })
+
+  const result = await evm.getRuntimeAPI(42161).transferNative(
+    '0x00000000000000000000000000000000000000BB',
+    '0.25'
+  )
+
+  assert.equal(result.hash, '0xnativehash')
+  assert.deepEqual(
+    calls.map(call => call[0]),
+    ['getChainId', 'switchChain', 'sendTransaction', 'waitForTransactionReceipt']
+  )
+  assert.equal(calls[1][1], 42161)
+})
+
+test('EVM client resolves wallet chain before unbound USDC transfers', async () => {
+  const calls = []
+  const evm = new EVM({})
+  evm.publicClients.set(42161, {
+    async waitForTransactionReceipt({ hash }) {
+      calls.push(['waitForTransactionReceipt', hash])
+      return { transactionHash: hash }
+    },
+  })
+  evm.bind({
+    address: '0x00000000000000000000000000000000000000AA',
+    isConnected: true,
+    chainId: null,
+    walletAdapter: {
+      async getChainId({ request }) {
+        calls.push(['getChainId', request])
+        return 42161
+      },
+      async writeContract(params) {
+        calls.push(['writeContract', params])
+        return '0xusdchash'
+      },
+    },
+  })
+
+  const result = await evm.transferUSDC('0x00000000000000000000000000000000000000CC', '1.5')
+
+  assert.equal(result.hash, '0xusdchash')
+  assert.deepEqual(
+    calls.map(call => call[0]),
+    ['getChainId', 'getChainId', 'writeContract', 'waitForTransactionReceipt']
+  )
+  assert.equal(calls[2][1].address.toLowerCase(), '0xaf88d065e77c8cc2239327c5edb3a432268e5831')
 })
 
 test('EVM client transfers native token via wallet adapter', async () => {
@@ -99,17 +293,23 @@ test('EVM client transfers native token via wallet adapter', async () => {
 test('EVM client transfers USDC via ERC20 transfer', async () => {
   const calls = []
   const evm = new EVM({})
+  evm.publicClients.set(42161, {
+    async waitForTransactionReceipt({ hash }) {
+      calls.push(['waitForTransactionReceipt', hash])
+      return { transactionHash: hash }
+    },
+  })
   evm.bind({
     address: '0x00000000000000000000000000000000000000AA',
     isConnected: true,
+    chainId: 42161,
     walletAdapter: {
+      async getChainId() {
+        return 42161
+      },
       async writeContract(params) {
         calls.push(['writeContract', params])
         return '0xusdchash'
-      },
-      async waitForTransactionReceipt({ hash }) {
-        calls.push(['waitForTransactionReceipt', hash])
-        return { transactionHash: hash }
       },
     },
   })
@@ -170,6 +370,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
     custom: {
       nickname: 'tester',
       evm: getAddress('0x00000000000000000000000000000000000000AA'),
+      evmChainId: 42161,
     },
   })
   assert.deepEqual(sent[0], [
@@ -179,6 +380,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
       custom: {
         nickname: 'tester',
         evm: getAddress('0x00000000000000000000000000000000000000AA'),
+        evmChainId: 42161,
       },
     },
   ])
@@ -187,6 +389,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
     custom: {
       nickname: 'tester',
       evm: '0x00000000000000000000000000000000000000BB',
+      evmChainId: 42161,
     },
   })
   assert.deepEqual(sent[1], [
@@ -196,6 +399,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
       custom: {
         nickname: 'tester',
         evm: '0x00000000000000000000000000000000000000BB',
+        evmChainId: 42161,
       },
     },
   ])
@@ -211,6 +415,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
     custom: {
       nickname: 'tester',
       evm: null,
+      evmChainId: null,
     },
   })
   assert.deepEqual(sent[2], [
@@ -220,6 +425,7 @@ test('EVM client syncs connected wallet state into player custom data', () => {
       custom: {
         nickname: 'tester',
         evm: null,
+        evmChainId: null,
       },
     },
   ])
@@ -267,6 +473,7 @@ test('EVM client does not resync when wallet address is unchanged', () => {
   assert.deepEqual(modified[0], {
     custom: {
       evm: getAddress('0x00000000000000000000000000000000000000AA'),
+      evmChainId: 42161,
     },
   })
   assert.deepEqual(sent[0], [
@@ -275,6 +482,7 @@ test('EVM client does not resync when wallet address is unchanged', () => {
       id: 'player-1',
       custom: {
         evm: getAddress('0x00000000000000000000000000000000000000AA'),
+        evmChainId: 42161,
       },
     },
   ])

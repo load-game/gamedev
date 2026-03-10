@@ -60,6 +60,7 @@ export function Client({ wsUrl, apiUrl, authUrl, connectionStatus, onSetup }) {
       const normalized = {
         address: snapshot?.address || null,
         connected: !!snapshot?.connected,
+        chainId: snapshot?.chainId ?? null,
         updatedAt: Date.now(),
       }
       globalThis.__runtimeResolvedWallet = normalized

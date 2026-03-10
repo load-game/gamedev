@@ -1,26 +1,42 @@
+import { createPublicClient, formatEther, formatUnits, getAddress, http, parseUnits } from 'viem'
+import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
+
 import { System } from './System'
-import { formatEther, formatUnits, getAddress, parseUnits } from 'viem'
 
-const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
-const USDC_DECIMALS = 6
-
-function getPlayerCustom(player) {
-  const custom = player?.data?.custom
-  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
-  return custom
-}
-
-function getPlayerEvmAddress(player) {
-  const value = getPlayerCustom(player)?.evm
-  return typeof value === 'string' && value ? value : null
-}
-
-function buildPlayerCustomPatch(player, address) {
-  const current = getPlayerCustom(player)
-  return {
-    ...(current || {}),
-    evm: address || null,
-  }
+const DEFAULT_CHAIN_ID = mainnet.id
+const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon]
+const SUPPORTED_CHAINS_BY_ID = new Map(SUPPORTED_CHAINS.map(chain => [chain.id, chain]))
+const TOKENS_BY_CHAIN_ID = {
+  [mainnet.id]: {
+    usdc: {
+      address: getAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+      decimals: 6,
+    },
+  },
+  [arbitrum.id]: {
+    usdc: {
+      address: getAddress('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+      decimals: 6,
+    },
+  },
+  [base.id]: {
+    usdc: {
+      address: getAddress('0x833589fCD6EDB6E08f4c7C32D4f71b54bdA02913'),
+      decimals: 6,
+    },
+  },
+  [optimism.id]: {
+    usdc: {
+      address: getAddress('0x0b2C639c533813f4Aa9D7837CaF62653d097Ff85'),
+      decimals: 6,
+    },
+  },
+  [polygon.id]: {
+    usdc: {
+      address: getAddress('0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
+      decimals: 6,
+    },
+  },
 }
 
 const ERC20_ABI = [
@@ -43,6 +59,64 @@ const ERC20_ABI = [
   },
 ]
 
+function getPlayerCustom(player) {
+  const custom = player?.data?.custom
+  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
+  return custom
+}
+
+function getPlayerEvmAddress(player) {
+  const value = getPlayerCustom(player)?.evm
+  return typeof value === 'string' && value ? value : null
+}
+
+function getPlayerEvmChainId(player) {
+  const value = getPlayerCustom(player)?.evmChainId
+  return Number.isInteger(value) && value > 0 ? value : null
+}
+
+function buildPlayerCustomPatch(player, address, chainId) {
+  const current = getPlayerCustom(player)
+  return {
+    ...(current || {}),
+    evm: address || null,
+    evmChainId: Number.isInteger(chainId) && chainId > 0 ? chainId : null,
+  }
+}
+
+function normalizeChainId(value) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    if (/^0x[0-9a-fA-F]+$/.test(trimmed)) {
+      const parsedHex = Number.parseInt(trimmed, 16)
+      return Number.isInteger(parsedHex) && parsedHex > 0 ? parsedHex : null
+    }
+    const parsedDec = Number.parseInt(trimmed, 10)
+    return Number.isInteger(parsedDec) && parsedDec > 0 ? parsedDec : null
+  }
+  return null
+}
+
+function extractInjectedChainId(args) {
+  if (!Array.isArray(args) || !args.length) return null
+  return normalizeChainId(args[0]) || normalizeChainId(args[1]) || null
+}
+
+function sameAddress(a, b) {
+  if (!a || !b) return false
+  return a.toLowerCase() === b.toLowerCase()
+}
+
+function sameWalletState(currentAddress, currentChainId, nextAddress, nextChainId) {
+  const addressesMatch =
+    (!currentAddress && !nextAddress) || (currentAddress && nextAddress && sameAddress(currentAddress, nextAddress))
+  return addressesMatch && (currentChainId || null) === (nextChainId || null)
+}
+
 export class EVM extends System {
   constructor(world) {
     super(world)
@@ -53,45 +127,65 @@ export class EVM extends System {
     this.pendingPlayerSync = false
     this.pendingNetworkSync = false
     this.networkAddress = null
+    this.networkChainId = null
+    this.publicClients = new Map()
+    this.runtimeAPIs = new Map()
     this.utils = { formatEther, formatUnits, getAddress, parseUnits }
     this.abis = {
       erc20: ERC20_ABI,
-    }
-    this.runtimeAPI = {
-      utils: this.utils,
-      abis: this.abis,
-      getAddress: this.getAddress.bind(this),
-      isConnected: this.isConnected.bind(this),
-      getChainId: this.getChainId.bind(this),
-      readContract: this.readContract.bind(this),
-      sendTransaction: this.sendTransaction.bind(this),
-      writeContract: this.writeContract.bind(this),
-      waitForTransactionReceipt: this.waitForTransactionReceipt.bind(this),
-      switchChain: this.switchChain.bind(this),
-      getNativeBalance: this.getNativeBalance.bind(this),
-      getTokenBalance: this.getTokenBalance.bind(this),
-      getUSDCBalance: this.getUSDCBalance.bind(this),
-      transferNative: this.transferNative.bind(this),
-      transferToken: this.transferToken.bind(this),
-      transferUSDC: this.transferUSDC.bind(this),
     }
   }
 
   init() {
     this.world.inject?.({
       world: {
-        evm: () => this.getRuntimeAPI(),
+        evm: (...args) => this.getRuntimeAPI(extractInjectedChainId(args)),
       },
       player: {
         evm: {
           get: player => getPlayerEvmAddress(player),
         },
+        evmChainId: {
+          get: player => getPlayerEvmChainId(player),
+        },
       },
     })
   }
 
-  getRuntimeAPI() {
-    return this.runtimeAPI
+  getRuntimeAPI(chainId = null) {
+    const boundChainId = normalizeChainId(chainId)
+    if (boundChainId) {
+      this._requireSupportedChain(boundChainId)
+    }
+
+    const key = boundChainId || 'default'
+    if (this.runtimeAPIs.has(key)) {
+      return this.runtimeAPIs.get(key)
+    }
+
+    const runtimeAPI = {
+      utils: this.utils,
+      abis: this.abis,
+      getAddress: () => this.getAddress(),
+      isConnected: () => this.isConnected(),
+      getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
+      readContract: params => this.readContract(params, { chainId: boundChainId }),
+      sendTransaction: params => this.sendTransaction(params, { chainId: boundChainId }),
+      writeContract: params => this.writeContract(params, { chainId: boundChainId }),
+      waitForTransactionReceipt: params => this.waitForTransactionReceipt(params, { chainId: boundChainId }),
+      switchChain: params => this.switchChain(params, { chainId: boundChainId }),
+      getNativeBalance: address => this.getNativeBalance(address, { chainId: boundChainId }),
+      getTokenBalance: (tokenAddress, address, decimals) =>
+        this.getTokenBalance(tokenAddress, address, decimals, { chainId: boundChainId }),
+      getUSDCBalance: address => this.getUSDCBalance(address, { chainId: boundChainId }),
+      transferNative: (to, amount) => this.transferNative(to, amount, { chainId: boundChainId }),
+      transferToken: (tokenAddress, to, amount, decimals) =>
+        this.transferToken(tokenAddress, to, amount, decimals, { chainId: boundChainId }),
+      transferUSDC: (to, amount) => this.transferUSDC(to, amount, { chainId: boundChainId }),
+    }
+
+    this.runtimeAPIs.set(key, runtimeAPI)
+    return runtimeAPI
   }
 
   start() {
@@ -129,11 +223,7 @@ export class EVM extends System {
       this.connected = this.walletAdapter?.isConnected?.() ?? null
     }
 
-    if (Number.isInteger(chainId) && chainId > 0) {
-      this.chainId = chainId
-    } else {
-      this.chainId = null
-    }
+    this.chainId = normalizeChainId(chainId)
 
     this.pendingPlayerSync = true
     this.pendingNetworkSync = true
@@ -150,11 +240,35 @@ export class EVM extends System {
     return !!this.walletAdapter?.isConnected?.()
   }
 
-  async getChainId({ request = false } = {}) {
+  async getChainId({ request = false, chainId } = {}) {
+    const requestedChainId = normalizeChainId(chainId)
+    if (requestedChainId) {
+      this._requireSupportedChain(requestedChainId)
+      return requestedChainId
+    }
+
     if (Number.isInteger(this.chainId) && this.chainId > 0) {
       return this.chainId
     }
-    return this._requireWalletAdapter().getChainId({ request })
+
+    if (this.isConnected() && typeof this.walletAdapter?.getChainId === 'function') {
+      const activeChainId = normalizeChainId(await this.walletAdapter.getChainId({ request }))
+      if (activeChainId) {
+        this.chainId = activeChainId
+        return activeChainId
+      }
+    }
+
+    return DEFAULT_CHAIN_ID
+  }
+
+  _mergeRuntimeOptions(params, boundChainId) {
+    const options = params && typeof params === 'object' && !Array.isArray(params) ? params : {}
+    if (!boundChainId) return options
+    return {
+      ...options,
+      chainId: boundChainId,
+    }
   }
 
   _requireWalletAdapter() {
@@ -162,6 +276,35 @@ export class EVM extends System {
       throw new Error('Wallet not connected')
     }
     return this.walletAdapter
+  }
+
+  _requireSupportedChain(chainId) {
+    const chain = SUPPORTED_CHAINS_BY_ID.get(chainId)
+    if (!chain) {
+      throw new Error(`Unsupported chainId: ${chainId}`)
+    }
+    return chain
+  }
+
+  _getPublicClient(chainId) {
+    const targetChain = this._requireSupportedChain(chainId)
+    let publicClient = this.publicClients.get(targetChain.id)
+    if (!publicClient) {
+      publicClient = createPublicClient({
+        chain: targetChain,
+        transport: http(),
+      })
+      this.publicClients.set(targetChain.id, publicClient)
+    }
+    return publicClient
+  }
+
+  _getTokenConfig(symbol, chainId) {
+    const token = TOKENS_BY_CHAIN_ID[chainId]?.[symbol] || null
+    if (!token) {
+      throw new Error(`${symbol.toUpperCase()} not configured for chainId ${chainId}`)
+    }
+    return token
   }
 
   _normalizeAddress(address, fieldName = 'address') {
@@ -194,21 +337,80 @@ export class EVM extends System {
     }
   }
 
+  async _resolveOperationChainId(explicitChainId = null) {
+    const requestedChainId = normalizeChainId(explicitChainId)
+    if (requestedChainId) {
+      this._requireSupportedChain(requestedChainId)
+      return requestedChainId
+    }
+
+    if (Number.isInteger(this.chainId) && this.chainId > 0) {
+      return this.chainId
+    }
+
+    if (this.isConnected() && typeof this.walletAdapter?.getChainId === 'function') {
+      const activeChainId = normalizeChainId(await this.walletAdapter.getChainId({ request: false }))
+      if (activeChainId) {
+        this.chainId = activeChainId
+        return activeChainId
+      }
+    }
+
+    return DEFAULT_CHAIN_ID
+  }
+
+  _resolveReadContext({ chainId } = {}) {
+    const requestedChainId = normalizeChainId(chainId)
+    if (requestedChainId) {
+      return {
+        chainId: this._requireSupportedChain(requestedChainId).id,
+        useWalletAdapter: false,
+      }
+    }
+
+    if (Number.isInteger(this.chainId) && this.chainId > 0) {
+      if (SUPPORTED_CHAINS_BY_ID.has(this.chainId)) {
+        return {
+          chainId: this.chainId,
+          useWalletAdapter: false,
+        }
+      }
+      return {
+        chainId: this.chainId,
+        useWalletAdapter: true,
+      }
+    }
+
+    return {
+      chainId: DEFAULT_CHAIN_ID,
+      useWalletAdapter: false,
+    }
+  }
+
+  async _ensureWalletChain(chainId = null) {
+    if (!chainId) return null
+    const targetChainId = this._requireSupportedChain(chainId).id
+    const currentChainId = normalizeChainId(await this._requireWalletAdapter().getChainId({ request: true }))
+
+    if (currentChainId !== targetChainId) {
+      await this.switchChain({ chainId: targetChainId })
+    }
+
+    return targetChainId
+  }
+
   _syncPlayerState() {
     if (!this.pendingPlayerSync) return
     const player = this.world?.entities?.player
     if (!player || typeof player.modify !== 'function') return
 
     const nextAddress = this.isConnected() ? this.getAddress() : null
+    const nextChainId = this.isConnected() ? normalizeChainId(this.chainId) : null
     const currentAddress = getPlayerEvmAddress(player)
-    const sameAddress =
-      (!currentAddress && !nextAddress) ||
-      (currentAddress &&
-        nextAddress &&
-        currentAddress.toLowerCase() === nextAddress.toLowerCase())
+    const currentChainId = getPlayerEvmChainId(player)
 
-    if (!sameAddress) {
-      player.modify({ custom: buildPlayerCustomPatch(player, nextAddress) })
+    if (!sameWalletState(currentAddress, currentChainId, nextAddress, nextChainId)) {
+      player.modify({ custom: buildPlayerCustomPatch(player, nextAddress, nextChainId) })
     }
 
     this.pendingPlayerSync = false
@@ -224,54 +426,128 @@ export class EVM extends System {
     if (!player?.data?.id) return
 
     const nextAddress = this.isConnected() ? this.getAddress() : null
-    const sameAddress =
-      (!this.networkAddress && !nextAddress) ||
-      (this.networkAddress &&
-        nextAddress &&
-        this.networkAddress.toLowerCase() === nextAddress.toLowerCase())
+    const nextChainId = this.isConnected() ? normalizeChainId(this.chainId) : null
 
-    if (!sameAddress) {
+    if (!sameWalletState(this.networkAddress, this.networkChainId, nextAddress, nextChainId)) {
       network.send('entityModified', {
         id: player.data.id,
-        custom: buildPlayerCustomPatch(player, nextAddress),
+        custom: buildPlayerCustomPatch(player, nextAddress, nextChainId),
       })
     }
 
     this.networkAddress = nextAddress
+    this.networkChainId = nextChainId
     this.pendingNetworkSync = false
   }
 
-  async readContract(params) {
-    return this._requireWalletAdapter().readContract(params)
+  async readContract(params, { chainId } = {}) {
+    const request = params && typeof params === 'object' && !Array.isArray(params) ? { ...params } : params
+    const requestedChainId = normalizeChainId(request?.chainId) || normalizeChainId(chainId)
+    if (request && typeof request === 'object' && !Array.isArray(request)) {
+      delete request.chainId
+    }
+
+    if (!requestedChainId && !normalizeChainId(this.chainId) && this.isConnected() && this.walletAdapter?.readContract) {
+      return this.walletAdapter.readContract(request)
+    }
+
+    const context = this._resolveReadContext({ chainId: requestedChainId })
+    if (context.useWalletAdapter) {
+      return this._requireWalletAdapter().readContract(request)
+    }
+    return this._getPublicClient(context.chainId).readContract(request)
   }
 
-  async sendTransaction(params) {
-    return this._requireWalletAdapter().sendTransaction(params)
-  }
-
-  async writeContract(params) {
-    return this._requireWalletAdapter().writeContract(params)
-  }
-
-  async waitForTransactionReceipt(params) {
-    return this._requireWalletAdapter().waitForTransactionReceipt(params)
-  }
-
-  async switchChain(params) {
-    const result = await this._requireWalletAdapter().switchChain(params)
-    this.chainId = Number.isInteger(result?.id) ? result.id : this.chainId
-    return result
-  }
-
-  async getNativeBalance(address = this.getAddress()) {
+  async sendTransaction(params, { chainId } = {}) {
     const walletAdapter = this._requireWalletAdapter()
+    const txParams = params && typeof params === 'object' && !Array.isArray(params) ? { ...params } : {}
+    const requestedChainId = normalizeChainId(txParams.chainId) || normalizeChainId(chainId)
+    delete txParams.chainId
+
+    if (requestedChainId) {
+      await this._ensureWalletChain(requestedChainId)
+    }
+
+    return walletAdapter.sendTransaction(txParams)
+  }
+
+  async writeContract(params, { chainId } = {}) {
+    const walletAdapter = this._requireWalletAdapter()
+    const txParams = params && typeof params === 'object' && !Array.isArray(params) ? { ...params } : {}
+    const requestedChainId = normalizeChainId(txParams.chainId) || normalizeChainId(chainId)
+    delete txParams.chainId
+
+    if (requestedChainId) {
+      await this._ensureWalletChain(requestedChainId)
+    }
+
+    return walletAdapter.writeContract(txParams)
+  }
+
+  async waitForTransactionReceipt(params, { chainId } = {}) {
+    const request = params && typeof params === 'object' && !Array.isArray(params) ? { ...params } : params
+    const requestedChainId = normalizeChainId(request?.chainId) || normalizeChainId(chainId)
+    if (request && typeof request === 'object' && !Array.isArray(request)) {
+      delete request.chainId
+    }
+
+    if (
+      !requestedChainId &&
+      !normalizeChainId(this.chainId) &&
+      this.isConnected() &&
+      this.walletAdapter?.waitForTransactionReceipt
+    ) {
+      return this.walletAdapter.waitForTransactionReceipt(request)
+    }
+
+    const context = this._resolveReadContext({ chainId: requestedChainId })
+    if (context.useWalletAdapter) {
+      return this._requireWalletAdapter().waitForTransactionReceipt(request)
+    }
+    return this._getPublicClient(context.chainId).waitForTransactionReceipt(request)
+  }
+
+  async switchChain(params, { chainId } = {}) {
+    const requestedChainId =
+      normalizeChainId(typeof params === 'object' && params !== null ? params.chainId : params) || normalizeChainId(chainId)
+
+    if (!requestedChainId) {
+      throw new Error('chainId is required')
+    }
+
+    const targetChainId = this._requireSupportedChain(requestedChainId).id
+    const result = await this._requireWalletAdapter().switchChain({ chainId: targetChainId })
+    this.chainId = normalizeChainId(result?.id) || targetChainId
+    this.pendingPlayerSync = true
+    this.pendingNetworkSync = true
+    this._syncPlayerState()
+    this._syncNetworkState()
+    return {
+      id: this.chainId,
+    }
+  }
+
+  async getNativeBalance(address = this.getAddress(), { chainId } = {}) {
     const target = this._normalizeAddress(address, 'address')
-    const balance = await walletAdapter.getBalance({ address: target, request: false })
+    const requestedChainId = normalizeChainId(chainId)
+
+    if (!requestedChainId && !normalizeChainId(this.chainId) && this.isConnected() && this.walletAdapter?.getBalance) {
+      const balance = await this.walletAdapter.getBalance({ address: target, request: false })
+      return Number(formatEther(balance))
+    }
+
+    const context = this._resolveReadContext({ chainId: requestedChainId })
+
+    if (context.useWalletAdapter) {
+      const balance = await this._requireWalletAdapter().getBalance({ address: target, request: false })
+      return Number(formatEther(balance))
+    }
+
+    const balance = await this._getPublicClient(context.chainId).getBalance({ address: target })
     return Number(formatEther(balance))
   }
 
-  async getTokenBalance(tokenAddress, address = this.getAddress(), decimals = 18) {
-    const walletAdapter = this._requireWalletAdapter()
+  async getTokenBalance(tokenAddress, address = this.getAddress(), decimals = 18, { chainId } = {}) {
     const token = this._normalizeAddress(tokenAddress, 'tokenAddress')
     const owner = this._normalizeAddress(address, 'address')
 
@@ -279,30 +555,40 @@ export class EVM extends System {
       throw new Error('Invalid decimals')
     }
 
-    const balance = await walletAdapter.readContract({
-      address: token,
-      abi: ERC20_ABI,
-      functionName: 'balanceOf',
-      args: [owner],
-    })
+    const balance = await this.readContract(
+      {
+        address: token,
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [owner],
+      },
+      { chainId }
+    )
 
     return Number(formatUnits(balance, decimals))
   }
 
-  async getUSDCBalance(address = this.getAddress()) {
-    return this.getTokenBalance(ARBITRUM_USDC_ADDRESS, address, USDC_DECIMALS)
+  async getUSDCBalance(address = this.getAddress(), { chainId } = {}) {
+    const targetChainId = await this._resolveOperationChainId(chainId)
+    const usdc = this._getTokenConfig('usdc', targetChainId)
+    return this.getTokenBalance(usdc.address, address, usdc.decimals, { chainId: targetChainId })
   }
 
-  async transferNative(to, amount) {
+  async transferNative(to, amount, { chainId } = {}) {
     const walletAdapter = this._requireWalletAdapter()
     const destination = this._normalizeAddress(to, 'to')
     const value = this._parseAmountToUnits(amount, 18, 'amount')
+    const targetChainId = normalizeChainId(chainId)
+
+    if (targetChainId) {
+      await this._ensureWalletChain(targetChainId)
+    }
 
     const hash = await walletAdapter.sendTransaction({
       to: destination,
       value,
     })
-    const receipt = await walletAdapter.waitForTransactionReceipt({ hash })
+    const receipt = await this.waitForTransactionReceipt({ hash }, { chainId: targetChainId })
 
     return {
       hash: receipt?.transactionHash || hash,
@@ -310,13 +596,18 @@ export class EVM extends System {
     }
   }
 
-  async transferToken(tokenAddress, to, amount, decimals = 18) {
+  async transferToken(tokenAddress, to, amount, decimals = 18, { chainId } = {}) {
     const walletAdapter = this._requireWalletAdapter()
     const token = this._normalizeAddress(tokenAddress, 'tokenAddress')
     const destination = this._normalizeAddress(to, 'to')
+    const targetChainId = normalizeChainId(chainId)
 
     if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
       throw new Error('Invalid decimals')
+    }
+
+    if (targetChainId) {
+      await this._ensureWalletChain(targetChainId)
     }
 
     const value = this._parseAmountToUnits(amount, decimals, 'amount')
@@ -326,7 +617,7 @@ export class EVM extends System {
       functionName: 'transfer',
       args: [destination, value],
     })
-    const receipt = await walletAdapter.waitForTransactionReceipt({ hash })
+    const receipt = await this.waitForTransactionReceipt({ hash }, { chainId: targetChainId })
 
     return {
       hash: receipt?.transactionHash || hash,
@@ -334,7 +625,9 @@ export class EVM extends System {
     }
   }
 
-  async transferUSDC(to, amount) {
-    return this.transferToken(ARBITRUM_USDC_ADDRESS, to, amount, USDC_DECIMALS)
+  async transferUSDC(to, amount, { chainId } = {}) {
+    const targetChainId = await this._resolveOperationChainId(chainId)
+    const usdc = this._getTokenConfig('usdc', targetChainId)
+    return this.transferToken(usdc.address, to, amount, usdc.decimals, { chainId: targetChainId })
   }
 }
