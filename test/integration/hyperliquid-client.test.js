@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { getAddress } from 'viem'
 
 import { EVM } from '../../src/core/systems/EVMClient.js'
+import { EVM as ServerEVM } from '../../src/core/systems/EVMServer.js'
 import { Hyperliquid } from '../../src/core/systems/HyperliquidClient.js'
 
 test('EVM client tracks bound wallet state', () => {
@@ -31,6 +32,8 @@ test('EVM client injects world and player APIs', () => {
   const runtime = injected.world.evm()
 
   assert.equal(typeof injected.world.evm, 'function')
+  assert.equal(injected.world.evm(), runtime)
+  assert.equal(runtime.actions, undefined)
   assert.equal(runtime.connect, undefined)
   assert.equal(runtime.disconnect, undefined)
   assert.equal(
@@ -39,6 +42,31 @@ test('EVM client injects world and player APIs', () => {
   )
   assert.equal(injected.player.evm.get({ data: { custom: { evm: null } } }), null)
   assert.equal(injected.player.evm.get({ data: { custom: null } }), null)
+})
+
+test('EVM server injects world and player APIs', async () => {
+  let injected = null
+  const world = {
+    inject(runtime) {
+      injected = runtime
+    },
+  }
+
+  const evm = new ServerEVM(world)
+  evm.init()
+  const runtime = injected.world.evm()
+
+  assert.equal(typeof injected.world.evm, 'function')
+  assert.equal(injected.world.evm(), runtime)
+  assert.equal(runtime.actions, undefined)
+  assert.equal(runtime.sendTransaction, undefined)
+  assert.equal(runtime.writeContract, undefined)
+  assert.equal(runtime.switchChain, undefined)
+  assert.equal(await runtime.getChainId(), evm.chain.id)
+  assert.equal(
+    injected.player.evm.get({ data: { custom: { evm: '0x00000000000000000000000000000000000000AA' } } }),
+    '0x00000000000000000000000000000000000000AA'
+  )
 })
 
 test('EVM client transfers native token via wallet adapter', async () => {

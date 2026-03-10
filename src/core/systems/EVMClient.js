@@ -56,17 +56,24 @@ export class EVM extends System {
     this.utils = { formatEther, formatUnits, getAddress, parseUnits }
     this.abis = {
       erc20: ERC20_ABI,
-      erc721: null,
     }
-    this.actions = {
-      getBalance: params => this._requireWalletAdapter().getBalance(params),
-      readContract: params => this._requireWalletAdapter().readContract(params),
-      sendTransaction: params => this._requireWalletAdapter().sendTransaction(params),
-      writeContract: params => this._requireWalletAdapter().writeContract(params),
-      waitForTransactionReceipt: params => this._requireWalletAdapter().waitForTransactionReceipt(params),
-      getChainId: params => this._requireWalletAdapter().getChainId(params),
-      switchChain: params => this._requireWalletAdapter().switchChain(params),
-      signTypedData: params => this._requireWalletAdapter().signTypedData(params),
+    this.runtimeAPI = {
+      utils: this.utils,
+      abis: this.abis,
+      getAddress: this.getAddress.bind(this),
+      isConnected: this.isConnected.bind(this),
+      getChainId: this.getChainId.bind(this),
+      readContract: this.readContract.bind(this),
+      sendTransaction: this.sendTransaction.bind(this),
+      writeContract: this.writeContract.bind(this),
+      waitForTransactionReceipt: this.waitForTransactionReceipt.bind(this),
+      switchChain: this.switchChain.bind(this),
+      getNativeBalance: this.getNativeBalance.bind(this),
+      getTokenBalance: this.getTokenBalance.bind(this),
+      getUSDCBalance: this.getUSDCBalance.bind(this),
+      transferNative: this.transferNative.bind(this),
+      transferToken: this.transferToken.bind(this),
+      transferUSDC: this.transferUSDC.bind(this),
     }
   }
 
@@ -84,25 +91,7 @@ export class EVM extends System {
   }
 
   getRuntimeAPI() {
-    return {
-      actions: this.actions,
-      utils: this.utils,
-      abis: this.abis,
-      getAddress: () => this.getAddress(),
-      isConnected: () => this.isConnected(),
-      getChainId: params => this.getChainId?.(params),
-      readContract: params => this.readContract?.(params),
-      sendTransaction: params => this.sendTransaction?.(params),
-      writeContract: params => this.writeContract?.(params),
-      waitForTransactionReceipt: params => this.waitForTransactionReceipt?.(params),
-      switchChain: params => this.switchChain?.(params),
-      getNativeBalance: address => this.getNativeBalance(address),
-      getTokenBalance: (tokenAddress, address, decimals) => this.getTokenBalance(tokenAddress, address, decimals),
-      getUSDCBalance: address => this.getUSDCBalance(address),
-      transferNative: (to, amount) => this.transferNative(to, amount),
-      transferToken: (tokenAddress, to, amount, decimals) => this.transferToken(tokenAddress, to, amount, decimals),
-      transferUSDC: (to, amount) => this.transferUSDC(to, amount),
-    }
+    return this.runtimeAPI
   }
 
   start() {

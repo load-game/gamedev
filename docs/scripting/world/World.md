@@ -127,12 +127,6 @@ The API is available on both client and server, but it is not identical in both 
 
 `player.evm` is the replicated player wallet address. On the local player, when an EVM wallet is connected, it typically matches `world.evm().getAddress()`.
 
-#### `actions`
-
-Low-level EVM client methods for advanced usage.
-
-Apps can supply their own ABIs and call raw chain methods through `actions`, but the exact surface differs by environment.
-
 #### `utils`
 
 Shared EVM utility helpers, including address/units formatting helpers.
@@ -175,9 +169,13 @@ On the client, `address` defaults to the active wallet. On the server, you shoul
 
 Returns ERC-20 token balance as a number.
 
+On the client, `address` defaults to the active wallet. On the server, you should pass an address explicitly.
+
 #### `getUSDCBalance(address?)`
 
 Returns Arbitrum USDC balance (`0xaf88...5831`) as a number.
+
+On the client, `address` defaults to the active wallet. On the server, you should pass an address explicitly.
 
 #### `sendTransaction(params)`
 

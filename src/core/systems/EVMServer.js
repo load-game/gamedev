@@ -41,9 +41,19 @@ export class EVM extends System {
     this.utils = utils
     this.abis = {
       erc20: erc20Abi,
-      erc721: null,
     }
-    this.actions = this.publicClient
+    this.runtimeAPI = {
+      utils: this.utils,
+      abis: this.abis,
+      getAddress: this.getAddress.bind(this),
+      isConnected: this.isConnected.bind(this),
+      getChainId: this.getChainId.bind(this),
+      readContract: this.readContract.bind(this),
+      waitForTransactionReceipt: this.waitForTransactionReceipt.bind(this),
+      getNativeBalance: this.getNativeBalance.bind(this),
+      getTokenBalance: this.getTokenBalance.bind(this),
+      getUSDCBalance: this.getUSDCBalance.bind(this),
+    }
   }
 
   init() {
@@ -60,19 +70,7 @@ export class EVM extends System {
   }
 
   getRuntimeAPI() {
-    return {
-      actions: this.actions,
-      utils: this.utils,
-      abis: this.abis,
-      getAddress: () => this.getAddress(),
-      isConnected: () => this.isConnected(),
-      getChainId: params => this.getChainId?.(params),
-      readContract: params => this.readContract?.(params),
-      waitForTransactionReceipt: params => this.waitForTransactionReceipt?.(params),
-      getNativeBalance: address => this.getNativeBalance(address),
-      getTokenBalance: (tokenAddress, address, decimals) => this.getTokenBalance(tokenAddress, address, decimals),
-      getUSDCBalance: address => this.getUSDCBalance(address),
-    }
+    return this.runtimeAPI
   }
 
   getAddress() {
