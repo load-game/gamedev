@@ -7,6 +7,7 @@ import {
   SubscriptionClient,
 } from '@nktkas/hyperliquid'
 import { PrivateKeySigner } from '@nktkas/hyperliquid/signing'
+import { getAddress } from 'viem'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
 const ARBITRUM_CHAIN_ID = 42161
@@ -14,6 +15,7 @@ const BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'
 const USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
 const MIN_DEPOSIT_AMOUNT = 5
 const DEFAULT_RUNTIME_API_OWNER = Symbol('hyperliquid-runtime-owner')
+const DEFAULT_RUNTIME_API_ADDRESS = Symbol('hyperliquid-runtime-address')
 const HYPERLIQUID_CANDLE_INTERVALS = new Set([
   '1m',
   '3m',
@@ -101,21 +103,119 @@ export class Hyperliquid extends System {
   init() {
     this.world.inject({
       world: {
-        hyperliquid: owner => this.getRuntimeAPI(owner),
+        hyperliquid: (...args) => this.getRuntimeAPI(this._resolveInjectedRuntimeArgs(args)),
       },
     })
   }
 
-  getRuntimeAPI(owner = null) {
-    const key = owner ?? DEFAULT_RUNTIME_API_OWNER
-    if (this.runtimeAPIs.has(key)) {
-      return this.runtimeAPIs.get(key)
+  _resolveInjectedRuntimeArgs(args = []) {
+    if (!args.length) {
+      return { owner: null, address: null }
+    }
+
+    const [firstArg, secondArg = null] = args
+    if (
+      firstArg === null ||
+      firstArg === undefined ||
+      typeof firstArg === 'string' ||
+      typeof firstArg === 'number'
+    ) {
+      return { owner: null, address: firstArg ?? null }
+    }
+
+    return {
+      owner: firstArg,
+      address: secondArg,
+    }
+  }
+
+  _resolveRuntimeOptions(ownerOrOptions = null, maybeAddress = undefined) {
+    if (ownerOrOptions && typeof ownerOrOptions === 'object' && !Array.isArray(ownerOrOptions)) {
+      const hasOwner = Object.prototype.hasOwnProperty.call(ownerOrOptions, 'owner')
+      const hasAddress = Object.prototype.hasOwnProperty.call(ownerOrOptions, 'address')
+      if (hasOwner || hasAddress) {
+        return {
+          owner: ownerOrOptions.owner ?? null,
+          address: ownerOrOptions.address ?? null,
+        }
+      }
+    }
+
+    if (maybeAddress !== undefined) {
+      return {
+        owner: ownerOrOptions ?? null,
+        address: maybeAddress ?? null,
+      }
+    }
+
+    if (typeof ownerOrOptions === 'string' || ownerOrOptions === null || ownerOrOptions === undefined) {
+      return {
+        owner: null,
+        address: ownerOrOptions ?? null,
+      }
+    }
+
+    return {
+      owner: ownerOrOptions,
+      address: null,
+    }
+  }
+
+  _normalizeAddress(address, fieldName = 'address') {
+    if (typeof address !== 'string' || !address.trim()) {
+      throw new Error(`${fieldName} is required`)
+    }
+
+    try {
+      return getAddress(address.trim())
+    } catch {
+      throw new Error(`Invalid ${fieldName}`)
+    }
+  }
+
+  _normalizeRuntimeAddress(address) {
+    if (address === null || address === undefined) {
+      return null
+    }
+
+    return this._normalizeAddress(address, 'address')
+  }
+
+  _getRuntimeCache(owner, address) {
+    const ownerKey = owner ?? DEFAULT_RUNTIME_API_OWNER
+    let runtimeCache = this.runtimeAPIs.get(ownerKey)
+    if (!runtimeCache) {
+      runtimeCache = new Map()
+      this.runtimeAPIs.set(ownerKey, runtimeCache)
+    }
+    return runtimeCache
+  }
+
+  _getReadAddress(address = null) {
+    if (address !== null && address !== undefined) {
+      return this._normalizeRuntimeAddress(address)
+    }
+
+    if (!this.address) {
+      throw new Error('No wallet connected')
+    }
+
+    return this.address
+  }
+
+  getRuntimeAPI(ownerOrOptions = null, maybeAddress = undefined) {
+    const { owner, address } = this._resolveRuntimeOptions(ownerOrOptions, maybeAddress)
+    const boundAddress = this._normalizeRuntimeAddress(address)
+    const runtimeCache = this._getRuntimeCache(owner, boundAddress)
+    const addressKey = boundAddress ?? DEFAULT_RUNTIME_API_ADDRESS
+    if (runtimeCache.has(addressKey)) {
+      return runtimeCache.get(addressKey)
     }
 
     const runtimeAPI = {
       getPrice: ticker => this.getPrice(ticker),
-      getBalance: () => this.getBalance(),
-      getPositions: () => this.getPositions(),
+      getBalance: () => this.getBalance({ address: boundAddress }),
+      getPositions: () => this.getPositions({ address: boundAddress }),
       getAvailableTickers: () => this.getAvailableTickers(),
       subscribeMids: listener => this.subscribeMids(listener, { owner }),
       subscribeTrades: (params, listener) => this.subscribeTrades(params, listener, { owner }),
@@ -130,7 +230,7 @@ export class Hyperliquid extends System {
       withdraw: (amount, destination) => this.withdraw(amount, destination),
     }
 
-    this.runtimeAPIs.set(key, runtimeAPI)
+    runtimeCache.set(addressKey, runtimeAPI)
     return runtimeAPI
   }
 
@@ -746,9 +846,8 @@ export class Hyperliquid extends System {
     return this.infoClient.meta()
   }
 
-  async _getClearinghouseState() {
-    if (!this.address) throw new Error('No wallet connected')
-    return this.infoClient.clearinghouseState({ user: this.address })
+  async _getClearinghouseState({ address = null } = {}) {
+    return this.infoClient.clearinghouseState({ user: this._getReadAddress(address) })
   }
 
   async _getAssetIndex(ticker) {
@@ -788,13 +887,13 @@ export class Hyperliquid extends System {
     return price
   }
 
-  async getBalance() {
-    const state = await this._getClearinghouseState()
+  async getBalance({ address = null } = {}) {
+    const state = await this._getClearinghouseState({ address })
     return parseFloat(state?.marginSummary?.accountValue || 0)
   }
 
-  async getPositions() {
-    const state = await this._getClearinghouseState()
+  async getPositions({ address = null } = {}) {
+    const state = await this._getClearinghouseState({ address })
     if (!state?.assetPositions) return []
 
     return state.assetPositions

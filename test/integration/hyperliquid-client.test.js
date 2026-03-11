@@ -504,7 +504,7 @@ test('Hyperliquid returns sorted ticker list', async () => {
   assert.deepEqual(tickers, ['BTC', 'ETH', 'SOL'])
 })
 
-test('Hyperliquid injects a stable runtime API per owner', () => {
+test('Hyperliquid injects a stable runtime API per owner and address', () => {
   let injected = null
   const world = {
     inject(runtime) {
@@ -517,24 +517,84 @@ test('Hyperliquid injects a stable runtime API per owner', () => {
 
   const ownerA = { id: 'app-a' }
   const ownerB = { id: 'app-b' }
+  const watchedAddress = '0x00000000000000000000000000000000000000AA'
+  const secondWatchedAddress = '0x00000000000000000000000000000000000000BB'
   const defaultRuntime = injected.world.hyperliquid()
   const otherDefaultRuntime = injected.world.hyperliquid()
-  const ownerARuntime = injected.world.hyperliquid(ownerA)
-  const ownerASecondRuntime = injected.world.hyperliquid(ownerA)
-  const ownerBRuntime = injected.world.hyperliquid(ownerB)
+  const watchedRuntime = injected.world.hyperliquid(watchedAddress)
+  const sameWatchedRuntime = injected.world.hyperliquid(` ${watchedAddress.toLowerCase()} `)
+  const secondWatchedRuntime = injected.world.hyperliquid(secondWatchedAddress)
+  const ownerADefaultRuntime = hl.getRuntimeAPI(ownerA)
+  const ownerAWatchRuntime = hl.getRuntimeAPI(ownerA, watchedAddress)
+  const ownerASecondWatchRuntime = hl.getRuntimeAPI({
+    owner: ownerA,
+    address: ` ${watchedAddress.toLowerCase()} `,
+  })
+  const ownerBWatchRuntime = hl.getRuntimeAPI(ownerB, watchedAddress)
 
   assert.equal(typeof injected.world.hyperliquid, 'function')
   assert.equal(defaultRuntime, otherDefaultRuntime)
-  assert.equal(ownerARuntime, ownerASecondRuntime)
-  assert.notEqual(defaultRuntime, ownerARuntime)
-  assert.notEqual(ownerARuntime, ownerBRuntime)
-  assert.equal(typeof ownerARuntime.getPrice, 'function')
-  assert.equal(typeof ownerARuntime.subscribeMids, 'function')
-  assert.equal(typeof ownerARuntime.subscribeTrades, 'function')
-  assert.equal(typeof ownerARuntime.subscribeOrderBook, 'function')
-  assert.equal(typeof ownerARuntime.subscribeCandles, 'function')
-  assert.equal(typeof ownerARuntime.buy, 'function')
-  assert.equal(typeof ownerARuntime.withdraw, 'function')
+  assert.equal(watchedRuntime, sameWatchedRuntime)
+  assert.notEqual(defaultRuntime, watchedRuntime)
+  assert.notEqual(watchedRuntime, secondWatchedRuntime)
+  assert.equal(ownerAWatchRuntime, ownerASecondWatchRuntime)
+  assert.notEqual(ownerADefaultRuntime, ownerAWatchRuntime)
+  assert.notEqual(ownerAWatchRuntime, ownerBWatchRuntime)
+  assert.equal(typeof ownerAWatchRuntime.getPrice, 'function')
+  assert.equal(typeof ownerAWatchRuntime.subscribeMids, 'function')
+  assert.equal(typeof ownerAWatchRuntime.subscribeTrades, 'function')
+  assert.equal(typeof ownerAWatchRuntime.subscribeOrderBook, 'function')
+  assert.equal(typeof ownerAWatchRuntime.subscribeCandles, 'function')
+  assert.equal(typeof ownerAWatchRuntime.buy, 'function')
+  assert.equal(typeof ownerAWatchRuntime.withdraw, 'function')
+})
+
+test('Hyperliquid runtime pull reads use the bound target address', async () => {
+  const calls = []
+  const hl = new Hyperliquid({})
+  hl.infoClient = {
+    async clearinghouseState({ user }) {
+      calls.push(user)
+      return {
+        marginSummary: {
+          accountValue: '1234.56',
+        },
+        assetPositions: [
+          {
+            position: {
+              coin: 'ETH',
+              szi: '1.25',
+              entryPx: '2100',
+              unrealizedPnl: '15.5',
+              liquidationPx: '1800',
+            },
+          },
+        ],
+      }
+    },
+  }
+
+  hl.bind({
+    address: '0x00000000000000000000000000000000000000CC',
+    isConnected: false,
+  })
+
+  const watchedRuntime = hl.getRuntimeAPI(' 0x00000000000000000000000000000000000000aa ')
+
+  assert.equal(await watchedRuntime.getBalance(), 1234.56)
+  assert.deepEqual(await watchedRuntime.getPositions(), [
+    {
+      ticker: 'ETH',
+      size: 1.25,
+      entryPrice: 2100,
+      unrealizedPnl: 15.5,
+      liquidationPrice: 1800,
+    },
+  ])
+  assert.deepEqual(calls, [
+    getAddress('0x00000000000000000000000000000000000000aa'),
+    getAddress('0x00000000000000000000000000000000000000aa'),
+  ])
 })
 
 function createHyperliquidMarketStreamHarness(methodNames) {
