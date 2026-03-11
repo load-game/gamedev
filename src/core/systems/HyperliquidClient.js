@@ -117,6 +117,7 @@ export class Hyperliquid extends System {
       getBalance: () => this.getBalance(),
       getPositions: () => this.getPositions(),
       getAvailableTickers: () => this.getAvailableTickers(),
+      subscribeMids: listener => this.subscribeMids(listener, { owner }),
       buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
       sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
       closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
@@ -307,6 +308,7 @@ export class Hyperliquid extends System {
       params,
       flushMode,
       upstreamSubscription: null,
+      upstreamPromise: null,
       listeners: new Map(),
       pendingLatest: undefined,
       pendingEvents: [],
@@ -348,6 +350,97 @@ export class Hyperliquid extends System {
     }
     entry.listeners.set(listenerId, listener)
     return listener
+  }
+
+  _queueMarketStreamLatest(entry, payload) {
+    if (!entry) return
+    entry.pendingLatest = payload
+  }
+
+  async _ensureMarketStreamUpstreamSubscription(entry, subscribeUpstream) {
+    if (!entry) {
+      throw new Error('Market stream entry is required')
+    }
+    if (entry.upstreamSubscription) {
+      return entry.upstreamSubscription
+    }
+    if (entry.upstreamPromise) {
+      return entry.upstreamPromise
+    }
+
+    entry.upstreamPromise = Promise.resolve()
+      .then(() => subscribeUpstream(this._getMarketStreamSubscriptionClient(), payload => {
+        this._queueMarketStreamLatest(entry, payload)
+      }))
+      .then(subscription => {
+        entry.upstreamSubscription = subscription
+        return subscription
+      })
+      .finally(() => {
+        entry.upstreamPromise = null
+      })
+
+    return entry.upstreamPromise
+  }
+
+  async _removeMarketStreamListener(entry, listenerId) {
+    if (!entry?.listeners.has(listenerId)) {
+      return
+    }
+
+    entry.listeners.delete(listenerId)
+    if (entry.listeners.size > 0) {
+      return
+    }
+
+    const upstreamSubscription = entry.upstreamSubscription
+    entry.upstreamSubscription = null
+    this.marketStreams.delete(entry.key)
+
+    if (!upstreamSubscription) {
+      return
+    }
+
+    await upstreamSubscription.unsubscribe()
+  }
+
+  _createMarketStreamHandle(entry, listener, failureSignal) {
+    let unsubscribed = false
+
+    return {
+      failureSignal,
+      unsubscribe: async () => {
+        if (unsubscribed) {
+          return
+        }
+        unsubscribed = true
+        await this._removeMarketStreamListener(entry, listener.id)
+      },
+    }
+  }
+
+  async subscribeMids(listener, { owner } = {}) {
+    const key = this._getAllMidsStreamKey()
+    const entry = this._ensureMarketStreamEntry({
+      key,
+      channel: 'allMids',
+      flushMode: 'latest',
+    })
+    const localListener = this._addMarketStreamListener(entry, listener, owner)
+
+    try {
+      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+        entry,
+        (subscriptionClient, onPayload) => subscriptionClient.allMids(onPayload)
+      )
+      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+    } catch (error) {
+      entry.listeners.delete(localListener.id)
+      if (entry.listeners.size === 0) {
+        this.marketStreams.delete(entry.key)
+      }
+      throw error
+    }
   }
 
   _normalizeMarketTicker(ticker) {
@@ -417,6 +510,21 @@ export class Hyperliquid extends System {
 
   _getAllMidsStreamKey() {
     return 'allMids'
+  }
+
+  update() {
+    for (const entry of this.marketStreams.values()) {
+      if (entry.flushMode !== 'latest' || entry.pendingLatest === undefined) {
+        continue
+      }
+
+      const payload = entry.pendingLatest
+      entry.pendingLatest = undefined
+
+      for (const listener of entry.listeners.values()) {
+        listener.callback(payload)
+      }
+    }
   }
 
   _normalizeTradesStreamParams({ ticker } = {}) {

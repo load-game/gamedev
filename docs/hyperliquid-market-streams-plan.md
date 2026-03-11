@@ -93,7 +93,7 @@ Each subscription returns:
     - `candle:${ticker}:${interval}`
   - Acceptance: equivalent calls map to the same key every time.
 
-- [ ] 5. Implement `subscribeMids(listener)`.
+- [x] 5. Implement `subscribeMids(listener)`.
   - Reuse one upstream `allMids` subscription across all listeners.
   - Queue incoming events instead of invoking callbacks directly from the websocket.
   - Coalesce mids to the latest payload per frame.
