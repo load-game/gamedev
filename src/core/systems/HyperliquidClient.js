@@ -410,6 +410,8 @@ export class Hyperliquid extends System {
 
     const upstreamSubscription = entry.upstreamSubscription
     entry.upstreamSubscription = null
+    entry.pendingLatest = undefined
+    entry.pendingEvents.length = 0
     this.marketStreams.delete(entry.key)
 
     entry.teardownPromise = Promise.resolve()
@@ -419,6 +421,16 @@ export class Hyperliquid extends System {
       })
 
     return entry.teardownPromise
+  }
+
+  async _destroyMarketStreams() {
+    const entries = Array.from(this.marketStreams.values())
+    if (!entries.length) {
+      return
+    }
+
+    await Promise.allSettled(entries.map(entry => this._teardownMarketStreamEntry(entry)))
+    this.marketStreams.clear()
   }
 
   async _removeMarketStreamListener(entry, listenerId) {
@@ -1162,6 +1174,7 @@ export class Hyperliquid extends System {
   }
 
   async destroy() {
+    await this._destroyMarketStreams()
     await this._closeMarketStreamTransport()
   }
 }

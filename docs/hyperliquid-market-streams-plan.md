@@ -131,7 +131,7 @@ Each subscription returns:
   - Wrap listener invocation so one listener failure does not break stream dispatch for others.
   - Acceptance: no app callback is invoked directly from the websocket event handler.
 
-- [ ] 11. Return subscription handles with idempotent unsubscribe behavior.
+- [x] 11. Return subscription handles with idempotent unsubscribe behavior.
   - Return `{ unsubscribe, failureSignal }` from each subscribe method.
   - Make `unsubscribe()` safe to call multiple times.
   - Treat `unsubscribe()` as an early-stop control, not a required destroy-time cleanup step.
