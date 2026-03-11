@@ -124,7 +124,7 @@ Each subscription returns:
   - Make runtime-owned cleanup the default for script callers.
   - Acceptance: destroyed/rebuilt apps stop receiving stream callbacks without any script-level unsubscribe code.
 
-- [ ] 10. Deliver events from `update()` instead of raw socket callbacks.
+- [x] 10. Deliver events from `update()` instead of raw socket callbacks.
   - Add a per-frame flush pass in `HyperliquidClient.update()`.
   - For snapshot-style streams (`mids`, `orderBook`, `candles`), flush only the latest pending payload.
   - For trades, flush queued batches in arrival order.

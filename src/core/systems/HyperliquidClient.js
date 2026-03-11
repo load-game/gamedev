@@ -452,6 +452,16 @@ export class Hyperliquid extends System {
     return listeners
   }
 
+  _dispatchMarketStreamPayload(entry, listeners, payload) {
+    for (const listener of listeners) {
+      try {
+        listener.callback(payload)
+      } catch (error) {
+        console.error(`[Hyperliquid] Market stream listener failed for ${entry.key}`, error)
+      }
+    }
+  }
+
   _createMarketStreamHandle(entry, listener, failureSignal) {
     let unsubscribed = false
 
@@ -668,9 +678,7 @@ export class Hyperliquid extends System {
         const pendingEvents = entry.pendingEvents.slice()
         entry.pendingEvents.length = 0
         for (const payload of pendingEvents) {
-          for (const listener of listeners) {
-            listener.callback(payload)
-          }
+          this._dispatchMarketStreamPayload(entry, listeners, payload)
         }
         continue
       }
@@ -682,9 +690,7 @@ export class Hyperliquid extends System {
       const payload = entry.pendingLatest
       entry.pendingLatest = undefined
 
-      for (const listener of listeners) {
-        listener.callback(payload)
-      }
+      this._dispatchMarketStreamPayload(entry, listeners, payload)
     }
   }
 
