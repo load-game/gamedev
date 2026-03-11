@@ -599,6 +599,53 @@ test('Hyperliquid tracks many local listeners on one market stream entry', () =>
   assert.deepEqual(entry.pendingEvents, [])
 })
 
+test('Hyperliquid normalizes market stream params into deterministic keys', () => {
+  const hl = new Hyperliquid({})
+
+  const trades = hl._normalizeTradesStreamParams({ ticker: ' btc ' })
+  const orderBook = hl._normalizeOrderBookStreamParams({
+    ticker: ' eth ',
+    nSigFigs: '3',
+    mantissa: '2',
+  })
+  const orderBookWithSigFigsFive = hl._normalizeOrderBookStreamParams({
+    ticker: 'eth',
+    nSigFigs: 5,
+    mantissa: '2',
+  })
+  const candles = hl._normalizeCandleStreamParams({ ticker: ' sol ', interval: '1m' })
+
+  assert.equal(hl._getAllMidsStreamKey(), 'allMids')
+  assert.deepEqual(trades, {
+    ticker: 'BTC',
+    coin: 'BTC',
+    key: 'trades:BTC',
+  })
+  assert.deepEqual(orderBook, {
+    ticker: 'ETH',
+    coin: 'ETH',
+    nSigFigs: 3,
+    mantissa: null,
+    key: 'l2Book:ETH:3:null',
+  })
+  assert.deepEqual(orderBookWithSigFigsFive, {
+    ticker: 'ETH',
+    coin: 'ETH',
+    nSigFigs: 5,
+    mantissa: 2,
+    key: 'l2Book:ETH:5:2',
+  })
+  assert.deepEqual(candles, {
+    ticker: 'SOL',
+    coin: 'SOL',
+    interval: '1m',
+    key: 'candle:SOL:1m',
+  })
+  assert.throws(() => hl._normalizeCandleStreamParams({ ticker: 'SOL', interval: '10m' }), {
+    message: 'Invalid Hyperliquid candle interval: 10m',
+  })
+})
+
 test('Hyperliquid deposit uses wallet adapter contract operations', async () => {
   const calls = []
 

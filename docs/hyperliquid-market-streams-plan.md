@@ -82,7 +82,7 @@ Each subscription returns:
   - Add pending-event queues for per-frame delivery.
   - Acceptance: the system can represent one upstream stream with many local listeners.
 
-- [ ] 4. Normalize stream parameters and keys.
+- [x] 4. Normalize stream parameters and keys.
   - Add ticker normalization for `subscribeTrades`, `subscribeOrderBook`, and `subscribeCandles`.
   - Add interval validation for candles.
   - Add order book key normalization for `nSigFigs` and `mantissa`.

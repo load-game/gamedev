@@ -14,6 +14,24 @@ const BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'
 const USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
 const MIN_DEPOSIT_AMOUNT = 5
 const DEFAULT_RUNTIME_API_OWNER = Symbol('hyperliquid-runtime-owner')
+const HYPERLIQUID_CANDLE_INTERVALS = new Set([
+  '1m',
+  '3m',
+  '5m',
+  '15m',
+  '30m',
+  '1h',
+  '2h',
+  '4h',
+  '8h',
+  '12h',
+  '1d',
+  '3d',
+  '1w',
+  '1M',
+])
+const HYPERLIQUID_ORDER_BOOK_SIG_FIGS = new Set([2, 3, 4, 5])
+const HYPERLIQUID_ORDER_BOOK_MANTISSAS = new Set([2, 5])
 
 const ERC20_ABI = [
   {
@@ -330,6 +348,111 @@ export class Hyperliquid extends System {
     }
     entry.listeners.set(listenerId, listener)
     return listener
+  }
+
+  _normalizeMarketTicker(ticker) {
+    if (typeof ticker !== 'string') {
+      throw new Error('Hyperliquid ticker must be a string')
+    }
+
+    const normalized = ticker.trim().toUpperCase()
+    if (!normalized) {
+      throw new Error('Hyperliquid ticker is required')
+    }
+
+    return normalized
+  }
+
+  _normalizeOptionalInteger(value, label) {
+    if (value === undefined || value === null || value === '') {
+      return null
+    }
+
+    const parsed =
+      typeof value === 'number' && Number.isInteger(value) ? value : Number.parseInt(String(value), 10)
+    if (!Number.isInteger(parsed)) {
+      throw new Error(`Hyperliquid ${label} must be an integer`)
+    }
+
+    return parsed
+  }
+
+  _normalizeCandleInterval(interval) {
+    if (typeof interval !== 'string') {
+      throw new Error('Hyperliquid candle interval must be a string')
+    }
+
+    const normalized = interval.trim()
+    if (!HYPERLIQUID_CANDLE_INTERVALS.has(normalized)) {
+      throw new Error(`Invalid Hyperliquid candle interval: ${interval}`)
+    }
+
+    return normalized
+  }
+
+  _normalizeOrderBookAggregation({ nSigFigs = null, mantissa = null } = {}) {
+    const normalizedSigFigs = this._normalizeOptionalInteger(nSigFigs, 'order book nSigFigs')
+    if (normalizedSigFigs !== null && !HYPERLIQUID_ORDER_BOOK_SIG_FIGS.has(normalizedSigFigs)) {
+      throw new Error(`Invalid Hyperliquid order book nSigFigs: ${nSigFigs}`)
+    }
+
+    let normalizedMantissa = this._normalizeOptionalInteger(mantissa, 'order book mantissa')
+    if (normalizedMantissa !== null && !HYPERLIQUID_ORDER_BOOK_MANTISSAS.has(normalizedMantissa)) {
+      throw new Error(`Invalid Hyperliquid order book mantissa: ${mantissa}`)
+    }
+
+    if (normalizedSigFigs !== 5) {
+      normalizedMantissa = null
+    }
+
+    return {
+      nSigFigs: normalizedSigFigs,
+      mantissa: normalizedMantissa,
+    }
+  }
+
+  _formatMarketStreamKeyPart(value) {
+    return value === null || value === undefined ? 'null' : String(value)
+  }
+
+  _getAllMidsStreamKey() {
+    return 'allMids'
+  }
+
+  _normalizeTradesStreamParams({ ticker } = {}) {
+    const coin = this._normalizeMarketTicker(ticker)
+    return {
+      ticker: coin,
+      coin,
+      key: `trades:${coin}`,
+    }
+  }
+
+  _normalizeOrderBookStreamParams({ ticker, nSigFigs = null, mantissa = null } = {}) {
+    const coin = this._normalizeMarketTicker(ticker)
+    const aggregation = this._normalizeOrderBookAggregation({ nSigFigs, mantissa })
+
+    return {
+      ticker: coin,
+      coin,
+      nSigFigs: aggregation.nSigFigs,
+      mantissa: aggregation.mantissa,
+      key: `l2Book:${coin}:${this._formatMarketStreamKeyPart(aggregation.nSigFigs)}:${this._formatMarketStreamKeyPart(
+        aggregation.mantissa
+      )}`,
+    }
+  }
+
+  _normalizeCandleStreamParams({ ticker, interval } = {}) {
+    const coin = this._normalizeMarketTicker(ticker)
+    const normalizedInterval = this._normalizeCandleInterval(interval)
+
+    return {
+      ticker: coin,
+      coin,
+      interval: normalizedInterval,
+      key: `candle:${coin}:${normalizedInterval}`,
+    }
   }
 
   async _getMeta() {
