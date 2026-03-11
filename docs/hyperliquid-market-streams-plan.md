@@ -111,7 +111,7 @@ Each subscription returns:
   - Coalesce order book updates to the latest payload per frame.
   - Acceptance: order book listeners receive the most recent snapshot once per flush.
 
-- [ ] 8. Implement `subscribeCandles({ ticker, interval }, listener)`.
+- [x] 8. Implement `subscribeCandles({ ticker, interval }, listener)`.
   - Validate interval against supported Hyperliquid candle intervals.
   - Reuse one upstream candle subscription per ticker+interval.
   - Coalesce candle updates to the latest payload per frame.

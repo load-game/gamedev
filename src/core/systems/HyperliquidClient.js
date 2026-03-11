@@ -120,6 +120,7 @@ export class Hyperliquid extends System {
       subscribeMids: listener => this.subscribeMids(listener, { owner }),
       subscribeTrades: (params, listener) => this.subscribeTrades(params, listener, { owner }),
       subscribeOrderBook: (params, listener) => this.subscribeOrderBook(params, listener, { owner }),
+      subscribeCandles: (params, listener) => this.subscribeCandles(params, listener, { owner }),
       buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
       sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
       closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
@@ -500,6 +501,35 @@ export class Hyperliquid extends System {
       const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.l2Book(params, onPayload)
+      )
+      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+    } catch (error) {
+      entry.listeners.delete(localListener.id)
+      if (entry.listeners.size === 0) {
+        this.marketStreams.delete(entry.key)
+      }
+      throw error
+    }
+  }
+
+  async subscribeCandles({ ticker, interval } = {}, listener, { owner } = {}) {
+    const descriptor = this._normalizeCandleStreamParams({ ticker, interval })
+    const params = {
+      coin: descriptor.coin,
+      interval: descriptor.interval,
+    }
+    const entry = this._ensureMarketStreamEntry({
+      key: descriptor.key,
+      channel: 'candle',
+      params,
+      flushMode: 'latest',
+    })
+    const localListener = this._addMarketStreamListener(entry, listener, owner)
+
+    try {
+      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+        entry,
+        (subscriptionClient, onPayload) => subscriptionClient.candle(params, onPayload)
       )
       return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
