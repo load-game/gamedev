@@ -7,6 +7,7 @@ const ARBITRUM_CHAIN_ID = 42161
 const BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'
 const USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
 const MIN_DEPOSIT_AMOUNT = 5
+const DEFAULT_RUNTIME_API_OWNER = Symbol('hyperliquid-runtime-owner')
 
 const ERC20_ABI = [
   {
@@ -65,26 +66,39 @@ export class Hyperliquid extends System {
 
     this._assetIndexCache = null
     this.pendingDeposit = false
+    this.runtimeAPIs = new Map()
   }
 
   init() {
     this.world.inject({
       world: {
-        hyperliquid: () => ({
-          getPrice: ticker => this.getPrice(ticker),
-          getBalance: () => this.getBalance(),
-          getPositions: () => this.getPositions(),
-          getAvailableTickers: () => this.getAvailableTickers(),
-          buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
-          sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
-          closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
-          hasAgentKey: () => this.hasAgentKey(),
-          setupAgentKey: name => this.setupAgentKey(name),
-          deposit: amount => this.deposit(amount),
-          withdraw: (amount, destination) => this.withdraw(amount, destination),
-        }),
+        hyperliquid: owner => this.getRuntimeAPI(owner),
       },
     })
+  }
+
+  getRuntimeAPI(owner = null) {
+    const key = owner ?? DEFAULT_RUNTIME_API_OWNER
+    if (this.runtimeAPIs.has(key)) {
+      return this.runtimeAPIs.get(key)
+    }
+
+    const runtimeAPI = {
+      getPrice: ticker => this.getPrice(ticker),
+      getBalance: () => this.getBalance(),
+      getPositions: () => this.getPositions(),
+      getAvailableTickers: () => this.getAvailableTickers(),
+      buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
+      sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
+      closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
+      hasAgentKey: () => this.hasAgentKey(),
+      setupAgentKey: name => this.setupAgentKey(name),
+      deposit: amount => this.deposit(amount),
+      withdraw: (amount, destination) => this.withdraw(amount, destination),
+    }
+
+    this.runtimeAPIs.set(key, runtimeAPI)
+    return runtimeAPI
   }
 
   bind({ address, walletAdapter, isConnected } = {}) {

@@ -504,6 +504,35 @@ test('Hyperliquid returns sorted ticker list', async () => {
   assert.deepEqual(tickers, ['BTC', 'ETH', 'SOL'])
 })
 
+test('Hyperliquid injects a stable runtime API per owner', () => {
+  let injected = null
+  const world = {
+    inject(runtime) {
+      injected = runtime
+    },
+  }
+
+  const hl = new Hyperliquid(world)
+  hl.init()
+
+  const ownerA = { id: 'app-a' }
+  const ownerB = { id: 'app-b' }
+  const defaultRuntime = injected.world.hyperliquid()
+  const otherDefaultRuntime = injected.world.hyperliquid()
+  const ownerARuntime = injected.world.hyperliquid(ownerA)
+  const ownerASecondRuntime = injected.world.hyperliquid(ownerA)
+  const ownerBRuntime = injected.world.hyperliquid(ownerB)
+
+  assert.equal(typeof injected.world.hyperliquid, 'function')
+  assert.equal(defaultRuntime, otherDefaultRuntime)
+  assert.equal(ownerARuntime, ownerASecondRuntime)
+  assert.notEqual(defaultRuntime, ownerARuntime)
+  assert.notEqual(ownerARuntime, ownerBRuntime)
+  assert.equal(typeof ownerARuntime.getPrice, 'function')
+  assert.equal(typeof ownerARuntime.buy, 'function')
+  assert.equal(typeof ownerARuntime.withdraw, 'function')
+})
+
 test('Hyperliquid deposit uses wallet adapter contract operations', async () => {
   const calls = []
 
