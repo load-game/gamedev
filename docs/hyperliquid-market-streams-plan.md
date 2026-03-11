@@ -1,6 +1,6 @@
 # Hyperliquid Market Streams Plan
 
-Status: Proposed
+Status: Implemented
 Owner: Codex + user
 Last updated: 2026-03-11
 
@@ -164,7 +164,7 @@ Each subscription returns:
   - Re-run existing Hyperliquid deposit/referrer tests to confirm no regressions.
   - Acceptance: streaming behavior is covered without relying on live network access.
 
-- [ ] 15. Final verification pass.
+- [x] 15. Final verification pass.
   - Run targeted Hyperliquid integration tests.
   - Review for leaks: orphan listeners, orphan upstream subscriptions, unclosed transport.
   - Review docs for final API wording consistency (`ticker` externally, Hyperliquid `coin` internally).
