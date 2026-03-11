@@ -574,6 +574,31 @@ test('Hyperliquid lazily creates and closes a shared market stream transport', a
   assert.equal(transport.closeCalls, 1)
 })
 
+test('Hyperliquid tracks many local listeners on one market stream entry', () => {
+  const hl = new Hyperliquid({})
+  const entry = hl._ensureMarketStreamEntry({
+    key: 'allMids',
+    channel: 'allMids',
+    flushMode: 'latest',
+  })
+  const sameEntry = hl._ensureMarketStreamEntry({
+    key: 'allMids',
+    channel: 'allMids',
+    flushMode: 'latest',
+  })
+  const firstListener = hl._addMarketStreamListener(entry, () => {})
+  const secondListener = hl._addMarketStreamListener(sameEntry, () => {})
+
+  assert.equal(entry, sameEntry)
+  assert.equal(hl.marketStreams.size, 1)
+  assert.equal(entry.listeners.size, 2)
+  assert.equal(entry.listeners.get(firstListener.id), firstListener)
+  assert.equal(entry.listeners.get(secondListener.id), secondListener)
+  assert.equal(entry.upstreamSubscription, null)
+  assert.equal(entry.pendingLatest, undefined)
+  assert.deepEqual(entry.pendingEvents, [])
+})
+
 test('Hyperliquid deposit uses wallet adapter contract operations', async () => {
   const calls = []
 

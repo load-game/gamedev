@@ -76,6 +76,8 @@ export class Hyperliquid extends System {
     this.marketStreamTransport = null
     this.marketStreamSubscriptionClient = null
     this.marketStreamTransportClosePromise = null
+    this.marketStreams = new Map()
+    this.marketStreamListenerId = 0
   }
 
   init() {
@@ -278,6 +280,56 @@ export class Hyperliquid extends System {
       })
 
     return this.marketStreamTransportClosePromise
+  }
+
+  _createMarketStreamEntry({ key, channel = null, params = null, flushMode = 'latest' } = {}) {
+    return {
+      key,
+      channel,
+      params,
+      flushMode,
+      upstreamSubscription: null,
+      listeners: new Map(),
+      pendingLatest: undefined,
+      pendingEvents: [],
+    }
+  }
+
+  _getMarketStreamEntry(key) {
+    return this.marketStreams.get(key) || null
+  }
+
+  _ensureMarketStreamEntry(descriptor) {
+    const key = descriptor?.key
+    if (!key) {
+      throw new Error('Market stream key is required')
+    }
+
+    let entry = this.marketStreams.get(key)
+    if (entry) {
+      return entry
+    }
+
+    entry = this._createMarketStreamEntry(descriptor)
+    this.marketStreams.set(key, entry)
+    return entry
+  }
+
+  _addMarketStreamListener(entry, callback) {
+    if (!entry) {
+      throw new Error('Market stream entry is required')
+    }
+    if (typeof callback !== 'function') {
+      throw new Error('Market stream listener must be a function')
+    }
+
+    const listenerId = ++this.marketStreamListenerId
+    const listener = {
+      id: listenerId,
+      callback,
+    }
+    entry.listeners.set(listenerId, listener)
+    return listener
   }
 
   async _getMeta() {

@@ -76,7 +76,7 @@ Each subscription returns:
   - Add teardown logic so transport can be closed from `destroy()`.
   - Acceptance: transport is created only on first subscription attempt and can be fully closed.
 
-- [ ] 3. Add internal stream registries and queues.
+- [x] 3. Add internal stream registries and queues.
   - Add a registry for active upstream subscriptions keyed by normalized stream key.
   - Add listener registries per stream entry.
   - Add pending-event queues for per-frame delivery.
