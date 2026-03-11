@@ -139,7 +139,7 @@ Each subscription returns:
   - If the last listener is removed, tear down the upstream subscription and delete the stream entry.
   - Acceptance: early unsubscribe works, and destroy-time cleanup does not depend on user code.
 
-- [ ] 12. Preserve existing Hyperliquid trading behavior.
+- [x] 12. Preserve existing Hyperliquid trading behavior.
   - Keep wallet binding behavior in `bind()` intact.
   - Keep `buy`, `sell`, `closePosition`, `deposit`, `withdraw`, `hasAgentKey`, and `setupAgentKey` behavior unchanged.
   - Avoid entangling market-stream lifecycle with exchange-client lifecycle beyond shared system ownership.
