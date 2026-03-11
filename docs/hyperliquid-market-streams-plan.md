@@ -105,7 +105,7 @@ Each subscription returns:
   - Preserve arrival order for trade batches when flushing.
   - Acceptance: trades for the same ticker share one upstream stream and flush in order.
 
-- [ ] 7. Implement `subscribeOrderBook({ ticker, nSigFigs?, mantissa? }, listener)`.
+- [x] 7. Implement `subscribeOrderBook({ ticker, nSigFigs?, mantissa? }, listener)`.
   - Normalize ticker and optional aggregation params.
   - Reuse one upstream order book subscription per normalized key.
   - Coalesce order book updates to the latest payload per frame.

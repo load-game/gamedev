@@ -119,6 +119,7 @@ export class Hyperliquid extends System {
       getAvailableTickers: () => this.getAvailableTickers(),
       subscribeMids: listener => this.subscribeMids(listener, { owner }),
       subscribeTrades: (params, listener) => this.subscribeTrades(params, listener, { owner }),
+      subscribeOrderBook: (params, listener) => this.subscribeOrderBook(params, listener, { owner }),
       buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
       sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
       closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
@@ -464,6 +465,41 @@ export class Hyperliquid extends System {
       const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.trades({ coin: descriptor.coin }, onPayload)
+      )
+      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+    } catch (error) {
+      entry.listeners.delete(localListener.id)
+      if (entry.listeners.size === 0) {
+        this.marketStreams.delete(entry.key)
+      }
+      throw error
+    }
+  }
+
+  async subscribeOrderBook({ ticker, nSigFigs = null, mantissa = null } = {}, listener, { owner } = {}) {
+    const descriptor = this._normalizeOrderBookStreamParams({ ticker, nSigFigs, mantissa })
+    const params = {
+      coin: descriptor.coin,
+    }
+    if (descriptor.nSigFigs !== null) {
+      params.nSigFigs = descriptor.nSigFigs
+    }
+    if (descriptor.mantissa !== null) {
+      params.mantissa = descriptor.mantissa
+    }
+
+    const entry = this._ensureMarketStreamEntry({
+      key: descriptor.key,
+      channel: 'l2Book',
+      params,
+      flushMode: 'latest',
+    })
+    const localListener = this._addMarketStreamListener(entry, listener, owner)
+
+    try {
+      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+        entry,
+        (subscriptionClient, onPayload) => subscriptionClient.l2Book(params, onPayload)
       )
       return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
