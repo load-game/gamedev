@@ -312,6 +312,7 @@ export class Hyperliquid extends System {
       flushMode,
       upstreamSubscription: null,
       upstreamPromise: null,
+      teardownPromise: null,
       listeners: new Map(),
       pendingLatest: undefined,
       pendingEvents: [],
@@ -338,7 +339,14 @@ export class Hyperliquid extends System {
     return entry
   }
 
-  _addMarketStreamListener(entry, callback) {
+  _getMarketStreamListenerDeadHook(owner) {
+    if (!owner || typeof owner.getDeadHook !== 'function') {
+      return null
+    }
+    return owner.getDeadHook()
+  }
+
+  _addMarketStreamListener(entry, callback, owner = null) {
     if (!entry) {
       throw new Error('Market stream entry is required')
     }
@@ -350,6 +358,8 @@ export class Hyperliquid extends System {
     const listener = {
       id: listenerId,
       callback,
+      owner,
+      deadHook: this._getMarketStreamListenerDeadHook(owner),
     }
     entry.listeners.set(listenerId, listener)
     return listener
@@ -390,6 +400,27 @@ export class Hyperliquid extends System {
     return entry.upstreamPromise
   }
 
+  async _teardownMarketStreamEntry(entry) {
+    if (!entry) {
+      return
+    }
+    if (entry.teardownPromise) {
+      return entry.teardownPromise
+    }
+
+    const upstreamSubscription = entry.upstreamSubscription
+    entry.upstreamSubscription = null
+    this.marketStreams.delete(entry.key)
+
+    entry.teardownPromise = Promise.resolve()
+      .then(() => upstreamSubscription?.unsubscribe?.())
+      .finally(() => {
+        entry.teardownPromise = null
+      })
+
+    return entry.teardownPromise
+  }
+
   async _removeMarketStreamListener(entry, listenerId) {
     if (!entry?.listeners.has(listenerId)) {
       return
@@ -400,15 +431,25 @@ export class Hyperliquid extends System {
       return
     }
 
-    const upstreamSubscription = entry.upstreamSubscription
-    entry.upstreamSubscription = null
-    this.marketStreams.delete(entry.key)
+    await this._teardownMarketStreamEntry(entry)
+  }
 
-    if (!upstreamSubscription) {
-      return
+  _getActiveMarketStreamListeners(entry) {
+    const listeners = []
+
+    for (const [listenerId, listener] of entry.listeners) {
+      if (listener.deadHook?.dead) {
+        entry.listeners.delete(listenerId)
+        continue
+      }
+      listeners.push(listener)
     }
 
-    await upstreamSubscription.unsubscribe()
+    if (entry.listeners.size === 0) {
+      void this._teardownMarketStreamEntry(entry)
+    }
+
+    return listeners
   }
 
   _createMarketStreamHandle(entry, listener, failureSignal) {
@@ -612,6 +653,13 @@ export class Hyperliquid extends System {
 
   update() {
     for (const entry of this.marketStreams.values()) {
+      const listeners = this._getActiveMarketStreamListeners(entry)
+      if (!listeners.length) {
+        entry.pendingLatest = undefined
+        entry.pendingEvents.length = 0
+        continue
+      }
+
       if (entry.flushMode === 'queue') {
         if (!entry.pendingEvents.length) {
           continue
@@ -620,7 +668,7 @@ export class Hyperliquid extends System {
         const pendingEvents = entry.pendingEvents.slice()
         entry.pendingEvents.length = 0
         for (const payload of pendingEvents) {
-          for (const listener of entry.listeners.values()) {
+          for (const listener of listeners) {
             listener.callback(payload)
           }
         }
@@ -634,7 +682,7 @@ export class Hyperliquid extends System {
       const payload = entry.pendingLatest
       entry.pendingLatest = undefined
 
-      for (const listener of entry.listeners.values()) {
+      for (const listener of listeners) {
         listener.callback(payload)
       }
     }

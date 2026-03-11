@@ -117,7 +117,7 @@ Each subscription returns:
   - Coalesce candle updates to the latest payload per frame.
   - Acceptance: repeated subscriptions for the same ticker/interval reuse one upstream stream.
 
-- [ ] 9. Track listener ownership and dead-script cleanup.
+- [x] 9. Track listener ownership and dead-script cleanup.
   - Capture the calling app entity when `world.hyperliquid()` is used from scripts.
   - Store the owner's dead hook with each listener registration.
   - Skip and prune listeners whose owner is dead before callback delivery.
