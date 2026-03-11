@@ -118,6 +118,7 @@ export class Hyperliquid extends System {
       getPositions: () => this.getPositions(),
       getAvailableTickers: () => this.getAvailableTickers(),
       subscribeMids: listener => this.subscribeMids(listener, { owner }),
+      subscribeTrades: (params, listener) => this.subscribeTrades(params, listener, { owner }),
       buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
       sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
       closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
@@ -352,8 +353,12 @@ export class Hyperliquid extends System {
     return listener
   }
 
-  _queueMarketStreamLatest(entry, payload) {
+  _queueMarketStreamPayload(entry, payload) {
     if (!entry) return
+    if (entry.flushMode === 'queue') {
+      entry.pendingEvents.push(payload)
+      return
+    }
     entry.pendingLatest = payload
   }
 
@@ -370,7 +375,7 @@ export class Hyperliquid extends System {
 
     entry.upstreamPromise = Promise.resolve()
       .then(() => subscribeUpstream(this._getMarketStreamSubscriptionClient(), payload => {
-        this._queueMarketStreamLatest(entry, payload)
+        this._queueMarketStreamPayload(entry, payload)
       }))
       .then(subscription => {
         entry.upstreamSubscription = subscription
@@ -432,6 +437,33 @@ export class Hyperliquid extends System {
       const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.allMids(onPayload)
+      )
+      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+    } catch (error) {
+      entry.listeners.delete(localListener.id)
+      if (entry.listeners.size === 0) {
+        this.marketStreams.delete(entry.key)
+      }
+      throw error
+    }
+  }
+
+  async subscribeTrades({ ticker } = {}, listener, { owner } = {}) {
+    const descriptor = this._normalizeTradesStreamParams({ ticker })
+    const entry = this._ensureMarketStreamEntry({
+      key: descriptor.key,
+      channel: 'trades',
+      params: {
+        coin: descriptor.coin,
+      },
+      flushMode: 'queue',
+    })
+    const localListener = this._addMarketStreamListener(entry, listener, owner)
+
+    try {
+      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+        entry,
+        (subscriptionClient, onPayload) => subscriptionClient.trades({ coin: descriptor.coin }, onPayload)
       )
       return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
@@ -514,7 +546,22 @@ export class Hyperliquid extends System {
 
   update() {
     for (const entry of this.marketStreams.values()) {
-      if (entry.flushMode !== 'latest' || entry.pendingLatest === undefined) {
+      if (entry.flushMode === 'queue') {
+        if (!entry.pendingEvents.length) {
+          continue
+        }
+
+        const pendingEvents = entry.pendingEvents.slice()
+        entry.pendingEvents.length = 0
+        for (const payload of pendingEvents) {
+          for (const listener of entry.listeners.values()) {
+            listener.callback(payload)
+          }
+        }
+        continue
+      }
+
+      if (entry.pendingLatest === undefined) {
         continue
       }
 

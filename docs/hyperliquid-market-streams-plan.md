@@ -99,7 +99,7 @@ Each subscription returns:
   - Coalesce mids to the latest payload per frame.
   - Acceptance: multiple listeners share one upstream mids subscription.
 
-- [ ] 6. Implement `subscribeTrades({ ticker }, listener)`.
+- [x] 6. Implement `subscribeTrades({ ticker }, listener)`.
   - Normalize `ticker` to the Hyperliquid `coin` parameter.
   - Reuse one upstream trades subscription per ticker.
   - Preserve arrival order for trade batches when flushing.
