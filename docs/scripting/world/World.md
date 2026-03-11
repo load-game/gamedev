@@ -244,6 +244,8 @@ Returns:
 
 Returns the Hyperliquid trading helper API.
 
+Market streams are client-only in this pass. Stream callbacks run from the runtime update loop, not directly from the websocket event handler. When the owning app script is destroyed, its listeners are cleaned up automatically. `unsubscribe()` is optional for destroy-time cleanup and is mainly for stopping a stream early.
+
 ```js
 const hl = world.hyperliquid()
 ```
@@ -275,6 +277,51 @@ Returns open positions:
 #### `getAvailableTickers()`
 
 Returns a sorted ticker list available for trading.
+
+#### `subscribeMids(listener)`
+
+Subscribes to live mids for all markets.
+
+Returns:
+
+```js
+{ unsubscribe, failureSignal }
+```
+
+#### `subscribeTrades({ ticker }, listener)`
+
+Subscribes to live trade batches for a ticker.
+
+Returns:
+
+```js
+{ unsubscribe, failureSignal }
+```
+
+#### `subscribeOrderBook({ ticker, nSigFigs?, mantissa? }, listener)`
+
+Subscribes to the live order book for a ticker. `nSigFigs` and `mantissa` use Hyperliquid's optional aggregation settings.
+
+Returns:
+
+```js
+{ unsubscribe, failureSignal }
+```
+
+#### `subscribeCandles({ ticker, interval }, listener)`
+
+Subscribes to live candle updates for a ticker and interval.
+
+Supported intervals:
+- `1m`, `3m`, `5m`, `15m`, `30m`
+- `1h`, `2h`, `4h`, `8h`, `12h`
+- `1d`, `3d`, `1w`, `1M`
+
+Returns:
+
+```js
+{ unsubscribe, failureSignal }
+```
 
 #### `buy(ticker, amount, slippage = 1)`
 

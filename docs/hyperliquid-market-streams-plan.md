@@ -145,7 +145,7 @@ Each subscription returns:
   - Avoid entangling market-stream lifecycle with exchange-client lifecycle beyond shared system ownership.
   - Acceptance: existing trading tests still pass after streaming changes.
 
-- [ ] 13. Document the new market stream API in `docs/scripting/world/World.md`.
+- [x] 13. Document the new market stream API in `docs/scripting/world/World.md`.
   - Add the four new subscription methods under `.hyperliquid()`.
   - Document return shape: `{ unsubscribe, failureSignal }`.
   - State clearly that streaming is client-only for now.
