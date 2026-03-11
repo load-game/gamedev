@@ -632,11 +632,11 @@ function createHyperliquidMarketStreamHarness(methodNames) {
     }
   }
 
-  hl._createMarketStreamTransport = () => {
+  hl._createStreamTransport = () => {
     transportCreations += 1
     return transport
   }
-  hl._createMarketStreamSubscriptionClient = providedTransport => {
+  hl._createStreamSubscriptionClient = providedTransport => {
     clientCreations += 1
     assert.equal(providedTransport, transport)
     return client
@@ -656,7 +656,7 @@ function createHyperliquidMarketStreamHarness(methodNames) {
   }
 }
 
-test('Hyperliquid lazily creates and closes a shared market stream transport', async () => {
+test('Hyperliquid lazily creates and closes a shared stream transport', async () => {
   const hl = new Hyperliquid({})
   const transport = {
     closeCalls: 0,
@@ -667,20 +667,20 @@ test('Hyperliquid lazily creates and closes a shared market stream transport', a
   let transportCreations = 0
   let clientCreations = 0
 
-  hl._createMarketStreamTransport = () => {
+  hl._createStreamTransport = () => {
     transportCreations += 1
     return transport
   }
-  hl._createMarketStreamSubscriptionClient = providedTransport => {
+  hl._createStreamSubscriptionClient = providedTransport => {
     clientCreations += 1
     return { transport: providedTransport }
   }
 
-  assert.equal(hl.marketStreamTransport, null)
-  assert.equal(hl.marketStreamSubscriptionClient, null)
+  assert.equal(hl.streamTransport, null)
+  assert.equal(hl.streamSubscriptionClient, null)
 
-  const client = hl._getMarketStreamSubscriptionClient()
-  const secondClient = hl._getMarketStreamSubscriptionClient()
+  const client = hl._getStreamSubscriptionClient()
+  const secondClient = hl._getStreamSubscriptionClient()
 
   assert.equal(client, secondClient)
   assert.equal(client.transport, transport)
@@ -690,30 +690,30 @@ test('Hyperliquid lazily creates and closes a shared market stream transport', a
   await hl.destroy()
 
   assert.equal(transport.closeCalls, 1)
-  assert.equal(hl.marketStreamTransport, null)
-  assert.equal(hl.marketStreamSubscriptionClient, null)
+  assert.equal(hl.streamTransport, null)
+  assert.equal(hl.streamSubscriptionClient, null)
 
   await hl.destroy()
   assert.equal(transport.closeCalls, 1)
 })
 
-test('Hyperliquid tracks many local listeners on one market stream entry', () => {
+test('Hyperliquid tracks many local listeners on one shared stream entry', () => {
   const hl = new Hyperliquid({})
-  const entry = hl._ensureMarketStreamEntry({
+  const entry = hl._ensureStreamEntry({
     key: 'allMids',
     channel: 'allMids',
     flushMode: 'latest',
   })
-  const sameEntry = hl._ensureMarketStreamEntry({
+  const sameEntry = hl._ensureStreamEntry({
     key: 'allMids',
     channel: 'allMids',
     flushMode: 'latest',
   })
-  const firstListener = hl._addMarketStreamListener(entry, () => {})
-  const secondListener = hl._addMarketStreamListener(sameEntry, () => {})
+  const firstListener = hl._addStreamListener(entry, () => {})
+  const secondListener = hl._addStreamListener(sameEntry, () => {})
 
   assert.equal(entry, sameEntry)
-  assert.equal(hl.marketStreams.size, 1)
+  assert.equal(hl.streams.size, 1)
   assert.equal(entry.listeners.size, 2)
   assert.equal(entry.listeners.get(firstListener.id), firstListener)
   assert.equal(entry.listeners.get(secondListener.id), secondListener)
@@ -780,7 +780,7 @@ test('Hyperliquid reuses one upstream stream per key and tears it down on final 
   assert.equal(calls.length, 1)
   assert.equal(first.failureSignal, failureSignal)
   assert.equal(second.failureSignal, failureSignal)
-  assert.equal(hl.marketStreams.size, 1)
+  assert.equal(hl.streams.size, 1)
 
   calls[0].onPayload({ mids: { BTC: '101000' } })
   assert.deepEqual(firstReceived, [])
@@ -792,11 +792,11 @@ test('Hyperliquid reuses one upstream stream per key and tears it down on final 
 
   await first.unsubscribe()
   assert.equal(calls[0].unsubscribeCalls, 0)
-  assert.equal(hl.marketStreams.size, 1)
+  assert.equal(hl.streams.size, 1)
 
   await second.unsubscribe()
   assert.equal(calls[0].unsubscribeCalls, 1)
-  assert.equal(hl.marketStreams.size, 0)
+  assert.equal(hl.streams.size, 0)
 
   await second.unsubscribe()
   assert.equal(calls[0].unsubscribeCalls, 1)
@@ -880,7 +880,7 @@ test('Hyperliquid prunes dead owner listeners automatically', async () => {
   calls[0].onPayload({ mids: { BTC: '101000' } })
   hl.update()
   assert.deepEqual(received, [{ mids: { BTC: '101000' } }])
-  assert.equal(hl.marketStreams.size, 1)
+  assert.equal(hl.streams.size, 1)
 
   deadHook.dead = true
   calls[0].onPayload({ mids: { BTC: '102000' } })
@@ -889,7 +889,7 @@ test('Hyperliquid prunes dead owner listeners automatically', async () => {
 
   assert.deepEqual(received, [{ mids: { BTC: '101000' } }])
   assert.equal(calls[0].unsubscribeCalls, 1)
-  assert.equal(hl.marketStreams.size, 0)
+  assert.equal(hl.streams.size, 0)
 })
 
 test('Hyperliquid destroy unsubscribes market streams and closes the transport', async () => {
@@ -899,7 +899,7 @@ test('Hyperliquid destroy unsubscribes market streams and closes the transport',
   await hl.subscribeMids(() => {})
   await hl.subscribeTrades({ ticker: 'ETH' }, () => {})
 
-  assert.equal(hl.marketStreams.size, 2)
+  assert.equal(hl.streams.size, 2)
   assert.equal(getTransportCreations(), 1)
   assert.equal(getClientCreations(), 1)
 
@@ -909,9 +909,9 @@ test('Hyperliquid destroy unsubscribes market streams and closes the transport',
   assert.equal(calls[0].unsubscribeCalls, 1)
   assert.equal(calls[1].unsubscribeCalls, 1)
   assert.equal(transport.closeCalls, 1)
-  assert.equal(hl.marketStreams.size, 0)
-  assert.equal(hl.marketStreamTransport, null)
-  assert.equal(hl.marketStreamSubscriptionClient, null)
+  assert.equal(hl.streams.size, 0)
+  assert.equal(hl.streamTransport, null)
+  assert.equal(hl.streamSubscriptionClient, null)
 
   await hl.destroy()
   assert.equal(transport.closeCalls, 1)

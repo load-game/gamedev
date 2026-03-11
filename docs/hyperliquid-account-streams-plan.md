@@ -103,7 +103,7 @@ Each subscription returns:
   - Cache runtime APIs by owner+normalized-address pair.
   - Acceptance: `world.hyperliquid()` and `world.hyperliquid(address)` are both stable per owner/address combination.
 
-- [ ] 2. Generalize the existing market-stream internals into shared Hyperliquid stream infrastructure.
+- [x] 2. Generalize the existing market-stream internals into shared Hyperliquid stream infrastructure.
   - Rename narrow `marketStream*` internals or otherwise expand them so account streams can reuse the same transport, subscription client, registries, and listener lifecycle.
   - Keep one lazy websocket transport and one lazy subscription client shared across market and account streams.
   - Acceptance: market streams continue to work unchanged while account streams can reuse the same infrastructure.

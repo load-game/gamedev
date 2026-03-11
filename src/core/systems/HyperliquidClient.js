@@ -93,11 +93,11 @@ export class Hyperliquid extends System {
     this._assetIndexCache = null
     this.pendingDeposit = false
     this.runtimeAPIs = new Map()
-    this.marketStreamTransport = null
-    this.marketStreamSubscriptionClient = null
-    this.marketStreamTransportClosePromise = null
-    this.marketStreams = new Map()
-    this.marketStreamListenerId = 0
+    this.streamTransport = null
+    this.streamSubscriptionClient = null
+    this.streamTransportClosePromise = null
+    this.streams = new Map()
+    this.streamListenerId = 0
   }
 
   init() {
@@ -359,52 +359,50 @@ export class Hyperliquid extends System {
     return this.infoClient.allMids()
   }
 
-  _createMarketStreamTransport() {
+  _createStreamTransport() {
     return new WebSocketTransport()
   }
 
-  _createMarketStreamSubscriptionClient(transport) {
+  _createStreamSubscriptionClient(transport) {
     return new SubscriptionClient({ transport })
   }
 
-  _getMarketStreamTransport() {
-    if (!this.marketStreamTransport) {
-      this.marketStreamTransport = this._createMarketStreamTransport()
+  _getStreamTransport() {
+    if (!this.streamTransport) {
+      this.streamTransport = this._createStreamTransport()
     }
-    return this.marketStreamTransport
+    return this.streamTransport
   }
 
-  _getMarketStreamSubscriptionClient() {
-    if (!this.marketStreamSubscriptionClient) {
-      this.marketStreamSubscriptionClient = this._createMarketStreamSubscriptionClient(
-        this._getMarketStreamTransport()
-      )
+  _getStreamSubscriptionClient() {
+    if (!this.streamSubscriptionClient) {
+      this.streamSubscriptionClient = this._createStreamSubscriptionClient(this._getStreamTransport())
     }
-    return this.marketStreamSubscriptionClient
+    return this.streamSubscriptionClient
   }
 
-  async _closeMarketStreamTransport() {
-    if (this.marketStreamTransportClosePromise) {
-      return this.marketStreamTransportClosePromise
+  async _closeStreamTransport() {
+    if (this.streamTransportClosePromise) {
+      return this.streamTransportClosePromise
     }
-    if (!this.marketStreamTransport) {
-      this.marketStreamSubscriptionClient = null
+    if (!this.streamTransport) {
+      this.streamSubscriptionClient = null
       return
     }
 
-    const transport = this.marketStreamTransport
-    this.marketStreamTransport = null
-    this.marketStreamSubscriptionClient = null
-    this.marketStreamTransportClosePromise = Promise.resolve()
+    const transport = this.streamTransport
+    this.streamTransport = null
+    this.streamSubscriptionClient = null
+    this.streamTransportClosePromise = Promise.resolve()
       .then(() => transport.close?.())
       .finally(() => {
-        this.marketStreamTransportClosePromise = null
+        this.streamTransportClosePromise = null
       })
 
-    return this.marketStreamTransportClosePromise
+    return this.streamTransportClosePromise
   }
 
-  _createMarketStreamEntry({ key, channel = null, params = null, flushMode = 'latest' } = {}) {
+  _createStreamEntry({ key, channel = null, params = null, flushMode = 'latest' } = {}) {
     return {
       key,
       channel,
@@ -419,53 +417,53 @@ export class Hyperliquid extends System {
     }
   }
 
-  _getMarketStreamEntry(key) {
-    return this.marketStreams.get(key) || null
+  _getStreamEntry(key) {
+    return this.streams.get(key) || null
   }
 
-  _ensureMarketStreamEntry(descriptor) {
+  _ensureStreamEntry(descriptor) {
     const key = descriptor?.key
     if (!key) {
-      throw new Error('Market stream key is required')
+      throw new Error('Hyperliquid stream key is required')
     }
 
-    let entry = this.marketStreams.get(key)
+    let entry = this.streams.get(key)
     if (entry) {
       return entry
     }
 
-    entry = this._createMarketStreamEntry(descriptor)
-    this.marketStreams.set(key, entry)
+    entry = this._createStreamEntry(descriptor)
+    this.streams.set(key, entry)
     return entry
   }
 
-  _getMarketStreamListenerDeadHook(owner) {
+  _getStreamListenerDeadHook(owner) {
     if (!owner || typeof owner.getDeadHook !== 'function') {
       return null
     }
     return owner.getDeadHook()
   }
 
-  _addMarketStreamListener(entry, callback, owner = null) {
+  _addStreamListener(entry, callback, owner = null) {
     if (!entry) {
-      throw new Error('Market stream entry is required')
+      throw new Error('Hyperliquid stream entry is required')
     }
     if (typeof callback !== 'function') {
-      throw new Error('Market stream listener must be a function')
+      throw new Error('Hyperliquid stream listener must be a function')
     }
 
-    const listenerId = ++this.marketStreamListenerId
+    const listenerId = ++this.streamListenerId
     const listener = {
       id: listenerId,
       callback,
       owner,
-      deadHook: this._getMarketStreamListenerDeadHook(owner),
+      deadHook: this._getStreamListenerDeadHook(owner),
     }
     entry.listeners.set(listenerId, listener)
     return listener
   }
 
-  _queueMarketStreamPayload(entry, payload) {
+  _queueStreamPayload(entry, payload) {
     if (!entry) return
     if (entry.flushMode === 'queue') {
       entry.pendingEvents.push(payload)
@@ -474,9 +472,9 @@ export class Hyperliquid extends System {
     entry.pendingLatest = payload
   }
 
-  async _ensureMarketStreamUpstreamSubscription(entry, subscribeUpstream) {
+  async _ensureStreamUpstreamSubscription(entry, subscribeUpstream) {
     if (!entry) {
-      throw new Error('Market stream entry is required')
+      throw new Error('Hyperliquid stream entry is required')
     }
     if (entry.upstreamSubscription) {
       return entry.upstreamSubscription
@@ -486,9 +484,11 @@ export class Hyperliquid extends System {
     }
 
     entry.upstreamPromise = Promise.resolve()
-      .then(() => subscribeUpstream(this._getMarketStreamSubscriptionClient(), payload => {
-        this._queueMarketStreamPayload(entry, payload)
-      }))
+      .then(() =>
+        subscribeUpstream(this._getStreamSubscriptionClient(), payload => {
+          this._queueStreamPayload(entry, payload)
+        })
+      )
       .then(subscription => {
         entry.upstreamSubscription = subscription
         return subscription
@@ -500,7 +500,7 @@ export class Hyperliquid extends System {
     return entry.upstreamPromise
   }
 
-  async _teardownMarketStreamEntry(entry) {
+  async _teardownStreamEntry(entry) {
     if (!entry) {
       return
     }
@@ -512,7 +512,7 @@ export class Hyperliquid extends System {
     entry.upstreamSubscription = null
     entry.pendingLatest = undefined
     entry.pendingEvents.length = 0
-    this.marketStreams.delete(entry.key)
+    this.streams.delete(entry.key)
 
     entry.teardownPromise = Promise.resolve()
       .then(() => upstreamSubscription?.unsubscribe?.())
@@ -523,17 +523,17 @@ export class Hyperliquid extends System {
     return entry.teardownPromise
   }
 
-  async _destroyMarketStreams() {
-    const entries = Array.from(this.marketStreams.values())
+  async _destroyStreams() {
+    const entries = Array.from(this.streams.values())
     if (!entries.length) {
       return
     }
 
-    await Promise.allSettled(entries.map(entry => this._teardownMarketStreamEntry(entry)))
-    this.marketStreams.clear()
+    await Promise.allSettled(entries.map(entry => this._teardownStreamEntry(entry)))
+    this.streams.clear()
   }
 
-  async _removeMarketStreamListener(entry, listenerId) {
+  async _removeStreamListener(entry, listenerId) {
     if (!entry?.listeners.has(listenerId)) {
       return
     }
@@ -543,10 +543,10 @@ export class Hyperliquid extends System {
       return
     }
 
-    await this._teardownMarketStreamEntry(entry)
+    await this._teardownStreamEntry(entry)
   }
 
-  _getActiveMarketStreamListeners(entry) {
+  _getActiveStreamListeners(entry) {
     const listeners = []
 
     for (const [listenerId, listener] of entry.listeners) {
@@ -558,13 +558,13 @@ export class Hyperliquid extends System {
     }
 
     if (entry.listeners.size === 0) {
-      void this._teardownMarketStreamEntry(entry)
+      void this._teardownStreamEntry(entry)
     }
 
     return listeners
   }
 
-  _dispatchMarketStreamPayload(entry, listeners, payload) {
+  _dispatchStreamPayload(entry, listeners, payload) {
     for (const listener of listeners) {
       try {
         listener.callback(payload)
@@ -574,7 +574,7 @@ export class Hyperliquid extends System {
     }
   }
 
-  _createMarketStreamHandle(entry, listener, failureSignal) {
+  _createStreamHandle(entry, listener, failureSignal) {
     let unsubscribed = false
 
     return {
@@ -584,30 +584,30 @@ export class Hyperliquid extends System {
           return
         }
         unsubscribed = true
-        await this._removeMarketStreamListener(entry, listener.id)
+        await this._removeStreamListener(entry, listener.id)
       },
     }
   }
 
   async subscribeMids(listener, { owner } = {}) {
     const key = this._getAllMidsStreamKey()
-    const entry = this._ensureMarketStreamEntry({
+    const entry = this._ensureStreamEntry({
       key,
       channel: 'allMids',
       flushMode: 'latest',
     })
-    const localListener = this._addMarketStreamListener(entry, listener, owner)
+    const localListener = this._addStreamListener(entry, listener, owner)
 
     try {
-      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+      const upstreamSubscription = await this._ensureStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.allMids(onPayload)
       )
-      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+      return this._createStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
       entry.listeners.delete(localListener.id)
       if (entry.listeners.size === 0) {
-        this.marketStreams.delete(entry.key)
+        this.streams.delete(entry.key)
       }
       throw error
     }
@@ -615,7 +615,7 @@ export class Hyperliquid extends System {
 
   async subscribeTrades({ ticker } = {}, listener, { owner } = {}) {
     const descriptor = this._normalizeTradesStreamParams({ ticker })
-    const entry = this._ensureMarketStreamEntry({
+    const entry = this._ensureStreamEntry({
       key: descriptor.key,
       channel: 'trades',
       params: {
@@ -623,18 +623,18 @@ export class Hyperliquid extends System {
       },
       flushMode: 'queue',
     })
-    const localListener = this._addMarketStreamListener(entry, listener, owner)
+    const localListener = this._addStreamListener(entry, listener, owner)
 
     try {
-      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+      const upstreamSubscription = await this._ensureStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.trades({ coin: descriptor.coin }, onPayload)
       )
-      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+      return this._createStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
       entry.listeners.delete(localListener.id)
       if (entry.listeners.size === 0) {
-        this.marketStreams.delete(entry.key)
+        this.streams.delete(entry.key)
       }
       throw error
     }
@@ -652,24 +652,24 @@ export class Hyperliquid extends System {
       params.mantissa = descriptor.mantissa
     }
 
-    const entry = this._ensureMarketStreamEntry({
+    const entry = this._ensureStreamEntry({
       key: descriptor.key,
       channel: 'l2Book',
       params,
       flushMode: 'latest',
     })
-    const localListener = this._addMarketStreamListener(entry, listener, owner)
+    const localListener = this._addStreamListener(entry, listener, owner)
 
     try {
-      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+      const upstreamSubscription = await this._ensureStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.l2Book(params, onPayload)
       )
-      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+      return this._createStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
       entry.listeners.delete(localListener.id)
       if (entry.listeners.size === 0) {
-        this.marketStreams.delete(entry.key)
+        this.streams.delete(entry.key)
       }
       throw error
     }
@@ -681,24 +681,24 @@ export class Hyperliquid extends System {
       coin: descriptor.coin,
       interval: descriptor.interval,
     }
-    const entry = this._ensureMarketStreamEntry({
+    const entry = this._ensureStreamEntry({
       key: descriptor.key,
       channel: 'candle',
       params,
       flushMode: 'latest',
     })
-    const localListener = this._addMarketStreamListener(entry, listener, owner)
+    const localListener = this._addStreamListener(entry, listener, owner)
 
     try {
-      const upstreamSubscription = await this._ensureMarketStreamUpstreamSubscription(
+      const upstreamSubscription = await this._ensureStreamUpstreamSubscription(
         entry,
         (subscriptionClient, onPayload) => subscriptionClient.candle(params, onPayload)
       )
-      return this._createMarketStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+      return this._createStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
     } catch (error) {
       entry.listeners.delete(localListener.id)
       if (entry.listeners.size === 0) {
-        this.marketStreams.delete(entry.key)
+        this.streams.delete(entry.key)
       }
       throw error
     }
@@ -774,8 +774,8 @@ export class Hyperliquid extends System {
   }
 
   update() {
-    for (const entry of this.marketStreams.values()) {
-      const listeners = this._getActiveMarketStreamListeners(entry)
+    for (const entry of this.streams.values()) {
+      const listeners = this._getActiveStreamListeners(entry)
       if (!listeners.length) {
         entry.pendingLatest = undefined
         entry.pendingEvents.length = 0
@@ -790,7 +790,7 @@ export class Hyperliquid extends System {
         const pendingEvents = entry.pendingEvents.slice()
         entry.pendingEvents.length = 0
         for (const payload of pendingEvents) {
-          this._dispatchMarketStreamPayload(entry, listeners, payload)
+          this._dispatchStreamPayload(entry, listeners, payload)
         }
         continue
       }
@@ -802,7 +802,7 @@ export class Hyperliquid extends System {
       const payload = entry.pendingLatest
       entry.pendingLatest = undefined
 
-      this._dispatchMarketStreamPayload(entry, listeners, payload)
+      this._dispatchStreamPayload(entry, listeners, payload)
     }
   }
 
@@ -1273,7 +1273,7 @@ export class Hyperliquid extends System {
   }
 
   async destroy() {
-    await this._destroyMarketStreams()
-    await this._closeMarketStreamTransport()
+    await this._destroyStreams()
+    await this._closeStreamTransport()
   }
 }
