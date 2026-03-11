@@ -70,7 +70,7 @@ Each subscription returns:
   - Preserve all existing read/write methods on the runtime object.
   - Acceptance: existing call sites continue to work with no API regressions.
 
-- [ ] 2. Add websocket market-stream infrastructure to `src/core/systems/HyperliquidClient.js`.
+- [x] 2. Add websocket market-stream infrastructure to `src/core/systems/HyperliquidClient.js`.
   - Import `WebSocketTransport` and `SubscriptionClient` from `@nktkas/hyperliquid`.
   - Add lazy initialization for one shared websocket transport and one shared subscription client.
   - Add teardown logic so transport can be closed from `destroy()`.

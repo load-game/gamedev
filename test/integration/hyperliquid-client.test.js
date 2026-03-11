@@ -533,6 +533,47 @@ test('Hyperliquid injects a stable runtime API per owner', () => {
   assert.equal(typeof ownerARuntime.withdraw, 'function')
 })
 
+test('Hyperliquid lazily creates and closes a shared market stream transport', async () => {
+  const hl = new Hyperliquid({})
+  const transport = {
+    closeCalls: 0,
+    async close() {
+      this.closeCalls += 1
+    },
+  }
+  let transportCreations = 0
+  let clientCreations = 0
+
+  hl._createMarketStreamTransport = () => {
+    transportCreations += 1
+    return transport
+  }
+  hl._createMarketStreamSubscriptionClient = providedTransport => {
+    clientCreations += 1
+    return { transport: providedTransport }
+  }
+
+  assert.equal(hl.marketStreamTransport, null)
+  assert.equal(hl.marketStreamSubscriptionClient, null)
+
+  const client = hl._getMarketStreamSubscriptionClient()
+  const secondClient = hl._getMarketStreamSubscriptionClient()
+
+  assert.equal(client, secondClient)
+  assert.equal(client.transport, transport)
+  assert.equal(transportCreations, 1)
+  assert.equal(clientCreations, 1)
+
+  await hl.destroy()
+
+  assert.equal(transport.closeCalls, 1)
+  assert.equal(hl.marketStreamTransport, null)
+  assert.equal(hl.marketStreamSubscriptionClient, null)
+
+  await hl.destroy()
+  assert.equal(transport.closeCalls, 1)
+})
+
 test('Hyperliquid deposit uses wallet adapter contract operations', async () => {
   const calls = []
 

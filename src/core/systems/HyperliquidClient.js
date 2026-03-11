@@ -1,5 +1,11 @@
 import { System } from './System'
-import { HttpTransport, InfoClient, ExchangeClient } from '@nktkas/hyperliquid'
+import {
+  HttpTransport,
+  InfoClient,
+  ExchangeClient,
+  WebSocketTransport,
+  SubscriptionClient,
+} from '@nktkas/hyperliquid'
 import { PrivateKeySigner } from '@nktkas/hyperliquid/signing'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
@@ -67,6 +73,9 @@ export class Hyperliquid extends System {
     this._assetIndexCache = null
     this.pendingDeposit = false
     this.runtimeAPIs = new Map()
+    this.marketStreamTransport = null
+    this.marketStreamSubscriptionClient = null
+    this.marketStreamTransportClosePromise = null
   }
 
   init() {
@@ -224,6 +233,51 @@ export class Hyperliquid extends System {
 
   async _getAllMids() {
     return this.infoClient.allMids()
+  }
+
+  _createMarketStreamTransport() {
+    return new WebSocketTransport()
+  }
+
+  _createMarketStreamSubscriptionClient(transport) {
+    return new SubscriptionClient({ transport })
+  }
+
+  _getMarketStreamTransport() {
+    if (!this.marketStreamTransport) {
+      this.marketStreamTransport = this._createMarketStreamTransport()
+    }
+    return this.marketStreamTransport
+  }
+
+  _getMarketStreamSubscriptionClient() {
+    if (!this.marketStreamSubscriptionClient) {
+      this.marketStreamSubscriptionClient = this._createMarketStreamSubscriptionClient(
+        this._getMarketStreamTransport()
+      )
+    }
+    return this.marketStreamSubscriptionClient
+  }
+
+  async _closeMarketStreamTransport() {
+    if (this.marketStreamTransportClosePromise) {
+      return this.marketStreamTransportClosePromise
+    }
+    if (!this.marketStreamTransport) {
+      this.marketStreamSubscriptionClient = null
+      return
+    }
+
+    const transport = this.marketStreamTransport
+    this.marketStreamTransport = null
+    this.marketStreamSubscriptionClient = null
+    this.marketStreamTransportClosePromise = Promise.resolve()
+      .then(() => transport.close?.())
+      .finally(() => {
+        this.marketStreamTransportClosePromise = null
+      })
+
+    return this.marketStreamTransportClosePromise
   }
 
   async _getMeta() {
@@ -658,6 +712,6 @@ export class Hyperliquid extends System {
   }
 
   async destroy() {
-    // no-op
+    await this._closeMarketStreamTransport()
   }
 }
