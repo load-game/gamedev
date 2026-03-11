@@ -769,6 +769,33 @@ test('Hyperliquid normalizes market stream params into deterministic keys', () =
   })
 })
 
+test('Hyperliquid normalizes watched account addresses into deterministic stream keys', () => {
+  const hl = new Hyperliquid({})
+  hl.bind({
+    address: '0x00000000000000000000000000000000000000CC',
+    isConnected: false,
+  })
+
+  const explicit = hl._normalizeAccountStreamParams({
+    address: ' 0x00000000000000000000000000000000000000aa ',
+  })
+  const connectedWallet = hl._normalizeAccountStreamParams()
+
+  assert.deepEqual(explicit, {
+    address: getAddress('0x00000000000000000000000000000000000000aa'),
+    user: getAddress('0x00000000000000000000000000000000000000aa'),
+    key: `clearinghouseState:${getAddress('0x00000000000000000000000000000000000000aa')}`,
+  })
+  assert.deepEqual(connectedWallet, {
+    address: getAddress('0x00000000000000000000000000000000000000CC'),
+    user: getAddress('0x00000000000000000000000000000000000000CC'),
+    key: `clearinghouseState:${getAddress('0x00000000000000000000000000000000000000CC')}`,
+  })
+  assert.throws(() => hl._normalizeAccountStreamParams({ address: 'invalid-address' }), {
+    message: 'Invalid address',
+  })
+})
+
 test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {
   const { hl, calls, failureSignal } = createHyperliquidMarketStreamHarness(['allMids'])
   const firstReceived = []

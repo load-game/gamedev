@@ -108,7 +108,7 @@ Each subscription returns:
   - Keep one lazy websocket transport and one lazy subscription client shared across market and account streams.
   - Acceptance: market streams continue to work unchanged while account streams can reuse the same infrastructure.
 
-- [ ] 3. Normalize watched addresses and stream keys.
+- [x] 3. Normalize watched addresses and stream keys.
   - Normalize address inputs with the same checksum and canonical rules used elsewhere in the runtime.
   - Define a deterministic key for v1 account streams:
     - `clearinghouseState:${address}`

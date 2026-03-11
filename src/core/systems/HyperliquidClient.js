@@ -200,7 +200,7 @@ export class Hyperliquid extends System {
       throw new Error('No wallet connected')
     }
 
-    return this.address
+    return this._normalizeAddress(this.address, 'address')
   }
 
   getRuntimeAPI(ownerOrOptions = null, maybeAddress = undefined) {
@@ -771,6 +771,19 @@ export class Hyperliquid extends System {
 
   _getAllMidsStreamKey() {
     return 'allMids'
+  }
+
+  _getClearinghouseStateStreamKey(address) {
+    return `clearinghouseState:${address}`
+  }
+
+  _normalizeAccountStreamParams({ address = null } = {}) {
+    const normalizedAddress = this._getReadAddress(address)
+    return {
+      address: normalizedAddress,
+      user: normalizedAddress,
+      key: this._getClearinghouseStateStreamKey(normalizedAddress),
+    }
   }
 
   update() {
