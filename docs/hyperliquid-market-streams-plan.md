@@ -153,7 +153,7 @@ Each subscription returns:
   - State that `unsubscribe()` is optional for destroy-time cleanup and is mainly for stopping a stream early.
   - Acceptance: world scripting docs cover both discrete reads and market streams.
 
-- [ ] 14. Add integration tests in `test/integration/hyperliquid-client.test.js`.
+- [x] 14. Add integration tests in `test/integration/hyperliquid-client.test.js`.
   - Test that injected runtime exposes the four subscription methods.
   - Test that duplicate subscriptions reuse one upstream stream.
   - Test that unsubscribing the final listener tears down the upstream subscription.

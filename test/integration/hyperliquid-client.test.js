@@ -529,9 +529,72 @@ test('Hyperliquid injects a stable runtime API per owner', () => {
   assert.notEqual(defaultRuntime, ownerARuntime)
   assert.notEqual(ownerARuntime, ownerBRuntime)
   assert.equal(typeof ownerARuntime.getPrice, 'function')
+  assert.equal(typeof ownerARuntime.subscribeMids, 'function')
+  assert.equal(typeof ownerARuntime.subscribeTrades, 'function')
+  assert.equal(typeof ownerARuntime.subscribeOrderBook, 'function')
+  assert.equal(typeof ownerARuntime.subscribeCandles, 'function')
   assert.equal(typeof ownerARuntime.buy, 'function')
   assert.equal(typeof ownerARuntime.withdraw, 'function')
 })
+
+function createHyperliquidMarketStreamHarness(methodNames) {
+  const hl = new Hyperliquid({})
+  const calls = []
+  const failureSignal = { pending: true }
+  const transport = {
+    closeCalls: 0,
+    async close() {
+      this.closeCalls += 1
+    },
+  }
+  const client = {}
+  let transportCreations = 0
+  let clientCreations = 0
+
+  for (const methodName of methodNames) {
+    client[methodName] = (...args) => {
+      const onPayload = args[args.length - 1]
+      const params = args.length === 2 ? args[0] : null
+      const call = {
+        methodName,
+        params,
+        onPayload,
+        unsubscribeCalls: 0,
+      }
+      calls.push(call)
+
+      return {
+        failureSignal,
+        async unsubscribe() {
+          call.unsubscribeCalls += 1
+        },
+      }
+    }
+  }
+
+  hl._createMarketStreamTransport = () => {
+    transportCreations += 1
+    return transport
+  }
+  hl._createMarketStreamSubscriptionClient = providedTransport => {
+    clientCreations += 1
+    assert.equal(providedTransport, transport)
+    return client
+  }
+
+  return {
+    hl,
+    calls,
+    failureSignal,
+    transport,
+    getTransportCreations() {
+      return transportCreations
+    },
+    getClientCreations() {
+      return clientCreations
+    },
+  }
+}
 
 test('Hyperliquid lazily creates and closes a shared market stream transport', async () => {
   const hl = new Hyperliquid({})
@@ -644,6 +707,154 @@ test('Hyperliquid normalizes market stream params into deterministic keys', () =
   assert.throws(() => hl._normalizeCandleStreamParams({ ticker: 'SOL', interval: '10m' }), {
     message: 'Invalid Hyperliquid candle interval: 10m',
   })
+})
+
+test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {
+  const { hl, calls, failureSignal } = createHyperliquidMarketStreamHarness(['allMids'])
+  const firstReceived = []
+  const secondReceived = []
+
+  const first = await hl.subscribeMids(payload => firstReceived.push(payload))
+  const second = await hl.subscribeMids(payload => secondReceived.push(payload))
+
+  assert.equal(calls.length, 1)
+  assert.equal(first.failureSignal, failureSignal)
+  assert.equal(second.failureSignal, failureSignal)
+  assert.equal(hl.marketStreams.size, 1)
+
+  calls[0].onPayload({ mids: { BTC: '101000' } })
+  assert.deepEqual(firstReceived, [])
+  assert.deepEqual(secondReceived, [])
+
+  hl.update()
+  assert.deepEqual(firstReceived, [{ mids: { BTC: '101000' } }])
+  assert.deepEqual(secondReceived, [{ mids: { BTC: '101000' } }])
+
+  await first.unsubscribe()
+  assert.equal(calls[0].unsubscribeCalls, 0)
+  assert.equal(hl.marketStreams.size, 1)
+
+  await second.unsubscribe()
+  assert.equal(calls[0].unsubscribeCalls, 1)
+  assert.equal(hl.marketStreams.size, 0)
+
+  await second.unsubscribe()
+  assert.equal(calls[0].unsubscribeCalls, 1)
+})
+
+test('Hyperliquid coalesces mids, order book, and candle payloads until update', async () => {
+  const { hl, calls } = createHyperliquidMarketStreamHarness(['allMids', 'l2Book', 'candle'])
+  const midsReceived = []
+  const orderBookReceived = []
+  const candlesReceived = []
+
+  await hl.subscribeMids(payload => midsReceived.push(payload))
+  await hl.subscribeOrderBook({ ticker: ' eth ', nSigFigs: '5', mantissa: '2' }, payload =>
+    orderBookReceived.push(payload)
+  )
+  await hl.subscribeCandles({ ticker: ' sol ', interval: '1m' }, payload => candlesReceived.push(payload))
+
+  assert.equal(calls.length, 3)
+  assert.deepEqual(calls.map(call => [call.methodName, call.params]), [
+    ['allMids', null],
+    ['l2Book', { coin: 'ETH', nSigFigs: 5, mantissa: 2 }],
+    ['candle', { coin: 'SOL', interval: '1m' }],
+  ])
+
+  calls[0].onPayload({ mids: { BTC: '101000' } })
+  calls[0].onPayload({ mids: { BTC: '102000' } })
+  calls[1].onPayload({ levels: [['buy-1']] })
+  calls[1].onPayload({ levels: [['buy-2']] })
+  calls[2].onPayload({ c: '10' })
+  calls[2].onPayload({ c: '11' })
+
+  assert.deepEqual(midsReceived, [])
+  assert.deepEqual(orderBookReceived, [])
+  assert.deepEqual(candlesReceived, [])
+
+  hl.update()
+
+  assert.deepEqual(midsReceived, [{ mids: { BTC: '102000' } }])
+  assert.deepEqual(orderBookReceived, [{ levels: [['buy-2']] }])
+  assert.deepEqual(candlesReceived, [{ c: '11' }])
+})
+
+test('Hyperliquid flushes trades in arrival order during update', async () => {
+  const { hl, calls } = createHyperliquidMarketStreamHarness(['trades'])
+  const received = []
+
+  await hl.subscribeTrades({ ticker: ' btc ' }, payload => received.push(payload))
+
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0].params, { coin: 'BTC' })
+
+  calls[0].onPayload([{ px: '101000' }])
+  calls[0].onPayload([{ px: '102000' }])
+  calls[0].onPayload([{ px: '103000' }])
+
+  assert.deepEqual(received, [])
+
+  hl.update()
+
+  assert.deepEqual(received, [
+    [{ px: '101000' }],
+    [{ px: '102000' }],
+    [{ px: '103000' }],
+  ])
+})
+
+test('Hyperliquid prunes dead owner listeners automatically', async () => {
+  const { hl, calls } = createHyperliquidMarketStreamHarness(['allMids'])
+  const deadHook = { dead: false }
+  const owner = {
+    getDeadHook() {
+      return deadHook
+    },
+  }
+  const received = []
+  const runtime = hl.getRuntimeAPI(owner)
+
+  await runtime.subscribeMids(payload => received.push(payload))
+  assert.equal(calls.length, 1)
+
+  calls[0].onPayload({ mids: { BTC: '101000' } })
+  hl.update()
+  assert.deepEqual(received, [{ mids: { BTC: '101000' } }])
+  assert.equal(hl.marketStreams.size, 1)
+
+  deadHook.dead = true
+  calls[0].onPayload({ mids: { BTC: '102000' } })
+  hl.update()
+  await Promise.resolve()
+
+  assert.deepEqual(received, [{ mids: { BTC: '101000' } }])
+  assert.equal(calls[0].unsubscribeCalls, 1)
+  assert.equal(hl.marketStreams.size, 0)
+})
+
+test('Hyperliquid destroy unsubscribes market streams and closes the transport', async () => {
+  const { hl, calls, transport, getTransportCreations, getClientCreations } =
+    createHyperliquidMarketStreamHarness(['allMids', 'trades'])
+
+  await hl.subscribeMids(() => {})
+  await hl.subscribeTrades({ ticker: 'ETH' }, () => {})
+
+  assert.equal(hl.marketStreams.size, 2)
+  assert.equal(getTransportCreations(), 1)
+  assert.equal(getClientCreations(), 1)
+
+  await hl.destroy()
+
+  assert.equal(calls.length, 2)
+  assert.equal(calls[0].unsubscribeCalls, 1)
+  assert.equal(calls[1].unsubscribeCalls, 1)
+  assert.equal(transport.closeCalls, 1)
+  assert.equal(hl.marketStreams.size, 0)
+  assert.equal(hl.marketStreamTransport, null)
+  assert.equal(hl.marketStreamSubscriptionClient, null)
+
+  await hl.destroy()
+  assert.equal(transport.closeCalls, 1)
 })
 
 test('Hyperliquid deposit uses wallet adapter contract operations', async () => {
