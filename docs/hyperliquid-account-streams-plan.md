@@ -153,7 +153,7 @@ Each subscription returns:
   - Add the normalized account snapshot type and `subscribeAccount`.
   - Acceptance: the public scripting types reflect the new API.
 
-- [ ] 11. Add integration tests.
+- [x] 11. Add integration tests.
   - Test runtime caching across owner+address pairs.
   - Test address normalization into deterministic keys.
   - Test duplicate subscriptions sharing one upstream `clearinghouseState` stream.
