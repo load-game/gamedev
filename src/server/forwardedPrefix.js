@@ -11,16 +11,8 @@ export function extractRuntimePrefixFromPath(value) {
   const trimmed = value.trim()
   if (!trimmed) return ''
   const [pathname] = trimmed.split('?')
-  const patterns = [
-    /^(\/worlds\/[^/]+)/,
-    /^(\/games\/[^/]+\/studio)/,
-    /^(\/games\/[^/]+\/matches\/[^/]+)/,
-  ]
-  for (const pattern of patterns) {
-    const match = pathname.match(pattern)
-    if (match) return match[1]
-  }
-  return ''
+  const match = pathname.match(/^(\/worlds\/[^/]+)/)
+  return match ? match[1] : ''
 }
 
 export function deriveAdminUrlFromRequest(req) {
