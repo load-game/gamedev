@@ -318,7 +318,8 @@ const db = await getDB({ worldDir })
 await cleaner.init({ db })
 
 // init storage
-const storage = new Storage(path.join(worldDir, '/storage.json'))
+const storage = new Storage(db)
+await storage.init()
 
 // create world
 const world = createServerWorld()
@@ -717,6 +718,7 @@ async function worldNetwork(fastify) {
 process.on('SIGINT', async () => {
   agonesIdleController.clearIdleShutdownTimer('sigint')
   await world.network.save()
+  await world.storage?.close?.()
   await fastify.close()
   if (wssServer) await wssServer.close()
   process.exit(0)
@@ -725,6 +727,7 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   agonesIdleController.clearIdleShutdownTimer('sigterm')
   await world.network.save()
+  await world.storage?.close?.()
   await fastify.close()
   if (wssServer) await wssServer.close()
   process.exit(0)

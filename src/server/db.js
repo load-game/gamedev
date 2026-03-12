@@ -499,4 +499,15 @@ const migrations = [
       table.index(['objectUid'])
     })
   },
+  // add world storage table
+  async db => {
+    const exists = await db.schema.hasTable('world_storage')
+    if (exists) return
+    await db.schema.createTable('world_storage', table => {
+      table.string('key').primary()
+      table.text('value').notNullable()
+      table.timestamp('createdAt').notNullable()
+      table.timestamp('updatedAt').notNullable()
+    })
+  },
 ]
