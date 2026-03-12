@@ -47,7 +47,7 @@ Status: Ready for implementation
 - [x] P2-02 (S, `runtime`): Remove `ALLOW_WORLD_ID_CONFIG_MISMATCH` from `.env.example` and app-server docs.
   Deliverable: `.env.example` and `docs/App-server.md` no longer document the prototype mismatch flag.
 
-- [ ] P2-03 (S, `runtime`): Delete the dedicated mismatch tests.
+- [x] P2-03 (S, `runtime`): Delete the dedicated mismatch tests.
   Deliverable: `test/integration/world-id-mismatch.test.js` is removed.
 
 ### P3 - Match Completion Hook Removal
