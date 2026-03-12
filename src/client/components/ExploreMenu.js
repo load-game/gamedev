@@ -65,9 +65,6 @@ export function ExploreMenu({ open, onClose }) {
   const [worlds, setWorlds] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [games, setGames] = useState([])
-  const [gamesLoading, setGamesLoading] = useState(false)
-  const [gamesError, setGamesError] = useState('')
   const [query, setQuery] = useState('')
   const [playerCounts, setPlayerCounts] = useState({})
 
@@ -138,9 +135,6 @@ export function ExploreMenu({ open, onClose }) {
     setWorlds([])
     setPlayerCounts({})
     setLoading(true)
-    setGames([])
-    setGamesLoading(true)
-    setGamesError('')
 
     setFriends([])
     setIncomingRequests([])
@@ -196,32 +190,13 @@ export function ExploreMenu({ open, onClose }) {
         setLoading(false)
       })
 
-    fetch(`${apiBase}/games`, { credentials: 'include', headers: { accept: 'application/json' } })
-      .then(r => r.json().then(body => ({ ok: r.ok, body })).catch(() => ({ ok: false, body: null })))
-      .then(({ ok, body }) => {
-        if (cancelled) return
-        if (!ok) {
-          setGamesError('Failed to load games.')
-          setGamesLoading(false)
-          return
-        }
-        const list = Array.isArray(body?.games) ? body.games : []
-        setGames(list)
-        setGamesLoading(false)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setGamesError('Failed to load games.')
-        setGamesLoading(false)
-      })
-
     return () => {
       cancelled = true
     }
   }, [open, refreshFriends])
 
   useEffect(() => {
-    if (!open || (tab !== 'worlds' && tab !== 'games')) return
+    if (!open || tab !== 'worlds') return
     const timer = setTimeout(() => searchRef.current?.focus(), 50)
     return () => clearTimeout(timer)
   }, [open, tab])
@@ -242,14 +217,6 @@ export function ExploreMenu({ open, onClose }) {
       : [...worlds]
     return list.sort((a, b) => (playerCounts[b.slug] ?? -1) - (playerCounts[a.slug] ?? -1))
   }, [worlds, query, playerCounts])
-
-  const filteredGames = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const list = q
-      ? games.filter(g => (g.name || '').toLowerCase().includes(q) || (g.slug || '').toLowerCase().includes(q))
-      : [...games]
-    return list
-  }, [games, query])
 
   const handleAddFriend = useCallback(async () => {
     const targetName = friendName.trim()
@@ -775,7 +742,6 @@ export function ExploreMenu({ open, onClose }) {
         <div className='explore-head'>
           <div className='explore-head-left'>
             {tab === 'worlds' && <GlobeIcon size='1rem' />}
-            {tab === 'games' && <CheckIcon size='1rem' />}
             {tab === 'friends' && <UsersIcon size='1rem' />}
             <div className='explore-head-title'>Explore</div>
           </div>
@@ -789,13 +755,6 @@ export function ExploreMenu({ open, onClose }) {
               Worlds
             </button>
             <button
-              className={`explore-tab ${tab === 'games' ? 'active' : ''}`}
-              onClick={() => setTab('games')}
-            >
-              <CheckIcon size='0.75rem' />
-              Games
-            </button>
-            <button
               className={`explore-tab ${tab === 'friends' ? 'active' : ''}`}
               onClick={() => setTab('friends')}
             >
@@ -804,13 +763,13 @@ export function ExploreMenu({ open, onClose }) {
             </button>
           </div>
 
-          {(tab === 'worlds' || tab === 'games') ? (
+          {tab === 'worlds' ? (
             <div className='explore-search'>
               <SearchIcon size='0.8rem' />
               <input
                 ref={searchRef}
                 className='explore-search-input'
-                placeholder={tab === 'games' ? 'Search games...' : 'Search worlds...'}
+                placeholder='Search worlds...'
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
@@ -877,55 +836,6 @@ export function ExploreMenu({ open, onClose }) {
                               {playerCounts[world.slug]}
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {tab === 'games' && (
-            <>
-              {gamesLoading && (
-                <div className='explore-status'>
-                  <LoaderIcon size='1rem' style={{ verticalAlign: 'text-bottom', marginRight: '0.4rem' }} />
-                  Loading games...
-                </div>
-              )}
-              {!gamesLoading && gamesError && <div className='explore-error'>{gamesError}</div>}
-              {!gamesLoading && !gamesError && games.length === 0 && <div className='explore-status'>No games found.</div>}
-              {!gamesLoading && !gamesError && games.length > 0 && filteredGames.length === 0 && (
-                <div className='explore-status'>No results for "{query}".</div>
-              )}
-              {!gamesLoading && !gamesError && filteredGames.length > 0 && (
-                <div className='explore-grid'>
-                  {filteredGames.map(game => (
-                    <div
-                      key={game.id || game.slug}
-                      className='explore-card'
-                      onClick={() => {
-                        window.location.href = `/games/${game.slug}`
-                      }}
-                    >
-                      <div className='explore-card-img-wrap'>
-                        <img
-                          className='explore-card-img'
-                          src={'/placeholder-room.png'}
-                          alt={game.name || game.slug}
-                        />
-                      </div>
-                      <div className='explore-card-overlay' />
-                      <div className='explore-card-info'>
-                        <div className='explore-card-footer'>
-                          <div className='explore-card-meta'>
-                            <div className='explore-card-name'>{game.name || game.slug}</div>
-                          </div>
-                          <div className='explore-card-players'>
-                            <div className='explore-card-players-dot' />
-                            {`${game.active_match_count || 0}m / ${game.queue_count || 0}q`}
-                          </div>
                         </div>
                       </div>
                     </div>
