@@ -1022,6 +1022,8 @@ export class Hyperliquid extends System {
     return price
   }
 
+  // TODO: A future pass can serve getBalance/getPositions from the latest streamed
+  // account snapshot when the runtime already has one for its bound target address.
   async getBalance({ address = null } = {}) {
     const state = await this._getClearinghouseState({ address })
     return parseFloat(state?.marginSummary?.accountValue || 0)

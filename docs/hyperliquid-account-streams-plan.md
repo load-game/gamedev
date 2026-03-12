@@ -137,7 +137,7 @@ Each subscription returns:
   - On address-bound runtimes, throw a clear error for `buy`, `sell`, `closePosition`, `deposit`, `withdraw`, `hasAgentKey`, and `setupAgentKey`.
   - Acceptance: `world.hyperliquid(address)` is explicitly watch-only and never silently acts on the connected wallet.
 
-- [ ] 8. Keep existing pull reads unchanged, with a TODO for later convergence.
+- [x] 8. Keep existing pull reads unchanged, with a TODO for later convergence.
   - Leave `getBalance()` and `getPositions()` as request/response helpers backed by `infoClient`.
   - Add a TODO near those methods noting that a future pass could serve them from the latest streamed snapshot when available.
   - Acceptance: no behavior change today, but the future direction is documented in code.
