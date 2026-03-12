@@ -55,7 +55,7 @@ Status: Ready for implementation
 - [x] P3-01 (S, `runtime`): Delete the client-side match completion helper and its test.
   Deliverable: `src/client/matchCompletion.js` and `test/integration/match-completion-payload.test.js` are removed.
 
-- [ ] P3-02 (M, `runtime`): Remove the runtime shutdown-time POST to `/internal/matches/complete`.
+- [x] P3-02 (M, `runtime`): Remove the runtime shutdown-time POST to `/internal/matches/complete`.
   Deliverable: `src/server/index.js` no longer computes `lobbyMatchCompletionUrl`, tracks `matchCompletionFinalized`, or sends a match completion callback before Agones shutdown.
 
 - [ ] P3-03 (S, `runtime`): Keep generic idle shutdown behavior intact while removing games-only completion coupling.

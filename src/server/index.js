@@ -349,14 +349,12 @@ const AGONES_SDK_HTTP_PORT =
 const agonesIdleControllerEnabled =
   hasValue(process.env.PUBLIC_AUTH_URL) && parseBooleanEnvFlag(process.env.SHUTDOWN_IDLE, false)
 const agonesShutdownUrl = `http://127.0.0.1:${AGONES_SDK_HTTP_PORT}/shutdown`
-const lobbyMatchCompletionUrl = resolveLobbyInternalEndpoint('/internal/matches/complete')
 const adminConnectionCounts = {
   main: 0,
   wss: 0,
 }
 let idleShutdownTimerId = null
 let idleShutdownRequested = false
-let matchCompletionFinalized = false
 
 function getAdminConnectionCount() {
   return adminConnectionCounts.main + adminConnectionCounts.wss
@@ -378,41 +376,6 @@ function clearIdleShutdownTimer(reason = 'active_session') {
   console.info(`[agones-idle] cancelled idle shutdown (${reason})`)
 }
 
-async function requestMatchCompletion(reason = 'idle') {
-  if (!agonesIdleControllerEnabled || matchCompletionFinalized) return
-  if (getActiveSessionCount() > 0) return
-  if (!lobbyMatchCompletionUrl) return
-
-  const apiKey = deriveRuntimeInternalApiKey(process.env.WORLD_ID, process.env.JWT_SECRET)
-  if (!apiKey) return
-
-  try {
-    const response = await fetch(lobbyMatchCompletionUrl, {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/json',
-        authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({ reason }),
-    })
-
-    if (response.status === 404) {
-      matchCompletionFinalized = true
-      console.info('[agones-idle] no match row found for completion; skipping future completion signals')
-      return
-    }
-    if (!response.ok) {
-      throw new Error(`lobby_status_${response.status}`)
-    }
-
-    matchCompletionFinalized = true
-    console.info(`[agones-idle] signaled match completion (${reason})`)
-  } catch (err) {
-    console.warn(`[agones-idle] failed to signal match completion (${formatErrorMessage(err)})`)
-  }
-}
-
 function scheduleIdleShutdown(reason = 'idle') {
   if (!agonesIdleControllerEnabled || idleShutdownRequested || idleShutdownTimerId) return
   idleShutdownTimerId = setTimeout(() => {
@@ -429,7 +392,6 @@ async function requestAgonesShutdown(reason = 'idle') {
     return
   }
   try {
-    await requestMatchCompletion('agones_shutdown_requested')
     const response = await fetch(agonesShutdownUrl, { method: 'POST' })
     if (!response.ok) {
       throw new Error(`agones_sdk_status_${response.status}`)
