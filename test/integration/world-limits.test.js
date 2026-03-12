@@ -1,39 +1,39 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { ServerNetwork } from '../../src/core/systems/ServerNetwork.js'
 import { getMaxUploadSizeBytes, getMaxUploadSizeMb, getWorldMaxPlayers } from '../../src/server/worldLimits.js'
 
 function withEnv(overrides, run) {
-  const previous = {
-    PUBLIC_MAX_UPLOAD_SIZE: process.env.PUBLIC_MAX_UPLOAD_SIZE,
-    PUBLIC_WORLD_MAX_PLAYERS: process.env.PUBLIC_WORLD_MAX_PLAYERS,
-  }
-  if (Object.prototype.hasOwnProperty.call(overrides, 'PUBLIC_MAX_UPLOAD_SIZE')) {
-    if (overrides.PUBLIC_MAX_UPLOAD_SIZE === undefined) {
-      delete process.env.PUBLIC_MAX_UPLOAD_SIZE
+  const previous = {}
+  for (const key of Object.keys(overrides)) {
+    previous[key] = process.env[key]
+    if (overrides[key] === undefined) {
+      delete process.env[key]
     } else {
-      process.env.PUBLIC_MAX_UPLOAD_SIZE = overrides.PUBLIC_MAX_UPLOAD_SIZE
+      process.env[key] = overrides[key]
     }
   }
-  if (Object.prototype.hasOwnProperty.call(overrides, 'PUBLIC_WORLD_MAX_PLAYERS')) {
-    if (overrides.PUBLIC_WORLD_MAX_PLAYERS === undefined) {
-      delete process.env.PUBLIC_WORLD_MAX_PLAYERS
-    } else {
-      process.env.PUBLIC_WORLD_MAX_PLAYERS = overrides.PUBLIC_WORLD_MAX_PLAYERS
+
+  const restore = () => {
+    for (const key of Object.keys(overrides)) {
+      if (previous[key] === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = previous[key]
+      }
     }
   }
+
   try {
-    run()
-  } finally {
-    if (previous.PUBLIC_MAX_UPLOAD_SIZE === undefined) {
-      delete process.env.PUBLIC_MAX_UPLOAD_SIZE
-    } else {
-      process.env.PUBLIC_MAX_UPLOAD_SIZE = previous.PUBLIC_MAX_UPLOAD_SIZE
+    const result = run()
+    if (result && typeof result.then === 'function') {
+      return result.finally(restore)
     }
-    if (previous.PUBLIC_WORLD_MAX_PLAYERS === undefined) {
-      delete process.env.PUBLIC_WORLD_MAX_PLAYERS
-    } else {
-      process.env.PUBLIC_WORLD_MAX_PLAYERS = previous.PUBLIC_WORLD_MAX_PLAYERS
-    }
+    restore()
+    return result
+  } catch (err) {
+    restore()
+    throw err
   }
 }
 
@@ -66,5 +66,38 @@ test('world limits clamp invalid or non-positive values', () => {
   }, () => {
     assert.equal(getMaxUploadSizeMb(), 12)
     assert.equal(getWorldMaxPlayers(), 0)
+  })
+})
+
+test('server network rejects WORLD_ID mismatches against config worldId', async () => {
+  const db = table => {
+    assert.equal(table, 'config')
+    return {
+      where({ key }) {
+        return {
+          async first() {
+            if (key === 'spawn') {
+              return {
+                value: '{ "position": [0, 0, 0], "quaternion": [0, 0, 0, 1] }',
+              }
+            }
+            if (key === 'worldId') {
+              return { value: 'studio-world' }
+            }
+            return null
+          },
+        }
+      },
+    }
+  }
+
+  await withEnv({ WORLD_ID: 'match-world' }, async () => {
+    const network = new ServerNetwork({})
+    network.init({ db })
+    try {
+      await assert.rejects(network.start(), /WORLD_ID mismatch: env=match-world db=studio-world/)
+    } finally {
+      network.destroy()
+    }
   })
 })
