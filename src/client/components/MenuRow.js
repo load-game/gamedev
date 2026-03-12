@@ -6,7 +6,7 @@ import { MicIcon, MicOffIcon } from './Icons'
 
 const onboardingSteps = [
   { selector: '.editor-logo', text: 'Settings' },
-  { selector: '.editor-explore', text: 'Explore worlds and games' },
+  { selector: '.editor-explore', text: 'Explore worlds' },
   { selector: '.editor-user', text: 'Sign in and manage your world' },
   { selector: null, text: 'Sign in → create a world → go to your world → press Tab to open the editor → copy the SDK prompt to start building' },
 ]

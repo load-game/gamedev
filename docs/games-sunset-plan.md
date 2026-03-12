@@ -25,7 +25,7 @@ Status: Ready for implementation
 - [x] P0-01 (M, `runtime`): Remove the `Games` tab, its state, and its `/games` fetch flow from `src/client/components/ExploreMenu.js`.
   Deliverable: no runtime UI calls `GET /games`, displays games-specific counters, or links to `/games/:game`.
 
-- [ ] P0-02 (S, `runtime`): Remove the onboarding copy that still advertises games discovery.
+- [x] P0-02 (S, `runtime`): Remove the onboarding copy that still advertises games discovery.
   Deliverable: `src/client/components/MenuRow.js` no longer says "Explore worlds and games".
 
 ### P1 - `/games` Prefix Compatibility Removal
