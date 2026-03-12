@@ -704,6 +704,37 @@ export class Hyperliquid extends System {
     }
   }
 
+  async subscribeAccount(listener, { owner = null, address = null } = {}) {
+    const descriptor = this._normalizeAccountStreamParams({ address })
+    const params = {
+      user: descriptor.user,
+    }
+    const entry = this._ensureStreamEntry({
+      key: descriptor.key,
+      channel: 'clearinghouseState',
+      params,
+      flushMode: 'latest',
+    })
+    const localListener = this._addStreamListener(entry, listener, owner)
+
+    try {
+      const upstreamSubscription = await this._ensureStreamUpstreamSubscription(
+        entry,
+        (subscriptionClient, onPayload) =>
+          subscriptionClient.clearinghouseState(params, payload => {
+            onPayload(this._normalizeAccountSnapshotEvent(payload))
+          })
+      )
+      return this._createStreamHandle(entry, localListener, upstreamSubscription.failureSignal)
+    } catch (error) {
+      entry.listeners.delete(localListener.id)
+      if (entry.listeners.size === 0) {
+        this.streams.delete(entry.key)
+      }
+      throw error
+    }
+  }
+
   _normalizeMarketTicker(ticker) {
     if (typeof ticker !== 'string') {
       throw new Error('Hyperliquid ticker must be a string')

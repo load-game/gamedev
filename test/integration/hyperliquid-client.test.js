@@ -656,6 +656,53 @@ function createHyperliquidMarketStreamHarness(methodNames) {
   }
 }
 
+function createClearinghouseStateEvent(user, overrides = {}) {
+  return {
+    user,
+    dex: '',
+    clearinghouseState: {
+      marginSummary: {
+        accountValue: '1000',
+        totalNtlPos: '1500',
+        totalRawUsd: '1000',
+        totalMarginUsed: '45',
+      },
+      crossMarginSummary: {
+        accountValue: '1000',
+        totalNtlPos: '1500',
+        totalRawUsd: '1000',
+        totalMarginUsed: '45',
+      },
+      crossMaintenanceMarginUsed: '10',
+      withdrawable: '955',
+      assetPositions: [
+        {
+          type: 'oneWay',
+          position: {
+            coin: 'BTC',
+            szi: '0.01',
+            leverage: { type: 'cross', value: 5 },
+            entryPx: '100000',
+            positionValue: '1000',
+            unrealizedPnl: '12.5',
+            returnOnEquity: '0.12',
+            liquidationPx: '90000',
+            marginUsed: '20',
+            maxLeverage: 40,
+            cumFunding: {
+              allTime: '1',
+              sinceOpen: '0.5',
+              sinceChange: '0.2',
+            },
+          },
+        },
+      ],
+      time: 1700000000000,
+      ...overrides,
+    },
+  }
+}
+
 test('Hyperliquid lazily creates and closes a shared stream transport', async () => {
   const hl = new Hyperliquid({})
   const transport = {
@@ -911,6 +958,88 @@ test('Hyperliquid normalizes clearinghouse snapshots into scripting account payl
     ],
     timestamp: 1700000000000,
   })
+})
+
+test('Hyperliquid reuses one upstream clearinghouseState stream per normalized address', async () => {
+  const { hl, calls, failureSignal } = createHyperliquidMarketStreamHarness(['clearinghouseState'])
+  const watchedAddress = getAddress('0x00000000000000000000000000000000000000AA')
+  const firstReceived = []
+  const secondReceived = []
+
+  const first = await hl.subscribeAccount(payload => firstReceived.push(payload), {
+    address: watchedAddress,
+  })
+  const second = await hl.subscribeAccount(payload => secondReceived.push(payload), {
+    address: ` ${watchedAddress.toLowerCase()} `,
+  })
+
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0].params, { user: watchedAddress })
+  assert.equal(first.failureSignal, failureSignal)
+  assert.equal(second.failureSignal, failureSignal)
+  assert.equal(hl.streams.size, 1)
+
+  calls[0].onPayload(
+    createClearinghouseStateEvent(watchedAddress, {
+      marginSummary: {
+        accountValue: '1000',
+        totalNtlPos: '1500',
+        totalRawUsd: '1000',
+        totalMarginUsed: '45',
+      },
+      withdrawable: '955',
+      time: 1700000000000,
+    })
+  )
+  calls[0].onPayload(
+    createClearinghouseStateEvent(watchedAddress, {
+      marginSummary: {
+        accountValue: '1100',
+        totalNtlPos: '1600',
+        totalRawUsd: '1100',
+        totalMarginUsed: '50',
+      },
+      withdrawable: '1040',
+      time: 1700000001234,
+    })
+  )
+
+  assert.deepEqual(firstReceived, [])
+  assert.deepEqual(secondReceived, [])
+
+  hl.update()
+
+  assert.deepEqual(firstReceived, [
+    {
+      address: watchedAddress,
+      accountValue: 1100,
+      withdrawable: 1040,
+      totalMarginUsed: 50,
+      totalNotionalPosition: 1600,
+      positions: [
+        {
+          ticker: 'BTC',
+          size: 0.01,
+          entryPrice: 100000,
+          unrealizedPnl: 12.5,
+          liquidationPrice: 90000,
+          marginUsed: 20,
+          maxLeverage: 40,
+          leverage: { type: 'cross', value: 5 },
+        },
+      ],
+      timestamp: 1700000001234,
+    },
+  ])
+  assert.deepEqual(secondReceived, firstReceived)
+
+  await first.unsubscribe()
+  assert.equal(calls[0].unsubscribeCalls, 0)
+  assert.equal(hl.streams.size, 1)
+
+  await second.unsubscribe()
+  assert.equal(calls[0].unsubscribeCalls, 1)
+  assert.equal(hl.streams.size, 0)
 })
 
 test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {

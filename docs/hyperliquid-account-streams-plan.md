@@ -120,7 +120,7 @@ Each subscription returns:
   - Keep the raw Hyperliquid payload out of the default scripting API for this pass.
   - Acceptance: script listeners receive a stable, app-friendly account snapshot.
 
-- [ ] 5. Implement the upstream `clearinghouseState` subscription per address.
+- [x] 5. Implement the upstream `clearinghouseState` subscription per address.
   - Create one upstream subscription per normalized address.
   - Queue incoming snapshots and flush only the latest payload per frame.
   - Share the upstream subscription across all local listeners for the same address.
