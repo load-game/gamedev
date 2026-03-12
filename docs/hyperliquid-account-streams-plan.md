@@ -1,6 +1,6 @@
 # Hyperliquid Account Streams Plan
 
-Status: In Progress
+Status: Completed
 Owner: Codex + user
 Last updated: 2026-03-12
 
@@ -163,7 +163,7 @@ Each subscription returns:
   - Re-run existing market-stream tests to confirm the generalized stream infrastructure does not regress them.
   - Acceptance: account-stream behavior is covered without live network access.
 
-- [ ] 12. Final verification pass.
+- [x] 12. Final verification pass.
   - Review for leaks: orphan listeners, orphan upstream subscriptions, unclosed shared transport.
   - Verify docs and typings stay aligned on `world.hyperliquid(address?)` semantics.
   - Acceptance: the plan lands without changing existing trading behavior on the default runtime.
