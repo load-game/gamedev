@@ -132,7 +132,7 @@ Each subscription returns:
   - Use runtime-owned cleanup just like market streams.
   - Acceptance: scripts can watch local or arbitrary-address account state through one normalized API.
 
-- [ ] 7. Guard write methods on addressed runtimes.
+- [x] 7. Guard write methods on addressed runtimes.
   - Preserve existing write behavior on the default connected-wallet runtime.
   - On address-bound runtimes, throw a clear error for `buy`, `sell`, `closePosition`, `deposit`, `withdraw`, `hasAgentKey`, and `setupAgentKey`.
   - Acceptance: `world.hyperliquid(address)` is explicitly watch-only and never silently acts on the connected wallet.

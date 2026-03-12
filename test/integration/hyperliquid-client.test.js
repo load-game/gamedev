@@ -1102,6 +1102,52 @@ test('Hyperliquid runtime subscribeAccount binds the default or addressed target
   assert.equal(watchedReceived[0].accountValue, 1500)
 })
 
+test('Hyperliquid addressed runtimes are watch-only for write methods', async () => {
+  const hl = new Hyperliquid({})
+  const defaultRuntime = hl.getRuntimeAPI()
+  const watchedRuntime = hl.getRuntimeAPI('0x00000000000000000000000000000000000000AA')
+
+  let buyCalls = 0
+  let hasAgentKeyCalls = 0
+  hl.buy = async () => {
+    buyCalls += 1
+    return 'buy-ok'
+  }
+  hl.hasAgentKey = () => {
+    hasAgentKeyCalls += 1
+    return true
+  }
+
+  assert.equal(await defaultRuntime.buy('BTC', 1, 1), 'buy-ok')
+  assert.equal(defaultRuntime.hasAgentKey(), true)
+  assert.equal(buyCalls, 1)
+  assert.equal(hasAgentKeyCalls, 1)
+
+  await assert.rejects(async () => watchedRuntime.buy('BTC', 1, 1), {
+    message: 'Hyperliquid addressed runtimes are watch-only; buy is only available on world.hyperliquid()',
+  })
+  await assert.rejects(async () => watchedRuntime.sell('BTC', 1, 1), {
+    message: 'Hyperliquid addressed runtimes are watch-only; sell is only available on world.hyperliquid()',
+  })
+  await assert.rejects(async () => watchedRuntime.closePosition('BTC', 1), {
+    message:
+      'Hyperliquid addressed runtimes are watch-only; closePosition is only available on world.hyperliquid()',
+  })
+  await assert.rejects(async () => watchedRuntime.deposit(10), {
+    message: 'Hyperliquid addressed runtimes are watch-only; deposit is only available on world.hyperliquid()',
+  })
+  await assert.rejects(async () => watchedRuntime.withdraw(10, '0x00000000000000000000000000000000000000BB'), {
+    message: 'Hyperliquid addressed runtimes are watch-only; withdraw is only available on world.hyperliquid()',
+  })
+  await assert.rejects(async () => watchedRuntime.setupAgentKey('Agent'), {
+    message:
+      'Hyperliquid addressed runtimes are watch-only; setupAgentKey is only available on world.hyperliquid()',
+  })
+  assert.throws(() => watchedRuntime.hasAgentKey(), {
+    message: 'Hyperliquid addressed runtimes are watch-only; hasAgentKey is only available on world.hyperliquid()',
+  })
+})
+
 test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {
   const { hl, calls, failureSignal } = createHyperliquidMarketStreamHarness(['allMids'])
   const firstReceived = []

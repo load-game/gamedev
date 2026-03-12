@@ -191,6 +191,12 @@ export class Hyperliquid extends System {
     return runtimeCache
   }
 
+  _createWatchOnlyRuntimeError(methodName) {
+    return new Error(
+      `Hyperliquid addressed runtimes are watch-only; ${methodName} is only available on world.hyperliquid()`
+    )
+  }
+
   _getReadAddress(address = null) {
     if (address !== null && address !== undefined) {
       return this._normalizeRuntimeAddress(address)
@@ -212,6 +218,12 @@ export class Hyperliquid extends System {
       return runtimeCache.get(addressKey)
     }
 
+    const assertWritableRuntime = methodName => {
+      if (boundAddress !== null) {
+        throw this._createWatchOnlyRuntimeError(methodName)
+      }
+    }
+
     const runtimeAPI = {
       getPrice: ticker => this.getPrice(ticker),
       getBalance: () => this.getBalance({ address: boundAddress }),
@@ -222,13 +234,34 @@ export class Hyperliquid extends System {
       subscribeOrderBook: (params, listener) => this.subscribeOrderBook(params, listener, { owner }),
       subscribeCandles: (params, listener) => this.subscribeCandles(params, listener, { owner }),
       subscribeAccount: listener => this.subscribeAccount(listener, { owner, address: boundAddress }),
-      buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
-      sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
-      closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),
-      hasAgentKey: () => this.hasAgentKey(),
-      setupAgentKey: name => this.setupAgentKey(name),
-      deposit: amount => this.deposit(amount),
-      withdraw: (amount, destination) => this.withdraw(amount, destination),
+      buy: (ticker, amount, slippage) => {
+        assertWritableRuntime('buy')
+        return this.buy(ticker, amount, slippage)
+      },
+      sell: (ticker, amount, slippage) => {
+        assertWritableRuntime('sell')
+        return this.sell(ticker, amount, slippage)
+      },
+      closePosition: (ticker, slippage) => {
+        assertWritableRuntime('closePosition')
+        return this.closePosition(ticker, slippage)
+      },
+      hasAgentKey: () => {
+        assertWritableRuntime('hasAgentKey')
+        return this.hasAgentKey()
+      },
+      setupAgentKey: name => {
+        assertWritableRuntime('setupAgentKey')
+        return this.setupAgentKey(name)
+      },
+      deposit: amount => {
+        assertWritableRuntime('deposit')
+        return this.deposit(amount)
+      },
+      withdraw: (amount, destination) => {
+        assertWritableRuntime('withdraw')
+        return this.withdraw(amount, destination)
+      },
     }
 
     runtimeCache.set(addressKey, runtimeAPI)
