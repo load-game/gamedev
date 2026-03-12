@@ -52,7 +52,7 @@ Status: Ready for implementation
 
 ### P3 - Match Completion Hook Removal
 
-- [ ] P3-01 (S, `runtime`): Delete the client-side match completion helper and its test.
+- [x] P3-01 (S, `runtime`): Delete the client-side match completion helper and its test.
   Deliverable: `src/client/matchCompletion.js` and `test/integration/match-completion-payload.test.js` are removed.
 
 - [ ] P3-02 (M, `runtime`): Remove the runtime shutdown-time POST to `/internal/matches/complete`.
