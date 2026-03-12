@@ -58,7 +58,7 @@ Status: Ready for implementation
 - [x] P3-02 (M, `runtime`): Remove the runtime shutdown-time POST to `/internal/matches/complete`.
   Deliverable: `src/server/index.js` no longer computes `lobbyMatchCompletionUrl`, tracks `matchCompletionFinalized`, or sends a match completion callback before Agones shutdown.
 
-- [ ] P3-03 (S, `runtime`): Keep generic idle shutdown behavior intact while removing games-only completion coupling.
+- [x] P3-03 (S, `runtime`): Keep generic idle shutdown behavior intact while removing games-only completion coupling.
   Deliverable: ordinary world shutdown still works, but no runtime code depends on `world-service` match completion APIs.
 
 ### Deferred Until Data Pass
