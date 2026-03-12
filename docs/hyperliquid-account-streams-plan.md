@@ -2,7 +2,7 @@
 
 Status: In Progress
 Owner: Codex + user
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 ## Goal
 
@@ -142,7 +142,7 @@ Each subscription returns:
   - Add a TODO near those methods noting that a future pass could serve them from the latest streamed snapshot when available.
   - Acceptance: no behavior change today, but the future direction is documented in code.
 
-- [ ] 9. Document the addressed runtime and account stream API.
+- [x] 9. Document the addressed runtime and account stream API.
   - Update `docs/scripting/world/World.md` to document `world.hyperliquid(address?)`.
   - Document that account streaming is client-only.
   - Document addressed runtimes as watch-only.

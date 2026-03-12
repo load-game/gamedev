@@ -240,14 +240,31 @@ Returns:
 { hash, receipt }
 ```
 
-### `.hyperliquid()`
+### `.hyperliquid(address?)`
 
-Returns the Hyperliquid trading helper API.
+Returns the Hyperliquid helper API.
 
-Market streams are client-only in this pass. Stream callbacks run from the runtime update loop, not directly from the websocket event handler. When the owning app script is destroyed, its listeners are cleaned up automatically. `unsubscribe()` is optional for destroy-time cleanup and is mainly for stopping a stream early.
+- `world.hyperliquid()` targets the connected wallet and supports reads, streams, and trading.
+- `world.hyperliquid(address)` targets an explicit EVM address for reads and account streaming.
+- Address-bound runtimes are watch-only. They never trade on behalf of the connected wallet.
+
+Market streams and account streams are client-only in this pass. Stream callbacks run from the runtime update loop, not directly from the websocket event handler. When the owning app script is destroyed, its listeners are cleaned up automatically. `unsubscribe()` is optional for destroy-time cleanup and is mainly for stopping a stream early.
 
 ```js
-const hl = world.hyperliquid()
+const localHl = world.hyperliquid()
+const watchedHl = world.hyperliquid('0x1234...')
+```
+
+You can also watch another player when they expose an EVM address:
+
+```js
+const player = world.getPlayer(playerId)
+if (player?.evm) {
+  const remoteHl = world.hyperliquid(player.evm)
+  await remoteHl.subscribeAccount(account => {
+    console.log(account.positions)
+  })
+}
 ```
 
 #### `getPrice(ticker)`
@@ -322,6 +339,47 @@ Returns:
 ```js
 { unsubscribe, failureSignal }
 ```
+
+#### `subscribeAccount(listener)`
+
+Subscribes to live account snapshots for the runtime target address.
+
+- On `world.hyperliquid()`, this watches the connected wallet.
+- On `world.hyperliquid(address)`, this watches that explicit address.
+- This stream is client-only in this pass.
+
+Listener payload:
+
+```js
+{
+  address: '0x1234...',
+  accountValue: 1234.56,
+  withdrawable: 1200.12,
+  totalMarginUsed: 34.44,
+  totalNotionalPosition: 4567.89,
+  positions: [
+    {
+      ticker: 'BTC',
+      size: 0.001,
+      entryPrice: 104000,
+      unrealizedPnl: 5.25,
+      liquidationPrice: 95000,
+      marginUsed: 15.2,
+      maxLeverage: 40,
+      leverage: { type: 'cross', value: 5 },
+    },
+  ],
+  timestamp: 1700000000000,
+}
+```
+
+Returns:
+
+```js
+{ unsubscribe, failureSignal }
+```
+
+The methods below are only available on the default connected-wallet runtime. On `world.hyperliquid(address)`, they throw a watch-only error.
 
 #### `buy(ticker, amount, slippage = 1)`
 
