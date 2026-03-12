@@ -114,7 +114,7 @@ Each subscription returns:
     - `clearinghouseState:${address}`
   - Acceptance: equivalent address inputs reuse the same upstream stream.
 
-- [ ] 4. Add account snapshot normalization helpers.
+- [x] 4. Add account snapshot normalization helpers.
   - Convert Hyperliquid `clearinghouseState` payloads into a smaller scripting payload with numeric fields and normalized position objects.
   - Reuse the existing `getPositions()` shape where it makes sense, then extend it with the additional position metadata needed from the stream.
   - Keep the raw Hyperliquid payload out of the default scripting API for this pass.

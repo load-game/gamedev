@@ -769,6 +769,63 @@ export class Hyperliquid extends System {
     return value === null || value === undefined ? 'null' : String(value)
   }
 
+  _parseHyperliquidNumber(value, fallback = 0) {
+    const parsed = Number.parseFloat(String(value ?? ''))
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+
+  _normalizePosition(position) {
+    return {
+      ticker: position.coin,
+      size: this._parseHyperliquidNumber(position.szi),
+      entryPrice: this._parseHyperliquidNumber(position.entryPx),
+      unrealizedPnl: this._parseHyperliquidNumber(position.unrealizedPnl),
+      liquidationPrice:
+        position.liquidationPx === null || position.liquidationPx === undefined
+          ? null
+          : this._parseHyperliquidNumber(position.liquidationPx),
+    }
+  }
+
+  _normalizeAccountSnapshotPosition(position) {
+    return {
+      ...this._normalizePosition(position),
+      marginUsed: this._parseHyperliquidNumber(position.marginUsed),
+      maxLeverage: this._parseHyperliquidNumber(position.maxLeverage),
+      leverage: {
+        type: position.leverage?.type === 'isolated' ? 'isolated' : 'cross',
+        value: this._parseHyperliquidNumber(position.leverage?.value),
+      },
+    }
+  }
+
+  _normalizeAccountSnapshot(clearinghouseState, address) {
+    const normalizedAddress = this._normalizeAddress(address, 'address')
+    const positions = Array.isArray(clearinghouseState?.assetPositions)
+      ? clearinghouseState.assetPositions
+          .map(assetPosition => assetPosition?.position)
+          .filter(position => this._parseHyperliquidNumber(position?.szi) !== 0)
+          .map(position => this._normalizeAccountSnapshotPosition(position))
+      : []
+
+    return {
+      address: normalizedAddress,
+      accountValue: this._parseHyperliquidNumber(clearinghouseState?.marginSummary?.accountValue),
+      withdrawable: this._parseHyperliquidNumber(clearinghouseState?.withdrawable),
+      totalMarginUsed: this._parseHyperliquidNumber(clearinghouseState?.marginSummary?.totalMarginUsed),
+      totalNotionalPosition: this._parseHyperliquidNumber(clearinghouseState?.marginSummary?.totalNtlPos),
+      positions,
+      timestamp:
+        typeof clearinghouseState?.time === 'number'
+          ? clearinghouseState.time
+          : this._parseHyperliquidNumber(clearinghouseState?.time),
+    }
+  }
+
+  _normalizeAccountSnapshotEvent(event) {
+    return this._normalizeAccountSnapshot(event?.clearinghouseState, event?.user)
+  }
+
   _getAllMidsStreamKey() {
     return 'allMids'
   }
@@ -910,14 +967,9 @@ export class Hyperliquid extends System {
     if (!state?.assetPositions) return []
 
     return state.assetPositions
-      .filter(p => parseFloat(p.position.szi) !== 0)
-      .map(p => ({
-        ticker: p.position.coin,
-        size: parseFloat(p.position.szi),
-        entryPrice: parseFloat(p.position.entryPx),
-        unrealizedPnl: parseFloat(p.position.unrealizedPnl),
-        liquidationPrice: p.position.liquidationPx ? parseFloat(p.position.liquidationPx) : null,
-      }))
+      .map(assetPosition => assetPosition?.position)
+      .filter(position => this._parseHyperliquidNumber(position?.szi) !== 0)
+      .map(position => this._normalizePosition(position))
   }
 
   async buy(ticker, amount, slippage = 1) {

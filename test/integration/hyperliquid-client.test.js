@@ -796,6 +796,123 @@ test('Hyperliquid normalizes watched account addresses into deterministic stream
   })
 })
 
+test('Hyperliquid normalizes clearinghouse snapshots into scripting account payloads', () => {
+  const hl = new Hyperliquid({})
+  const snapshot = hl._normalizeAccountSnapshotEvent({
+    user: '0x00000000000000000000000000000000000000AA',
+    clearinghouseState: {
+      marginSummary: {
+        accountValue: '1234.56',
+        totalNtlPos: '4567.89',
+        totalRawUsd: '1234.56',
+        totalMarginUsed: '34.44',
+      },
+      crossMarginSummary: {
+        accountValue: '1234.56',
+        totalNtlPos: '4567.89',
+        totalRawUsd: '1234.56',
+        totalMarginUsed: '34.44',
+      },
+      crossMaintenanceMarginUsed: '12.34',
+      withdrawable: '1200.12',
+      assetPositions: [
+        {
+          type: 'oneWay',
+          position: {
+            coin: 'BTC',
+            szi: '0.001',
+            leverage: { type: 'cross', value: 5 },
+            entryPx: '104000',
+            positionValue: '104',
+            unrealizedPnl: '5.25',
+            returnOnEquity: '0.15',
+            liquidationPx: '95000',
+            marginUsed: '15.2',
+            maxLeverage: 40,
+            cumFunding: {
+              allTime: '1.1',
+              sinceOpen: '0.5',
+              sinceChange: '0.2',
+            },
+          },
+        },
+        {
+          type: 'oneWay',
+          position: {
+            coin: 'ETH',
+            szi: '0',
+            leverage: { type: 'cross', value: 3 },
+            entryPx: '2100',
+            positionValue: '0',
+            unrealizedPnl: '0',
+            returnOnEquity: '0',
+            liquidationPx: null,
+            marginUsed: '0',
+            maxLeverage: 25,
+            cumFunding: {
+              allTime: '0',
+              sinceOpen: '0',
+              sinceChange: '0',
+            },
+          },
+        },
+        {
+          type: 'oneWay',
+          position: {
+            coin: 'SOL',
+            szi: '-2',
+            leverage: { type: 'isolated', value: 3, rawUsd: '20' },
+            entryPx: '150',
+            positionValue: '300',
+            unrealizedPnl: '-8.5',
+            returnOnEquity: '-0.1',
+            liquidationPx: null,
+            marginUsed: '20',
+            maxLeverage: 10,
+            cumFunding: {
+              allTime: '-0.5',
+              sinceOpen: '-0.2',
+              sinceChange: '-0.1',
+            },
+          },
+        },
+      ],
+      time: 1700000000000,
+    },
+  })
+
+  assert.deepEqual(snapshot, {
+    address: getAddress('0x00000000000000000000000000000000000000AA'),
+    accountValue: 1234.56,
+    withdrawable: 1200.12,
+    totalMarginUsed: 34.44,
+    totalNotionalPosition: 4567.89,
+    positions: [
+      {
+        ticker: 'BTC',
+        size: 0.001,
+        entryPrice: 104000,
+        unrealizedPnl: 5.25,
+        liquidationPrice: 95000,
+        marginUsed: 15.2,
+        maxLeverage: 40,
+        leverage: { type: 'cross', value: 5 },
+      },
+      {
+        ticker: 'SOL',
+        size: -2,
+        entryPrice: 150,
+        unrealizedPnl: -8.5,
+        liquidationPrice: null,
+        marginUsed: 20,
+        maxLeverage: 10,
+        leverage: { type: 'isolated', value: 3 },
+      },
+    ],
+    timestamp: 1700000000000,
+  })
+})
+
 test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {
   const { hl, calls, failureSignal } = createHyperliquidMarketStreamHarness(['allMids'])
   const firstReceived = []
