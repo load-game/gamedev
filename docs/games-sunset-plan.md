@@ -33,7 +33,7 @@ Status: Ready for implementation
 - [x] P1-01 (M, `runtime`): Narrow `src/server/forwardedPrefix.js` back to `/worlds/*` handling only.
   Deliverable: no `/games/:game/studio` or `/games/:game/matches/:matchId` prefix extraction remains.
 
-- [ ] P1-02 (S, `runtime`): Remove the `/games` app-server/admin URL compatibility cases from `test/integration/app-server-world-url.test.js`.
+- [x] P1-02 (S, `runtime`): Remove the `/games` app-server/admin URL compatibility cases from `test/integration/app-server-world-url.test.js`.
   Deliverable: test coverage keeps `/worlds/*` expectations and drops `/games/*` expectations.
 
 - [ ] P1-03 (S, `runtime`): Delete the dedicated `/games` forwarded-prefix test file.

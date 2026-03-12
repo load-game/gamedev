@@ -29,17 +29,6 @@ test('joinUrl and toWsUrl preserve slug path prefixes', () => {
   )
 })
 
-test('joinUrl and toWsUrl preserve games path prefixes', () => {
-  assert.equal(
-    joinUrl('https://dev.lobby.ws/games/demo/studio', '/admin/snapshot'),
-    'https://dev.lobby.ws/games/demo/studio/admin/snapshot'
-  )
-  assert.equal(
-    toWsUrl('https://dev.lobby.ws/games/demo/matches/m1'),
-    'wss://dev.lobby.ws/games/demo/matches/m1'
-  )
-})
-
 test('WorldAdminClient derives admin endpoints from slug world URLs', () => {
   const client = new WorldAdminClient({
     worldUrl: 'https://dev.lobby.ws/worlds/demo/admin/',
@@ -84,39 +73,4 @@ test('WorldAdminClient snapshot request uses slug-prefixed admin route', async (
   }
 
   assert.equal(captured[0], 'https://dev.lobby.ws/worlds/demo/admin/snapshot')
-})
-
-test('WorldAdminClient snapshot request uses /games-prefixed admin route', async () => {
-  const originalFetch = globalThis.fetch
-  const captured = []
-  globalThis.fetch = async (input) => {
-    captured.push(typeof input === 'string' ? input : input.toString())
-    return new Response(
-      JSON.stringify({
-        worldId: 'match-world',
-        assetsUrl: 'https://assets.lobby.ws/match-world',
-        settings: {},
-        spawn: {},
-        blueprints: [],
-        entities: [],
-        players: [],
-      }),
-      {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }
-    )
-  }
-
-  try {
-    const client = new WorldAdminClient({
-      worldUrl: 'https://dev.lobby.ws/games/demo/matches/m1/admin',
-      adminCode: 'secret',
-    })
-    await client.getSnapshot()
-  } finally {
-    globalThis.fetch = originalFetch
-  }
-
-  assert.equal(captured[0], 'https://dev.lobby.ws/games/demo/matches/m1/admin/snapshot')
 })
