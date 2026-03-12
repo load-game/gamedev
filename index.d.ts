@@ -924,11 +924,92 @@ interface HyperliquidPosition {
   liquidationPrice: number | null
 }
 
-interface HyperliquidAPI {
+interface HyperliquidStreamHandle {
+  failureSignal: AbortSignal
+  unsubscribe(): Promise<void>
+}
+
+type HyperliquidCandleInterval =
+  | '1m'
+  | '3m'
+  | '5m'
+  | '15m'
+  | '30m'
+  | '1h'
+  | '2h'
+  | '4h'
+  | '8h'
+  | '12h'
+  | '1d'
+  | '3d'
+  | '1w'
+  | '1M'
+
+interface HyperliquidTradesParams {
+  ticker: string
+}
+
+interface HyperliquidOrderBookParams {
+  ticker: string
+  nSigFigs?: number | null
+  mantissa?: number | null
+}
+
+interface HyperliquidCandleParams {
+  ticker: string
+  interval: HyperliquidCandleInterval
+}
+
+interface HyperliquidMidsPayload {
+  mids: Record<string, string>
+  [key: string]: any
+}
+
+type HyperliquidTradesPayload = any[]
+
+interface HyperliquidLeverage {
+  type: 'cross' | 'isolated'
+  value: number
+}
+
+interface HyperliquidAccountPosition extends HyperliquidPosition {
+  marginUsed: number
+  maxLeverage: number
+  leverage: HyperliquidLeverage
+}
+
+interface HyperliquidAccountSnapshot {
+  address: string
+  accountValue: number
+  withdrawable: number
+  totalMarginUsed: number
+  totalNotionalPosition: number
+  positions: HyperliquidAccountPosition[]
+  timestamp: number
+}
+
+interface HyperliquidWatchOnlyAPI {
   getPrice(ticker: string): Promise<number>
   getBalance(): Promise<number>
   getPositions(): Promise<HyperliquidPosition[]>
   getAvailableTickers(): Promise<string[]>
+  subscribeMids(listener: (payload: HyperliquidMidsPayload) => void): Promise<HyperliquidStreamHandle>
+  subscribeTrades(
+    params: HyperliquidTradesParams,
+    listener: (payload: HyperliquidTradesPayload) => void
+  ): Promise<HyperliquidStreamHandle>
+  subscribeOrderBook(
+    params: HyperliquidOrderBookParams,
+    listener: (payload: any) => void
+  ): Promise<HyperliquidStreamHandle>
+  subscribeCandles(
+    params: HyperliquidCandleParams,
+    listener: (payload: any) => void
+  ): Promise<HyperliquidStreamHandle>
+  subscribeAccount(listener: (payload: HyperliquidAccountSnapshot) => void): Promise<HyperliquidStreamHandle>
+}
+
+interface HyperliquidAPI extends HyperliquidWatchOnlyAPI {
   buy(ticker: string, amount: number, slippage?: number): Promise<any>
   sell(ticker: string, amount: number, slippage?: number): Promise<any>
   closePosition(ticker: string, slippage?: number): Promise<any>
@@ -993,6 +1074,7 @@ interface WorldAPI {
 
   // Hyperliquid
   hyperliquid(): HyperliquidAPI
+  hyperliquid(address: string): HyperliquidWatchOnlyAPI
 }
 
 // -----------------------------

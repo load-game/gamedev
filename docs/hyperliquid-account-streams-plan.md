@@ -148,7 +148,7 @@ Each subscription returns:
   - Document addressed runtimes as watch-only.
   - Acceptance: scripting docs clearly explain local-wallet vs watched-address usage.
 
-- [ ] 10. Update the public typings.
+- [x] 10. Update the public typings.
   - Extend `index.d.ts` for `world.hyperliquid(address?)`.
   - Add the normalized account snapshot type and `subscribeAccount`.
   - Acceptance: the public scripting types reflect the new API.
