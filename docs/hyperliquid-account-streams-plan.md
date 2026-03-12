@@ -126,7 +126,7 @@ Each subscription returns:
   - Share the upstream subscription across all local listeners for the same address.
   - Acceptance: repeated subscriptions to the same watched address reuse one upstream feed.
 
-- [ ] 6. Implement `subscribeAccount(listener)`.
+- [x] 6. Implement `subscribeAccount(listener)`.
   - Add the method to the runtime API returned by `world.hyperliquid(address?)`.
   - Return `{ unsubscribe, failureSignal }`.
   - Use runtime-owned cleanup just like market streams.

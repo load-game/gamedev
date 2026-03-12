@@ -221,6 +221,7 @@ export class Hyperliquid extends System {
       subscribeTrades: (params, listener) => this.subscribeTrades(params, listener, { owner }),
       subscribeOrderBook: (params, listener) => this.subscribeOrderBook(params, listener, { owner }),
       subscribeCandles: (params, listener) => this.subscribeCandles(params, listener, { owner }),
+      subscribeAccount: listener => this.subscribeAccount(listener, { owner, address: boundAddress }),
       buy: (ticker, amount, slippage) => this.buy(ticker, amount, slippage),
       sell: (ticker, amount, slippage) => this.sell(ticker, amount, slippage),
       closePosition: (ticker, slippage) => this.closePosition(ticker, slippage),

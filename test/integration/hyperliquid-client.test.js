@@ -597,8 +597,8 @@ test('Hyperliquid runtime pull reads use the bound target address', async () => 
   ])
 })
 
-function createHyperliquidMarketStreamHarness(methodNames) {
-  const hl = new Hyperliquid({})
+function createHyperliquidMarketStreamHarness(methodNames, world = {}) {
+  const hl = new Hyperliquid(world)
   const calls = []
   const failureSignal = { pending: true }
   const transport = {
@@ -1040,6 +1040,66 @@ test('Hyperliquid reuses one upstream clearinghouseState stream per normalized a
   await second.unsubscribe()
   assert.equal(calls[0].unsubscribeCalls, 1)
   assert.equal(hl.streams.size, 0)
+})
+
+test('Hyperliquid runtime subscribeAccount binds the default or addressed target', async () => {
+  let injected = null
+  const { hl, calls } = createHyperliquidMarketStreamHarness(['clearinghouseState'], {
+    inject(runtime) {
+      injected = runtime
+    },
+  })
+  hl.init()
+  hl.bind({
+    address: '0x00000000000000000000000000000000000000CC',
+    isConnected: false,
+  })
+
+  const defaultReceived = []
+  const watchedReceived = []
+
+  await injected.world.hyperliquid().subscribeAccount(payload => defaultReceived.push(payload))
+  await injected.world.hyperliquid('0x00000000000000000000000000000000000000AA').subscribeAccount(payload =>
+    watchedReceived.push(payload)
+  )
+
+  assert.equal(calls.length, 2)
+  assert.deepEqual(calls.map(call => call.params), [
+    { user: getAddress('0x00000000000000000000000000000000000000CC') },
+    { user: getAddress('0x00000000000000000000000000000000000000AA') },
+  ])
+
+  calls[0].onPayload(
+    createClearinghouseStateEvent(getAddress('0x00000000000000000000000000000000000000CC'), {
+      marginSummary: {
+        accountValue: '900',
+        totalNtlPos: '1200',
+        totalRawUsd: '900',
+        totalMarginUsed: '35',
+      },
+      withdrawable: '865',
+      time: 1700000002000,
+    })
+  )
+  calls[1].onPayload(
+    createClearinghouseStateEvent(getAddress('0x00000000000000000000000000000000000000AA'), {
+      marginSummary: {
+        accountValue: '1500',
+        totalNtlPos: '2000',
+        totalRawUsd: '1500',
+        totalMarginUsed: '60',
+      },
+      withdrawable: '1440',
+      time: 1700000003000,
+    })
+  )
+
+  hl.update()
+
+  assert.equal(defaultReceived[0].address, getAddress('0x00000000000000000000000000000000000000CC'))
+  assert.equal(defaultReceived[0].accountValue, 900)
+  assert.equal(watchedReceived[0].address, getAddress('0x00000000000000000000000000000000000000AA'))
+  assert.equal(watchedReceived[0].accountValue, 1500)
 })
 
 test('Hyperliquid reuses one upstream stream per key and tears it down on final unsubscribe', async () => {
