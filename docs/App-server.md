@@ -131,5 +131,5 @@ For prod targets, the CLI asks for confirmation unless you pass `--yes`.
 - Bootstrap didn’t happen: ensure the target world is empty/default or run `gamedev world export` (add `--include-built-scripts` for legacy single-file apps).
 - Unauthorized: ensure `ADMIN_CODE` matches the world server `ADMIN_CODE`.
 - Script updates rejected: ensure `ADMIN_CODE` matches and the deploy lock is free.
-- WORLD_ID mismatch: set `WORLD_ID` to match the target world id, or use `ALLOW_WORLD_ID_CONFIG_MISMATCH=true` for shared-schema prototype runtimes.
+- WORLD_ID mismatch: set `WORLD_ID` to match the target world id.
 - Changes not appearing: confirm `apps/<appName>/index.js` (or blueprint JSON) is being edited and app-server is connected.

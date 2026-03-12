@@ -44,7 +44,7 @@ Status: Ready for implementation
 - [x] P2-01 (M, `runtime`): Restore strict `WORLD_ID` vs DB `worldId` validation in `src/core/systems/ServerNetwork.js`.
   Deliverable: `src/server/worldIdMismatch.js` is removed and startup throws on mismatch again without a games-specific escape hatch.
 
-- [ ] P2-02 (S, `runtime`): Remove `ALLOW_WORLD_ID_CONFIG_MISMATCH` from `.env.example` and app-server docs.
+- [x] P2-02 (S, `runtime`): Remove `ALLOW_WORLD_ID_CONFIG_MISMATCH` from `.env.example` and app-server docs.
   Deliverable: `.env.example` and `docs/App-server.md` no longer document the prototype mismatch flag.
 
 - [ ] P2-03 (S, `runtime`): Delete the dedicated mismatch tests.
