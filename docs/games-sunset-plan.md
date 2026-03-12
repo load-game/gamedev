@@ -63,13 +63,12 @@ Status: Ready for implementation
 
 ### Deferred Until Data Pass
 
-- [ ] D1 (S, `runtime`): Remove the `game_match`-specific 60-second idle timeout behavior from `src/server/index.js`.
+- [x] D1 (S, `runtime`): Remove the `game_match`-specific 60-second idle timeout behavior from `src/server/index.js`.
   Deliverable: `isGameMatchWorldType` and the shortened timeout branch are gone.
-  Note: defer until lingering prototype-created `worlds.settings.worldType = game_match` rows and runtimes are handled.
 
 ## Validation
 
-- [ ] V1: Run `npm run build`.
+- [x] V1: Run `npm run build`.
 - [ ] V2: Run `npm test`.
 - [ ] V3: Run repo-wide reference cleanup.
   Deliverable: no live code or active docs reference `/games`, `ALLOW_WORLD_ID_CONFIG_MISMATCH`, `return_world_url`, or `origin_lobby_slug`, except in historical commits or this sunset plan.
@@ -80,4 +79,4 @@ Status: Ready for implementation
 - No runtime code assumes `/games/*` browser or admin prefixes.
 - No shared-schema `WORLD_ID` mismatch escape hatch remains.
 - Runtime no longer calls the `world-service` internal match completion endpoint during shutdown.
-- Deferred data-coupled `game_match` timeout cleanup is tracked separately instead of being mixed into this pass.
+- No `game_match`-specific idle timeout branch remains in runtime.
