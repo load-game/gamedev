@@ -41,7 +41,7 @@ test('createAgonesSdkHttp returns null when Agones is disabled or fetch is unava
   )
 })
 
-test('createAgonesSdkHttp posts ready and shutdown requests to the local SDK sidecar', async () => {
+test('createAgonesSdkHttp posts lifecycle and player tracking requests to the local SDK sidecar', async () => {
   const requests = []
   const agones = createAgonesSdkHttp({
     env: {
@@ -50,17 +50,56 @@ test('createAgonesSdkHttp posts ready and shutdown requests to the local SDK sid
     },
     fetchImpl: async (url, options) => {
       requests.push({ url, options })
-      return { ok: true, status: 200 }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return { bool: false }
+        },
+      }
     },
   })
 
   await agones.ready()
+  await agones.setPlayerCapacity(32)
+  assert.equal(await agones.playerConnect('player-1'), false)
+  assert.equal(await agones.playerDisconnect('player-1'), false)
   await agones.shutdown()
 
   assert.deepEqual(requests, [
     {
       url: 'http://127.0.0.1:1234/ready',
       options: { method: 'POST' },
+    },
+    {
+      url: 'http://127.0.0.1:1234/alpha/player/capacity',
+      options: {
+        method: 'PUT',
+        body: JSON.stringify({ count: 32 }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
+    },
+    {
+      url: 'http://127.0.0.1:1234/alpha/player/connect',
+      options: {
+        method: 'POST',
+        body: JSON.stringify({ playerID: 'player-1' }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
+    },
+    {
+      url: 'http://127.0.0.1:1234/alpha/player/disconnect',
+      options: {
+        method: 'POST',
+        body: JSON.stringify({ playerID: 'player-1' }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
     },
     {
       url: 'http://127.0.0.1:1234/shutdown',

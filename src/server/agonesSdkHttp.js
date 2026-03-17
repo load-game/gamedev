@@ -34,6 +34,24 @@ function createAgonesSdkHttpRequest({ baseUrl, fetchImpl }) {
   }
 }
 
+async function readJsonResponse(response) {
+  if (typeof response?.json !== 'function') return null
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+function normalizeAgonesBool(value) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    if (value === 'true') return true
+    if (value === 'false') return false
+  }
+  return true
+}
+
 export function createAgonesSdkHttp({ env = process.env, fetchImpl = globalThis.fetch } = {}) {
   if (!isAgonesSdkHttpEnabled(env) || typeof fetchImpl !== 'function') {
     return null
@@ -47,6 +65,26 @@ export function createAgonesSdkHttp({ env = process.env, fetchImpl = globalThis.
     baseUrl,
     ready() {
       return request('/ready')
+    },
+    async setPlayerCapacity(count) {
+      return request('/alpha/player/capacity', {
+        method: 'PUT',
+        body: { count },
+      })
+    },
+    async playerConnect(playerID) {
+      const response = await request('/alpha/player/connect', {
+        body: { playerID },
+      })
+      const payload = await readJsonResponse(response)
+      return normalizeAgonesBool(payload?.bool)
+    },
+    async playerDisconnect(playerID) {
+      const response = await request('/alpha/player/disconnect', {
+        body: { playerID },
+      })
+      const payload = await readJsonResponse(response)
+      return normalizeAgonesBool(payload?.bool)
     },
     shutdown() {
       return request('/shutdown')

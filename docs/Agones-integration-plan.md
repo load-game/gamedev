@@ -194,7 +194,7 @@ This order keeps the first change mostly mechanical, then adds lifecycle behavio
 - [x] Add `src/server/agonesSdkHttp.js` and gate it with `usesHostedRuntimeBootstrap(process.env)`.
 - [x] Move existing shutdown calls onto the adapter.
 - [x] Add `Ready`.
-- [ ] Add player tracking.
+- [x] Add player tracking.
 - [ ] Implement the deferred health loop plan in `docs/Agones-health-loop-plan.md`.
 
 ## Success Metrics

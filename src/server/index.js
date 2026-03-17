@@ -18,6 +18,7 @@ import { Storage } from './Storage'
 import { assets } from './assets'
 import { cleaner } from './cleaner'
 import { admin } from './admin'
+import { createAgonesPlayerTracker } from './agonesPlayerTracking.js'
 import { createAgonesSdkHttp } from './agonesSdkHttp.js'
 import { createAgonesIdleController, resolveAgonesIdleShutdownTimeoutMs } from './agonesIdleShutdown.js'
 import { createRegistryState, getRegistryPublicStatus } from './registry'
@@ -322,6 +323,12 @@ const agonesIdleController = createAgonesIdleController({
     await world.network.save()
   },
 })
+const agonesPlayerTracker = createAgonesPlayerTracker({
+  agones,
+  world,
+  env: process.env,
+})
+agonesPlayerTracker.start()
 
 function updateAdminConnectionCount(channel, count) {
   const normalized = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0
@@ -672,6 +679,8 @@ try {
 } catch {
   process.exit(1)
 }
+
+await agonesPlayerTracker.publishCapacity('startup')
 
 async function worldNetwork(fastify) {
   fastify.get('/ws', { websocket: true }, (ws, req) => {
