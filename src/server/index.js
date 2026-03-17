@@ -20,8 +20,9 @@ import { cleaner } from './cleaner'
 import { admin } from './admin'
 import { createAgonesSdkHttp } from './agonesSdkHttp.js'
 import { createAgonesIdleController, resolveAgonesIdleShutdownTimeoutMs } from './agonesIdleShutdown.js'
-import { createRegistryState, getRegistryPublicStatus, registerWithRegistry } from './registry'
+import { createRegistryState, getRegistryPublicStatus } from './registry'
 import { resolveAuthRuntimeConfig } from './authModes'
+import { completeRuntimeStartup } from './runtimeStartup.js'
 import {
   applyHostedRuntimeBootstrapPayload,
   derivePublicWsUrlFromApiUrl,
@@ -658,15 +659,19 @@ if (useDualPort) {
   }
 }
 
-if (agonesIdleControllerEnabled) {
-  console.info(`[agones-idle] enabled with timeout=${SHUTDOWN_IDLE / 1000}s`)
-  agonesIdleController.reconcileIdleShutdown('startup')
+try {
+  await completeRuntimeStartup({
+    agones,
+    agonesIdleController,
+    agonesIdleControllerEnabled,
+    idleTimeoutMs: SHUTDOWN_IDLE,
+    registryState,
+    worldId: world?.network?.worldId || null,
+    commitHash: process.env.COMMIT_HASH || null,
+  })
+} catch {
+  process.exit(1)
 }
-
-void registerWithRegistry(registryState, {
-  worldId: world?.network?.worldId || null,
-  commitHash: process.env.COMMIT_HASH || null,
-})
 
 async function worldNetwork(fastify) {
   fastify.get('/ws', { websocket: true }, (ws, req) => {
