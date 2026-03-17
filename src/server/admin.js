@@ -267,7 +267,7 @@ function serializeEntitiesForAdmin(world) {
   return world.entities.serialize().filter(entity => entity?.type !== 'player')
 }
 
-export async function admin(fastify, { world, assets, adminHtmlPath, onConnectionCountChanged } = {}) {
+export async function admin(fastify, { world, assets, adminHtmlPath, onConnectionCountChanged, agones = null } = {}) {
   const adminCredentialRevealEnabled = isAdminCredentialRevealEnabled(process.env)
   const subscribers = new Set()
   const playerSubscribers = new Set()
@@ -834,6 +834,7 @@ export async function admin(fastify, { world, assets, adminHtmlPath, onConnectio
           if (data.type === ADMIN_SHUTDOWN_COMMAND) {
             const commandResult = await handleAdminShutdownCommand({
               canDeploy: capabilities.deploy,
+              agones,
               beforeShutdown: async () => {
                 await world.network.save()
               },

@@ -13,10 +13,7 @@ test('command contract uses agones_shutdown name', () => {
 
 test('resolveAgonesShutdownUrl uses the default and configured Agones SDK ports', () => {
   assert.equal(resolveAgonesShutdownUrl({}), 'http://127.0.0.1:9358/shutdown')
-  assert.equal(
-    resolveAgonesShutdownUrl({ AGONES_SDK_HTTP_PORT: '1234' }),
-    'http://127.0.0.1:1234/shutdown'
-  )
+  assert.equal(resolveAgonesShutdownUrl({ AGONES_SDK_HTTP_PORT: '1234' }), 'http://127.0.0.1:1234/shutdown')
 })
 
 test('admin shutdown command denies callers without deploy capability', async () => {
@@ -33,25 +30,20 @@ test('admin shutdown command denies callers without deploy capability', async ()
 
 test('admin shutdown command saves before requesting Agones shutdown', async () => {
   const events = []
-  let request = null
 
   const result = await handleAdminShutdownCommand({
     canDeploy: true,
+    agones: {
+      shutdown: async () => {
+        events.push('shutdown')
+      },
+    },
     beforeShutdown: async () => {
       events.push('save')
-    },
-    fetchImpl: async (url, options) => {
-      events.push('shutdown')
-      request = { url, options }
-      return { ok: true, status: 200 }
     },
   })
 
   assert.deepEqual(events, ['save', 'shutdown'])
-  assert.deepEqual(request, {
-    url: 'http://127.0.0.1:9358/shutdown',
-    options: { method: 'POST' },
-  })
   assert.deepEqual(result, {
     ok: true,
     requested: true,
@@ -63,12 +55,13 @@ test('admin shutdown command does not request Agones shutdown when saving fails'
 
   const result = await handleAdminShutdownCommand({
     canDeploy: true,
+    agones: {
+      shutdown: async () => {
+        requested = true
+      },
+    },
     beforeShutdown: async () => {
       throw new Error('save_failed')
-    },
-    fetchImpl: async () => {
-      requested = true
-      return { ok: true, status: 200 }
     },
   })
 
@@ -83,12 +76,29 @@ test('admin shutdown command does not request Agones shutdown when saving fails'
 test('admin shutdown command surfaces Agones shutdown request failures', async () => {
   const result = await handleAdminShutdownCommand({
     canDeploy: true,
-    fetchImpl: async () => ({ ok: false, status: 503 }),
+    agones: {
+      shutdown: async () => {
+        throw new Error('agones_sdk_status_503')
+      },
+    },
   })
 
   assert.deepEqual(result, {
     ok: false,
     error: 'shutdown_request_failed',
     reason: 'agones_sdk_status_503',
+  })
+})
+
+test('admin shutdown command reports shutdown unavailable when Agones is disabled', async () => {
+  const result = await handleAdminShutdownCommand({
+    canDeploy: true,
+    agones: null,
+  })
+
+  assert.deepEqual(result, {
+    ok: false,
+    error: 'shutdown_unavailable',
+    reason: 'missing_shutdown_transport',
   })
 })

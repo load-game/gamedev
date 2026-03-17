@@ -18,6 +18,7 @@ import { Storage } from './Storage'
 import { assets } from './assets'
 import { cleaner } from './cleaner'
 import { admin } from './admin'
+import { createAgonesSdkHttp } from './agonesSdkHttp.js'
 import { createAgonesIdleController, resolveAgonesIdleShutdownTimeoutMs } from './agonesIdleShutdown.js'
 import { createRegistryState, getRegistryPublicStatus, registerWithRegistry } from './registry'
 import { resolveAuthRuntimeConfig } from './authModes'
@@ -91,10 +92,7 @@ function getDocsIndex() {
 
 function deriveRuntimeInternalApiKey(worldId, jwtSecret) {
   if (!hasValue(worldId) || !hasValue(jwtSecret)) return null
-  return crypto
-    .createHmac('sha256', jwtSecret.trim())
-    .update(`runtime-internal:${worldId.trim()}`)
-    .digest('hex')
+  return crypto.createHmac('sha256', jwtSecret.trim()).update(`runtime-internal:${worldId.trim()}`).digest('hex')
 }
 
 function resolveLobbyInternalEndpoint(pathname) {
@@ -216,9 +214,7 @@ if (!process.env.SAVE_INTERVAL) {
 if (!process.env.PUBLIC_MAX_UPLOAD_SIZE) {
   throw new Error('[envs] PUBLIC_MAX_UPLOAD_SIZE not set')
 }
-const usesPostgresDb =
-  process.env.DB_URI?.startsWith('postgres://')
-  || process.env.DB_URI?.startsWith('postgresql://')
+const usesPostgresDb = process.env.DB_URI?.startsWith('postgres://') || process.env.DB_URI?.startsWith('postgresql://')
 if (usesHostedBootstrap && usesPostgresDb && !hasValue(process.env.DB_SCHEMA)) {
   throw new Error('[envs] DB_SCHEMA must be resolved for hosted postgres runtimes')
 }
@@ -290,23 +286,19 @@ await storage.init()
 // create world
 const world = createServerWorld()
 await world.init({
-    assetsDir: assets.dir,
-    assetsUrl: assets.url,
-    db,
-    assets,
-    storage,
-    authConfig,
-  })
+  assetsDir: assets.dir,
+  assetsUrl: assets.url,
+  db,
+  assets,
+  storage,
+  authConfig,
+})
 
 const registryState = createRegistryState()
 let clientHtmlTemplateCache = null
-const AGONES_SDK_DEFAULT_HTTP_PORT = 9358
-const agonesSdkHttpPort = Number.parseInt(process.env.AGONES_SDK_HTTP_PORT || '', 10)
-const AGONES_SDK_HTTP_PORT =
-  Number.isFinite(agonesSdkHttpPort) && agonesSdkHttpPort > 0 ? agonesSdkHttpPort : AGONES_SDK_DEFAULT_HTTP_PORT
+const agones = createAgonesSdkHttp({ env: process.env })
 const SHUTDOWN_IDLE = resolveAgonesIdleShutdownTimeoutMs(process.env)
-const agonesIdleControllerEnabled = SHUTDOWN_IDLE > 0
-const agonesShutdownUrl = `http://127.0.0.1:${AGONES_SDK_HTTP_PORT}/shutdown`
+const agonesIdleControllerEnabled = !!agones && SHUTDOWN_IDLE > 0
 const adminConnectionCounts = {
   main: 0,
   wss: 0,
@@ -323,7 +315,7 @@ function getActiveSessionCount() {
 const agonesIdleController = createAgonesIdleController({
   enabled: agonesIdleControllerEnabled,
   timeoutMs: SHUTDOWN_IDLE,
-  shutdownUrl: agonesShutdownUrl,
+  agones,
   getActiveSessionCount,
   beforeShutdown: async () => {
     await world.network.save()
@@ -436,6 +428,7 @@ fastify.register(admin, {
   world,
   assets,
   adminHtmlPath,
+  agones,
   onConnectionCountChanged: count => updateAdminConnectionCount('main', count),
 })
 
@@ -642,6 +635,7 @@ if (useDualPort) {
     world,
     assets,
     adminHtmlPath: adminHtmlPathDirect,
+    agones,
     onConnectionCountChanged: count => updateAdminConnectionCount('wss', count),
   })
   wssServer.register(async function wssWorldNetwork(app) {
