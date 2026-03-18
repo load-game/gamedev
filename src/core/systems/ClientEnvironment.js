@@ -78,13 +78,35 @@ void main() {
 }
 `
 
-function buildSkyFragmentShader(userCode) {
+function getCustomUniformType(value) {
+  if (typeof value === 'number') return 'float'
+  if (Array.isArray(value)) {
+    if (value.length === 2) return 'vec2'
+    if (value.length === 3) return 'vec3'
+    if (value.length === 4) return 'vec4'
+  }
+  return null
+}
+
+function buildCustomUniformDeclarations(userUniforms) {
+  if (!userUniforms) return ''
+  const declarations = []
+  for (const key in userUniforms) {
+    const type = getCustomUniformType(userUniforms[key])
+    if (!type) continue
+    declarations.push(`uniform ${type} ${key};`)
+  }
+  if (declarations.length === 0) return ''
+  return `${declarations.join('\n')}\n`
+}
+
+function buildSkyFragmentShader(userCode, userUniforms) {
   return `
 varying vec3 vPosition;
 varying vec2 vUv;
 uniform float uTime;
 uniform vec2 uResolution;
-void main() {
+${buildCustomUniformDeclarations(userUniforms)}void main() {
   vec3 direction = normalize(vPosition);
   vec3 color = vec3(0.0);
   float alpha = 1.0;
@@ -159,6 +181,29 @@ export class ClientEnvironment extends System {
     // ...
   }
 
+  applyBackgroundSky(bgTexture) {
+    if (!this.skyBasicMaterial && this.sky.material?.isMeshBasicMaterial) {
+      this.skyBasicMaterial = this.sky.material
+    }
+    if (this.skyBasicMaterial) {
+      this.sky.material = this.skyBasicMaterial
+    }
+    if (this.skyShaderMaterial) {
+      this.skyShaderMaterial.dispose()
+      this.skyShaderMaterial = null
+    }
+    if (bgTexture) {
+      bgTexture.minFilter = bgTexture.magFilter = THREE.LinearFilter
+      bgTexture.mapping = THREE.EquirectangularReflectionMapping
+      bgTexture.colorSpace = THREE.SRGBColorSpace
+      this.sky.material.map = bgTexture
+      this.sky.visible = true
+    } else {
+      this.sky.material.map = null
+      this.sky.visible = false
+    }
+  }
+
   async updateSky() {
     if (!this.sky) {
       const geometry = new THREE.SphereGeometry(1000, 60, 40)
@@ -204,7 +249,7 @@ export class ClientEnvironment extends System {
         const uniforms = buildShaderUniforms(shaderUniforms)
         const material = new THREE.ShaderMaterial({
           vertexShader: skyVertexShader,
-          fragmentShader: buildSkyFragmentShader(shaderCode),
+          fragmentShader: buildSkyFragmentShader(shaderCode, shaderUniforms),
           uniforms,
           side: THREE.BackSide,
           depthWrite: false,
@@ -214,7 +259,7 @@ export class ClientEnvironment extends System {
         const renderer = this.world.graphics.renderer
         if (!renderer) {
           material.dispose()
-          this.sky.visible = false
+          this.applyBackgroundSky(bgTexture)
         } else {
           const prevOnError = renderer.debug.onShaderError
           let compileError = null
@@ -233,7 +278,7 @@ export class ClientEnvironment extends System {
           if (compileError) {
             console.warn('[sky] shader compile error:', compileError)
             material.dispose()
-            this.sky.visible = false
+            this.applyBackgroundSky(bgTexture)
           } else {
             if (!this.skyBasicMaterial) {
               this.skyBasicMaterial = this.sky.material
@@ -245,30 +290,10 @@ export class ClientEnvironment extends System {
         }
       } catch (err) {
         console.warn('[sky] shader error:', err)
-        this.sky.visible = false
+        this.applyBackgroundSky(bgTexture)
       }
-    } else if (bgTexture) {
-      if (this.skyBasicMaterial) {
-        this.sky.material = this.skyBasicMaterial
-      }
-      if (this.skyShaderMaterial) {
-        this.skyShaderMaterial.dispose()
-        this.skyShaderMaterial = null
-      }
-      bgTexture.minFilter = bgTexture.magFilter = THREE.LinearFilter
-      bgTexture.mapping = THREE.EquirectangularReflectionMapping
-      bgTexture.colorSpace = THREE.SRGBColorSpace
-      this.sky.material.map = bgTexture
-      this.sky.visible = true
     } else {
-      if (this.skyBasicMaterial) {
-        this.sky.material = this.skyBasicMaterial
-      }
-      if (this.skyShaderMaterial) {
-        this.skyShaderMaterial.dispose()
-        this.skyShaderMaterial = null
-      }
-      this.sky.visible = false
+      this.applyBackgroundSky(bgTexture)
     }
 
     if (hdrTexture) {
