@@ -11,6 +11,7 @@ import {
   handleRuntimeCredentialCommand,
 } from './adminCredentials.js'
 import { ADMIN_SHUTDOWN_COMMAND, handleAdminShutdownCommand } from './adminShutdown.js'
+import { describeWebSocketConnection, resolveWebSocketConnection } from './websocketConnection.js'
 import { getMaxUploadSizeBytes, getMaxUploadSizeMb } from './worldLimits.js'
 
 const SCRIPT_BLUEPRINT_FIELDS = new Set([
@@ -267,16 +268,49 @@ function serializeEntitiesForAdmin(world) {
   return world.entities.serialize().filter(entity => entity?.type !== 'player')
 }
 
-export async function admin(fastify, { world, assets, adminHtmlPath, onConnectionCountChanged, agones = null } = {}) {
+
+function sendRuntimeNotReady(reply, state = null) {
+  reply.header('Retry-After', '1')
+  return reply.code(503).send({
+    error: 'runtime_not_ready',
+    state,
+    message: 'Runtime bootstrap has not completed',
+    retryable: true,
+  })
+}
+
+export async function admin(
+  fastify,
+  {
+    world,
+    assets,
+    adminHtmlPath,
+    onConnectionCountChanged,
+    agones = null,
+    getAgones = null,
+    isRuntimeReady = null,
+    getRuntimeState = null,
+  } = {}
+) {
   const adminCredentialRevealEnabled = isAdminCredentialRevealEnabled(process.env)
   const subscribers = new Set()
   const playerSubscribers = new Set()
   const runtimeSubscribers = new Set()
   const db = world?.network?.db
+  const runtimeReady = typeof isRuntimeReady === 'function' ? isRuntimeReady : () => true
+  const runtimeState = typeof getRuntimeState === 'function' ? getRuntimeState : () => null
+  const resolveAgones = typeof getAgones === 'function' ? getAgones : () => agones
   let changefeedWriteQueue = Promise.resolve()
   const deployLocks = new Map()
   const lockTtlSeconds = Number.parseInt(process.env.DEPLOY_LOCK_TTL || '120', 10)
   const lockTtlMs = Number.isFinite(lockTtlSeconds) && lockTtlSeconds > 0 ? lockTtlSeconds * 1000 : 120000
+
+  fastify.addHook('onRequest', async (req, reply) => {
+    const upgradeHeader = String(req.headers.upgrade || '').toLowerCase()
+    if (upgradeHeader === 'websocket') return
+    if (runtimeReady()) return
+    return sendRuntimeNotReady(reply, runtimeState())
+  })
 
   function auditRuntimeCredentialReveal({
     req,
@@ -750,6 +784,22 @@ export async function admin(fastify, { world, assets, adminHtmlPath, onConnectio
       reply.type('text/html').send(html)
     },
     wsHandler: (ws, req) => {
+      const receivedWs = ws
+      ws = resolveWebSocketConnection(ws)
+      if (!ws || typeof ws.on !== 'function' || typeof ws.send !== 'function') {
+        req.log.error({
+          received: describeWebSocketConnection(receivedWs),
+          resolved: describeWebSocketConnection(ws),
+          upgrade: req.headers?.upgrade || null,
+        }, 'invalid websocket connection for /admin')
+        ws?.close?.(1011, 'invalid_websocket')
+        return
+      }
+      if (!runtimeReady()) {
+        ws?.close?.(1013, 'runtime_not_ready')
+        return
+      }
+
       let authed = false
       let defaultNetworkId = null
       let subscriptions = { snapshot: false, players: false, runtime: false }
@@ -834,7 +884,7 @@ export async function admin(fastify, { world, assets, adminHtmlPath, onConnectio
           if (data.type === ADMIN_SHUTDOWN_COMMAND) {
             const commandResult = await handleAdminShutdownCommand({
               canDeploy: capabilities.deploy,
-              agones,
+              agones: resolveAgones(),
               beforeShutdown: async () => {
                 await world.network.save()
               },

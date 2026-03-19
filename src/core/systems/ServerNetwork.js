@@ -458,9 +458,10 @@ export class ServerNetwork extends System {
       }
 
       // check connection params
-      let authToken = params.authToken
-      let name = params.name
-      let avatar = params.avatar
+      const connectionParams = params && typeof params === 'object' ? params : {}
+      let authToken = connectionParams.authToken
+      let name = connectionParams.name
+      let avatar = connectionParams.avatar
       if (typeof authToken === 'string') {
         authToken = authToken.trim()
       } else {

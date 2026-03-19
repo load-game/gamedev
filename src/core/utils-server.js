@@ -38,6 +38,14 @@ const runtimeSessionTtlSeconds = parsePositiveInt(
   DEFAULT_RUNTIME_SESSION_TTL_SECONDS
 )
 
+function normalizeSecret(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function normalizeWorldId(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
 function resolveRuntimeSessionIssuer() {
   const fromPublicApi = process.env.PUBLIC_API_URL?.trim()
   if (fromPublicApi) return fromPublicApi.replace(/\/api\/?$/, '')
@@ -59,15 +67,45 @@ function resolveLobbyIdentityIssuer() {
   return null
 }
 
-function resolveLobbyIdentityVerifyUrl(verifyUrl) {
+function normalizeBaseUrl(value) {
+  if (typeof value !== 'string') return ''
+  return value.trim().replace(/\/+$/, '')
+}
+
+function resolveControlInternalBaseUrl() {
+  const explicit = normalizeBaseUrl(process.env.CONTROL_INTERNAL_BASE_URL)
+  if (explicit) return explicit
+
+  const legacyPublicAuthUrl = normalizeBaseUrl(process.env.PUBLIC_AUTH_URL)
+  if (!legacyPublicAuthUrl) return null
+
+  try {
+    const url = new URL(legacyPublicAuthUrl)
+    let basePath = url.pathname.replace(/\/+$/, '')
+    basePath = basePath.replace(/\/identity$/, '')
+    url.pathname = basePath || '/'
+    url.search = ''
+    url.hash = ''
+    return normalizeBaseUrl(url.toString()) || null
+  } catch {
+    return null
+  }
+}
+
+function resolveLobbyIdentityVerifyUrl(verifyUrl, controlBaseUrl) {
   const explicit = typeof verifyUrl === 'string' ? verifyUrl.trim() : ''
   if (explicit) return explicit
 
-  const base = process.env.PUBLIC_AUTH_URL?.trim()
-  if (!base) return null
+  const controlBase = normalizeBaseUrl(controlBaseUrl) || resolveControlInternalBaseUrl()
+  if (controlBase) {
+    return `${controlBase}/identity/exchange/verify`
+  }
 
-  const normalizedBase = base.replace(/\/+$/, '')
-  return `${normalizedBase}/exchange/verify`
+  // Legacy fallback until all managed runtimes receive control.internalBaseUrl.
+  const legacyPublicAuthUrl = normalizeBaseUrl(process.env.PUBLIC_AUTH_URL)
+  if (!legacyPublicAuthUrl) return null
+
+  return `${legacyPublicAuthUrl}/exchange/verify`
 }
 
 export function createJWT(data, { worldId } = {}) {
@@ -126,24 +164,45 @@ export function readJWT(token, { worldId } = {}) {
   })
 }
 
-export async function verifyIdentityExchangeTokenWithLobby(token, { verifyUrl, timeoutMs } = {}) {
+export function buildRuntimeControlAuthorization({ worldId, jwtSecret } = {}) {
+  const normalizedWorldId = normalizeWorldId(worldId || process.env.WORLD_ID)
+  const normalizedJwtSecret = normalizeSecret(jwtSecret || process.env.JWT_SECRET)
+  if (!normalizedWorldId || !normalizedJwtSecret) return null
+  const token = crypto
+    .createHmac('sha256', normalizedJwtSecret)
+    .update(`runtime-internal:${normalizedWorldId}`)
+    .digest('hex')
+  return `Bearer ${token}`
+}
+
+export async function verifyIdentityExchangeTokenWithLobby(
+  token,
+  { verifyUrl, controlBaseUrl, worldId, jwtSecret, authorization, timeoutMs } = {}
+) {
   if (typeof token !== 'string' || !token.trim()) {
     return { ok: false, reason: 'invalid' }
   }
-  const endpoint = resolveLobbyIdentityVerifyUrl(verifyUrl)
+  const endpoint = resolveLobbyIdentityVerifyUrl(verifyUrl, controlBaseUrl)
   if (!endpoint) {
     return { ok: false, reason: 'unreachable' }
   }
+  const controlAuthorization =
+    (typeof authorization === 'string' && authorization.trim()) ||
+    buildRuntimeControlAuthorization({ worldId, jwtSecret })
   const resolvedTimeoutMs = parsePositiveInt(timeoutMs, DEFAULT_VERIFY_TIMEOUT_MS)
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), resolvedTimeoutMs)
   try {
+    const headers = {
+      'content-type': 'application/json',
+      accept: 'application/json',
+    }
+    if (controlAuthorization) {
+      headers.authorization = controlAuthorization
+    }
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        accept: 'application/json',
-      },
+      headers,
       body: JSON.stringify({ token: token.trim() }),
       signal: controller.signal,
     })
