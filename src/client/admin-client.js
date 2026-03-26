@@ -4,6 +4,7 @@ import { css } from '@firebolt-dev/css'
 
 import { createAdminWorld } from '../core/createAdminWorld'
 import { CoreUI } from './components/CoreUI'
+import { resolveInitialAdminAuthFromEnv } from './adminAuth'
 import { assetPath } from './utils'
 
 export { System } from '../core/systems/System'
@@ -25,17 +26,7 @@ function resolveAdminUrl() {
 }
 
 function resolveInitialAdminAuth() {
-  const publicAuthUrl = typeof globalThis.env?.PUBLIC_AUTH_URL === 'string' ? globalThis.env.PUBLIC_AUTH_URL.trim() : ''
-  if (!publicAuthUrl) return null
-  return {
-    usesLobbyIdentity: true,
-    usesLocalIdentity: false,
-    admin: {
-      kind: 'player_token',
-      codeConfigured: false,
-      openAccess: false,
-    },
-  }
+  return resolveInitialAdminAuthFromEnv(globalThis.env)
 }
 
 export function AdminClient() {
