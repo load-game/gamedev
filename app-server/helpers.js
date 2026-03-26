@@ -204,6 +204,10 @@ export function normalizeSyncString(value) {
   return trimmed || null
 }
 
+export function normalizeOptionalSecret(value) {
+  return normalizeSyncString(value)
+}
+
 export function normalizeProjectRelativePath(value) {
   if (typeof value !== 'string') return null
   const normalized = normalizeScriptRelPath(value).trim()

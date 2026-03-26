@@ -2,13 +2,14 @@ import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 import { uuid } from './utils.js'
 import { readPacket, writePacket } from '../src/core/packets.js'
-import { normalizeWorldAdminBaseUrl, toWsUrl, joinUrl, normalizePacketData } from './helpers.js'
+import { normalizeWorldAdminBaseUrl, toWsUrl, joinUrl, normalizePacketData, normalizeOptionalSecret } from './helpers.js'
 
 export class WorldAdminClient extends EventEmitter {
-  constructor({ worldUrl, adminCode }) {
+  constructor({ worldUrl, adminCode, authToken }) {
     super()
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
-    this.adminCode = adminCode || null
+    this.adminCode = normalizeOptionalSecret(adminCode)
+    this.authToken = normalizeOptionalSecret(authToken)
     this.ws = null
     this.pending = new Map()
   }

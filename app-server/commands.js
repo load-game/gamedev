@@ -226,6 +226,12 @@ export class HyperfyCLI {
     this.conflictsDir = path.join(this.rootDir, '.lobby', 'conflicts')
 
     this.worldUrl = overrides.worldUrl || process.env.WORLD_URL || null
+    this.worldAuthToken =
+      typeof overrides.worldAuthToken === 'string'
+        ? overrides.worldAuthToken
+        : typeof process.env.WORLD_AUTH_TOKEN === 'string'
+          ? process.env.WORLD_AUTH_TOKEN
+          : null
     this.adminCode =
       typeof overrides.adminCode === 'string'
         ? overrides.adminCode
@@ -276,8 +282,9 @@ export class HyperfyCLI {
   async _connectAdminClient() {
     this._requireWorldUrl()
 
+    const authToken = this.worldAuthToken
     let adminCode = this.adminCode
-    if (!adminCode) {
+    if (!authToken && !adminCode) {
       adminCode = await this._promptAdminCode()
       this.adminCode = adminCode
     }
@@ -285,6 +292,7 @@ export class HyperfyCLI {
     const server = new DirectAppServer({
       worldUrl: this.worldUrl,
       adminCode,
+      authToken,
       rootDir: this.rootDir,
     })
     try {
@@ -292,13 +300,14 @@ export class HyperfyCLI {
       return server
     } catch (err) {
       const msg = err?.message || ''
-      const canRetry = (msg === 'invalid_code' || msg === 'unauthorized') && process.stdin.isTTY
+      const canRetry = !authToken && (msg === 'invalid_code' || msg === 'unauthorized') && process.stdin.isTTY
       if (!canRetry) throw err
       adminCode = await this._promptAdminCode()
       this.adminCode = adminCode
       const retryServer = new DirectAppServer({
         worldUrl: this.worldUrl,
         adminCode,
+        authToken,
         rootDir: this.rootDir,
       })
       await retryServer.connect()
@@ -787,7 +796,7 @@ Commands:
   reset [--force]            Delete local apps/assets/world.json
   status                     Show /admin snapshot summary
   help                       Show this help
-  --target <name>            Use .lobby/targets.json entry for WORLD_URL/WORLD_ID/ADMIN_CODE
+  --target <name>            Use .lobby/targets.json entry for WORLD_URL/WORLD_ID/ADMIN_CODE/WORLD_AUTH_TOKEN
 
 Options:
   --dry-run, -n              Show deploy plan without applying changes
@@ -798,10 +807,13 @@ Environment:
   WORLD_URL                  World server base URL (e.g. http://localhost:3000)
   WORLD_ID                   World ID (must match remote worldId)
   ADMIN_CODE                 Admin code (if the world requires it)
+  WORLD_AUTH_TOKEN           Runtime session token for hosted world admin access
 
 Notes:
   - Blueprints live at apps/<appName>/*.json with a shared index.js/js script.
   - Start the direct app-server for continuous sync:
+      WORLD_URL=... WORLD_ID=... WORLD_AUTH_TOKEN=... node <path-to-repo>/app-server/server.js
+    or for standalone runtimes:
       WORLD_URL=... WORLD_ID=... ADMIN_CODE=... node <path-to-repo>/app-server/server.js
 `)
   }
