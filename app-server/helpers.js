@@ -208,6 +208,35 @@ export function normalizeOptionalSecret(value) {
   return normalizeSyncString(value)
 }
 
+export function resolveWorldAdminAuth({ adminCode, authToken } = {}) {
+  const normalizedAuthToken = normalizeOptionalSecret(authToken)
+  if (normalizedAuthToken) {
+    return {
+      kind: 'player_token',
+      tokenBacked: true,
+      authToken: normalizedAuthToken,
+      adminCode: null,
+    }
+  }
+  return {
+    kind: 'admin_code',
+    tokenBacked: false,
+    authToken: null,
+    adminCode: normalizeOptionalSecret(adminCode),
+  }
+}
+
+export function buildWorldAdminHeaders({ adminCode, authToken } = {}, extra = {}) {
+  const headers = { ...extra }
+  const auth = resolveWorldAdminAuth({ adminCode, authToken })
+  if (auth.authToken) {
+    headers.authorization = `Bearer ${auth.authToken}`
+  } else if (auth.adminCode) {
+    headers['X-Admin-Code'] = auth.adminCode
+  }
+  return headers
+}
+
 export function normalizeProjectRelativePath(value) {
   if (typeof value !== 'string') return null
   const normalized = normalizeScriptRelPath(value).trim()

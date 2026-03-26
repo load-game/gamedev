@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { WorldAdminClient } from '../../app-server/WorldAdminClient.js'
-import { joinUrl, normalizeWorldAdminBaseUrl, toWsUrl } from '../../app-server/helpers.js'
+import {
+  buildWorldAdminHeaders,
+  joinUrl,
+  normalizeWorldAdminBaseUrl,
+  resolveWorldAdminAuth,
+  toWsUrl,
+} from '../../app-server/helpers.js'
 
 test('normalizeWorldAdminBaseUrl strips trailing /admin suffixes', () => {
   assert.equal(
@@ -43,8 +49,11 @@ test('WorldAdminClient derives admin endpoints from slug world URLs', () => {
 test('WorldAdminClient snapshot request uses slug-prefixed admin route', async () => {
   const originalFetch = globalThis.fetch
   const captured = []
-  globalThis.fetch = async (input) => {
-    captured.push(typeof input === 'string' ? input : input.toString())
+  globalThis.fetch = async (input, init = {}) => {
+    captured.push({
+      url: typeof input === 'string' ? input : input.toString(),
+      headers: init.headers || {},
+    })
     return new Response(
       JSON.stringify({
         worldId: 'demo-world',
@@ -72,5 +81,46 @@ test('WorldAdminClient snapshot request uses slug-prefixed admin route', async (
     globalThis.fetch = originalFetch
   }
 
-  assert.equal(captured[0], 'https://dev.lobby.ws/worlds/demo/admin/snapshot')
+  assert.equal(captured[0].url, 'https://dev.lobby.ws/worlds/demo/admin/snapshot')
+  assert.equal(captured[0].headers['X-Admin-Code'], 'secret')
+})
+
+test('resolveWorldAdminAuth prefers world auth token over admin code', () => {
+  assert.deepEqual(
+    resolveWorldAdminAuth({
+      adminCode: 'secret',
+      authToken: 'session-token',
+    }),
+    {
+      kind: 'player_token',
+      tokenBacked: true,
+      authToken: 'session-token',
+      adminCode: null,
+    }
+  )
+})
+
+test('buildWorldAdminHeaders uses bearer auth for token-backed sessions', () => {
+  assert.deepEqual(
+    buildWorldAdminHeaders({
+      adminCode: 'secret',
+      authToken: 'session-token',
+    }),
+    {
+      authorization: 'Bearer session-token',
+    }
+  )
+})
+
+test('WorldAdminClient omits admin code from websocket auth when token-backed', () => {
+  const client = new WorldAdminClient({
+    worldUrl: 'https://dev.lobby.ws/worlds/demo',
+    adminCode: 'secret',
+    authToken: 'session-token',
+  })
+
+  assert.deepEqual(client.buildAdminAuthPayload(), {
+    authToken: 'session-token',
+    subscriptions: { snapshot: false, players: false, runtime: false },
+  })
 })

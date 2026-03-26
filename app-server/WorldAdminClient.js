@@ -2,14 +2,22 @@ import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 import { uuid } from './utils.js'
 import { readPacket, writePacket } from '../src/core/packets.js'
-import { normalizeWorldAdminBaseUrl, toWsUrl, joinUrl, normalizePacketData, normalizeOptionalSecret } from './helpers.js'
+import {
+  normalizeWorldAdminBaseUrl,
+  toWsUrl,
+  joinUrl,
+  normalizePacketData,
+  buildWorldAdminHeaders,
+  resolveWorldAdminAuth,
+} from './helpers.js'
 
 export class WorldAdminClient extends EventEmitter {
   constructor({ worldUrl, adminCode, authToken }) {
     super()
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
-    this.adminCode = normalizeOptionalSecret(adminCode)
-    this.authToken = normalizeOptionalSecret(authToken)
+    this.auth = resolveWorldAdminAuth({ adminCode, authToken })
+    this.adminCode = this.auth.adminCode
+    this.authToken = this.auth.authToken
     this.ws = null
     this.pending = new Map()
   }
@@ -27,9 +35,23 @@ export class WorldAdminClient extends EventEmitter {
   }
 
   adminHeaders(extra = {}) {
-    const headers = { ...extra }
-    if (this.adminCode) headers['X-Admin-Code'] = this.adminCode
-    return headers
+    return buildWorldAdminHeaders(
+      {
+        adminCode: this.adminCode,
+        authToken: this.authToken,
+      },
+      extra
+    )
+  }
+
+  buildAdminAuthPayload(subscriptions = { snapshot: false, players: false, runtime: false }) {
+    const payload = { subscriptions }
+    if (this.authToken) {
+      payload.authToken = this.authToken
+    } else if (this.adminCode) {
+      payload.code = this.adminCode
+    }
+    return payload
   }
 
   async connect() {
@@ -43,12 +65,7 @@ export class WorldAdminClient extends EventEmitter {
       this.ws = ws
 
       const onOpen = () => {
-        ws.send(
-          writePacket('adminAuth', {
-            code: this.adminCode,
-            subscriptions: { snapshot: false, players: false, runtime: false },
-          })
-        )
+        ws.send(writePacket('adminAuth', this.buildAdminAuthPayload()))
       }
 
       const onMessage = async event => {
