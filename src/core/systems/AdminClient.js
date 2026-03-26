@@ -45,6 +45,25 @@ function normalizeRuntimeCredentials(data) {
   }
 }
 
+export function buildSdkSetupData({ credentials, authToken } = {}) {
+  if (!credentials || typeof credentials !== 'object') return null
+  const adminAuthKind = normalizeAdminAuthKind(credentials.adminAuthKind)
+  if (adminAuthKind === ADMIN_AUTH_KIND_PLAYER_TOKEN) {
+    return {
+      worldId: normalizeRuntimeCredentialValue(credentials.worldId),
+      adminAuthKind,
+      worldAuthToken: normalizeRuntimeCredentialValue(authToken),
+      adminCode: null,
+    }
+  }
+  return {
+    worldId: normalizeRuntimeCredentialValue(credentials.worldId),
+    adminAuthKind,
+    worldAuthToken: null,
+    adminCode: normalizeRuntimeCredentialValue(credentials.adminCode),
+  }
+}
+
 const ADMIN_AUTH_KIND_ADMIN_CODE = 'admin_code'
 const ADMIN_AUTH_KIND_PLAYER_TOKEN = 'player_token'
 
@@ -704,6 +723,25 @@ export class AdminClient extends System {
     }
     this.runtimeCredentials = credentials
     return credentials
+  }
+
+  async getSdkSetupData({ forceRefresh = false, timeoutMs = 10000 } = {}) {
+    const credentials = await this.getRuntimeCredentials({ forceRefresh, timeoutMs })
+    const setupData = buildSdkSetupData({
+      credentials,
+      authToken: this.requiresPlayerToken() ? this.refreshAuthToken() : null,
+    })
+    if (!setupData) {
+      const error = new Error('invalid_response')
+      error.code = 'invalid_response'
+      throw error
+    }
+    if (setupData.adminAuthKind === ADMIN_AUTH_KIND_PLAYER_TOKEN && !setupData.worldAuthToken) {
+      const error = new Error('player_session_missing')
+      error.code = 'player_session_missing'
+      throw error
+    }
+    return setupData
   }
 
   async requestAgonesShutdown({ timeoutMs = 10000 } = {}) {

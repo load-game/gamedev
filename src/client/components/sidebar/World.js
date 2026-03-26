@@ -12,6 +12,9 @@ const voiceChatOptions = [
   { label: 'Global', value: 'global' },
 ]
 
+const ADMIN_AUTH_KIND_ADMIN_CODE = 'admin_code'
+const ADMIN_AUTH_KIND_PLAYER_TOKEN = 'player_token'
+
 function parsePositiveInt(value) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
@@ -41,15 +44,26 @@ function resolveWorldUrl() {
   }
 }
 
-function buildCredentialsEnvBlock({ worldId, adminCode, worldUrl }) {
-  return `WORLD_ID=${normalizeCredentialValue(worldId)}
-ADMIN_CODE=${normalizeCredentialValue(adminCode)}
-WORLD_URL=${normalizeCredentialValue(worldUrl)}`
+function buildCredentialsEnvBlock({ worldId, adminAuthKind, adminCode, worldAuthToken, worldUrl }) {
+  const lines = [
+    `WORLD_URL=${normalizeCredentialValue(worldUrl)}`,
+    `WORLD_ID=${normalizeCredentialValue(worldId)}`,
+  ]
+  if (adminAuthKind === ADMIN_AUTH_KIND_PLAYER_TOKEN) {
+    lines.push(`WORLD_AUTH_TOKEN=${normalizeCredentialValue(worldAuthToken)}`)
+  } else {
+    lines.push(`ADMIN_CODE=${normalizeCredentialValue(adminCode)}`)
+  }
+  return lines.join('\n')
 }
 
-function buildCredentialsMarkdown({ worldId, adminCode, worldUrl }) {
-  const envBlock = buildCredentialsEnvBlock({ worldId, adminCode, worldUrl })
-  return `# Runtime Credentials Setup
+function buildCredentialsMarkdown({ worldId, adminAuthKind, adminCode, worldAuthToken, worldUrl }) {
+  const isHosted = adminAuthKind === ADMIN_AUTH_KIND_PLAYER_TOKEN
+  const envBlock = buildCredentialsEnvBlock({ worldId, adminAuthKind, adminCode, worldAuthToken, worldUrl })
+  const authNote = isHosted
+    ? '   This hosted setup uses your current runtime session token. Refresh the copied `.env` value if your session expires.'
+    : '   This standalone setup uses the runtime `ADMIN_CODE`.'
+  return `# Runtime SDK Setup
 
 1. In your current directory, clone \`github.com/lobby-ws/sdk\`:
    \`\`\`bash
@@ -59,6 +73,7 @@ function buildCredentialsMarkdown({ worldId, adminCode, worldUrl }) {
    \`\`\`env
    ${envBlock}
    \`\`\`
+${authNote}
    Verify the file was written before continuing:
    \`\`\`bash
    cat .env
@@ -72,13 +87,13 @@ function buildCredentialsMarkdown({ worldId, adminCode, worldUrl }) {
 }
 
 function formatCredentialError(code) {
-  if (code === 'admin_required') return 'Deploy access is required to view runtime credentials.'
+  if (code === 'admin_required') return 'Deploy access is required to view SDK setup.'
   if (code === 'admin_url_missing') return 'Admin endpoint is unavailable for this world.'
-  if (code === 'admin_code_missing') return 'Enter an admin code before requesting runtime credentials.'
-  if (code === 'player_session_missing') return 'Sign in to this hosted world before requesting runtime credentials.'
+  if (code === 'admin_code_missing') return 'Enter an admin code before requesting SDK setup.'
+  if (code === 'player_session_missing') return 'Sign in to this hosted world before requesting SDK setup.'
   if (code === 'clipboard_unavailable') return 'Clipboard access is unavailable in this browser context.'
-  if (code === 'timeout') return 'Timed out requesting runtime credentials.'
-  return 'Failed to load runtime credentials.'
+  if (code === 'timeout') return 'Timed out requesting SDK setup.'
+  return 'Failed to load SDK setup.'
 }
 
 function formatShutdownError(code) {
@@ -114,7 +129,7 @@ export function World({ world, hidden }) {
   const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
   const [ao, setAO] = useState(world.settings.ao)
   const [rank, setRank] = useState(world.settings.rank)
-  const [runtimeCredentials, setRuntimeCredentials] = useState(null)
+  const [sdkSetup, setSdkSetup] = useState(null)
   const [credentialsLoading, setCredentialsLoading] = useState(false)
   const [credentialsError, setCredentialsError] = useState(null)
   const [copiedCredentials, setCopiedCredentials] = useState(false)
@@ -141,8 +156,8 @@ export function World({ world, hidden }) {
   }, [])
 
   useEffect(() => {
-    if (!isAdmin || !world.admin?.getRuntimeCredentials) {
-      setRuntimeCredentials(null)
+    if (!isAdmin || !world.admin?.getSdkSetupData) {
+      setSdkSetup(null)
       setCredentialsLoading(false)
       setCredentialsError(null)
       return
@@ -151,14 +166,14 @@ export function World({ world, hidden }) {
     setCredentialsLoading(true)
     setCredentialsError(null)
     world.admin
-      .getRuntimeCredentials()
+      .getSdkSetupData()
       .then(credentials => {
         if (!active) return
-        setRuntimeCredentials(credentials)
+        setSdkSetup(credentials)
       })
       .catch(err => {
         if (!active) return
-        setRuntimeCredentials(null)
+        setSdkSetup(null)
         setCredentialsError(err?.code || 'request_failed')
       })
       .finally(() => {
@@ -183,16 +198,16 @@ export function World({ world, hidden }) {
     setShutdownError(null)
   }, [isAdmin])
 
-  const loadRuntimeCredentials = async ({ forceRefresh = false } = {}) => {
-    if (!world.admin?.getRuntimeCredentials) return
+  const loadSdkSetup = async ({ forceRefresh = false } = {}) => {
+    if (!world.admin?.getSdkSetupData) return
     setCredentialsLoading(true)
     setCredentialsError(null)
     try {
-      const credentials = await world.admin.getRuntimeCredentials({ forceRefresh })
-      setRuntimeCredentials(credentials)
+      const credentials = await world.admin.getSdkSetupData({ forceRefresh })
+      setSdkSetup(credentials)
       return credentials
     } catch (err) {
-      setRuntimeCredentials(null)
+      setSdkSetup(null)
       setCredentialsError(err?.code || 'request_failed')
       return null
     } finally {
@@ -201,11 +216,13 @@ export function World({ world, hidden }) {
   }
 
   const copyCredentials = async () => {
-    const credentials = runtimeCredentials || (await loadRuntimeCredentials({ forceRefresh: true }))
+    const credentials = sdkSetup || (await loadSdkSetup({ forceRefresh: true }))
     if (!credentials) return
     const payload = buildCredentialsMarkdown({
       worldId: credentials.worldId,
+      adminAuthKind: credentials.adminAuthKind,
       adminCode: credentials.adminCode,
+      worldAuthToken: credentials.worldAuthToken,
       worldUrl: resolveWorldUrl(),
     })
     try {
@@ -406,12 +423,10 @@ export function World({ world, hidden }) {
               {credentialsError && (
                 <div className='world-credentials-note error'>{formatCredentialError(credentialsError)}</div>
               )}
-              {!runtimeCredentials && credentialsLoading && (
-                <div className='world-credentials-note'>Loading runtime credentials...</div>
-              )}
+              {!sdkSetup && credentialsLoading && <div className='world-credentials-note'>Loading SDK setup...</div>}
               <FieldToggle
-                label='Copy Setup Prompt'
-                hint='Copy a Markdown setup guide for the SDK repo and runtime env vars.'
+                label='Copy SDK Setup'
+                hint='Copy a Markdown setup guide for the SDK repo and the correct auth env vars for this world.'
                 trueLabel='Copied'
                 falseLabel={credentialsLoading ? 'Loading...' : 'Copy'}
                 value={copiedCredentials}
