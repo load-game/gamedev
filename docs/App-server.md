@@ -12,7 +12,12 @@ App-server is the dev server that syncs local files to a world via `/admin`. It 
     - direct runtime: `http://localhost:3000`
     - platform slug proxy: `https://<host>/worlds/<slug>`
   - `WORLD_ID` (must match the target worldId)
-  - `ADMIN_CODE` (must match the world server, if set)
+  - hosted slug world: `WORLD_AUTH_TOKEN` (copy the current runtime session token from the world admin/sidebar setup flow)
+  - standalone runtime: `ADMIN_CODE` (must match the world server, if set)
+
+Hosted and standalone targets use different admin credentials:
+- Hosted slug worlds use `WORLD_AUTH_TOKEN` and ignore `ADMIN_CODE`.
+- Standalone runtimes use `ADMIN_CODE` unless admin access is intentionally left open.
 
 ---
 
@@ -46,7 +51,7 @@ Define targets in `.lobby/targets.json` and pass `--target <name>` to the CLI or
   "dev": {
     "worldUrl": "https://dev.lobby.ws/worlds/my-world",
     "worldId": "dev-world",
-    "adminCode": "secret",
+    "worldAuthToken": "runtime-session-token"
   },
   "prod": {
     "worldUrl": "https://world.example.com",
@@ -107,6 +112,7 @@ Tips
 - On `version_mismatch`, app-server fast-forwards and reapplies local changes, overwriting world state.
 - Downloaded assets live in the shared `assets/` folder and are referenced from blueprint JSON.
 - `WORLD_URL` should point to the world base URL (not `/admin`). If `/admin` is included, app-server normalizes it automatically.
+- Hosted slug worlds should set `WORLD_AUTH_TOKEN`; standalone runtimes should set `ADMIN_CODE`.
 
 ---
 
@@ -129,7 +135,11 @@ For prod targets, the CLI asks for confirmation unless you pass `--yes`.
 ### Troubleshooting
 
 - Bootstrap didn’t happen: ensure the target world is empty/default or run `gamedev world export` (add `--include-built-scripts` for legacy single-file apps).
-- Unauthorized: ensure `ADMIN_CODE` matches the world server `ADMIN_CODE`.
-- Script updates rejected: ensure `ADMIN_CODE` matches and the deploy lock is free.
+- Unauthorized:
+  - hosted slug world: ensure `WORLD_AUTH_TOKEN` is present, unexpired, and copied from the same world
+  - standalone runtime: ensure `ADMIN_CODE` matches the world server `ADMIN_CODE`
+- Script updates rejected:
+  - hosted slug world: ensure `WORLD_AUTH_TOKEN` is still valid and has admin/deploy access
+  - standalone runtime: ensure `ADMIN_CODE` matches and the deploy lock is free
 - WORLD_ID mismatch: set `WORLD_ID` to match the target world id.
 - Changes not appearing: confirm `apps/<appName>/index.js` (or blueprint JSON) is being edited and app-server is connected.

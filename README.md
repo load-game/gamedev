@@ -27,6 +27,9 @@ What `npm run dev` does:
 
 This repository powers the `gamedev` package and CLI used to scaffold, run, sync, and deploy Lobby world projects.
 
+Hosted slug-world targets use `WORLD_AUTH_TOKEN` for SDK/admin access.
+Standalone runtimes use `ADMIN_CODE` (or open admin access if left unset).
+
 ## What You Get
 
 - Persistent self-hosted world runtime (multiplayer, physics, WebXR).

@@ -7,6 +7,7 @@ There are a few commands that can be used by entering them in the chat.
 Standalone runtimes with `ADMIN_CODE` set can use this command to grant or revoke admin for the current player.
 
 Hosted slug worlds ignore `/admin <code>` and require a valid Lobby-backed runtime session instead.
+For SDK/app-server setup against hosted worlds, use `WORLD_AUTH_TOKEN` instead of `ADMIN_CODE`.
 
 If a standalone runtime does not set `ADMIN_CODE`, admin access is open instead of using this command.
 

@@ -64,7 +64,7 @@ Definition of done:
 ### 4. Replace Hosted-World SDK Setup UX
 
 - [x] Replace the world-sidebar setup flow so hosted worlds request tokenized SDK setup data and copy `WORLD_URL`, `WORLD_ID`, and `WORLD_AUTH_TOKEN`. Standalone worlds keep `WORLD_URL`, `WORLD_ID`, and `ADMIN_CODE`. Files: `runtime/src/client/components/sidebar/World.js`, `runtime/src/core/systems/AdminClient.js`. Size: 0.75 day.
-- [ ] Remove hosted-world references to `ADMIN_CODE` from runtime docs and examples, while keeping standalone instructions explicit. Files: `runtime/README.md`, `runtime/docs/App-server.md`, `runtime/docs/commands.md`, `runtime/.env.example`. Size: 0.5 day.
+- [x] Remove hosted-world references to `ADMIN_CODE` from runtime docs and examples, while keeping standalone instructions explicit. Files: `runtime/README.md`, `runtime/docs/App-server.md`, `runtime/docs/commands.md`, `runtime/.env.example`. Size: 0.5 day.
 - [ ] Replace tests that assert hosted `hasAdminCode` behavior with tests around explicit auth kind and token-backed setup output. Files: runtime client/unit/integration tests under `runtime/test/integration/`. Size: 0.5 day.
 
 Definition of done:
