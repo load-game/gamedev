@@ -604,7 +604,9 @@ export class ServerNetwork extends System {
     // become admin command
     if (cmd === 'admin') {
       const code = arg1
-      if (process.env.ADMIN_CODE && process.env.ADMIN_CODE === code) {
+      const supportsAdminCodeEscalation =
+        this.auth?.admin?.kind === 'admin_code' && !!this.auth?.admin?.codeConfigured
+      if (supportsAdminCodeEscalation && process.env.ADMIN_CODE && process.env.ADMIN_CODE === code) {
         const id = player.data.id
         const userId = player.data.userId
         const granted = !player.isAdmin()

@@ -4,9 +4,13 @@ There are a few commands that can be used by entering them in the chat.
 
 ### `/admin <code>`
 
-If your world has an admin code set, the only way to become an admin is to use this command with your code (see your .env file).
+Standalone runtimes with `ADMIN_CODE` set can use this command to grant or revoke admin for the current player.
 
-If your .env doesn't have an ADMIN_CODE set, then all players are treated as an admin.
+Hosted slug worlds ignore `/admin <code>` and require a valid Lobby-backed runtime session instead.
+
+If a standalone runtime does not set `ADMIN_CODE`, admin access is open instead of using this command.
+
+See your `.env` file for the configured standalone admin code.
 
 ### `/spawn set`
 
