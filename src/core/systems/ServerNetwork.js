@@ -55,6 +55,26 @@ function deriveApiUrlFromAdminUrl(adminUrl) {
   return `${normalized}/api`
 }
 
+function logChatAdminCodeAttempt(level, { auth, playerId, userId, reason, authResult }) {
+  const payload = JSON.stringify({
+    component: 'server_network',
+    event: 'chat_admin_code',
+    transport: 'chat',
+    admin_auth_kind: auth?.admin?.kind || null,
+    auth_result: authResult,
+    hosted_admin_code_rejected: reason === 'hosted_admin_code_rejected',
+    reason,
+    player_id: playerId || null,
+    user_id: userId || null,
+    world_id: process.env.WORLD_ID || null,
+  })
+  if (level === 'warn') {
+    console.warn(payload)
+    return
+  }
+  console.info(payload)
+}
+
 function isNumberArray(value, length) {
   return (
     Array.isArray(value) &&
@@ -626,6 +646,27 @@ export class ServerNetwork extends System {
           createdAt: moment().toISOString(),
         })
         await this.db('users').where('id', userId).update({ rank })
+        logChatAdminCodeAttempt('info', {
+          auth: this.auth,
+          playerId: id,
+          userId,
+          reason: granted ? 'admin_granted' : 'admin_revoked',
+          authResult: 'accepted',
+        })
+      } else if (code) {
+        const reason =
+          this.auth?.admin?.kind === 'player_token'
+            ? 'hosted_admin_code_rejected'
+            : process.env.ADMIN_CODE
+              ? 'invalid_code'
+              : 'admin_code_unconfigured'
+        logChatAdminCodeAttempt('warn', {
+          auth: this.auth,
+          playerId,
+          userId: player.data.userId,
+          reason,
+          authResult: 'rejected',
+        })
       }
     }
     if (cmd === 'name') {

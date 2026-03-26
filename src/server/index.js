@@ -105,6 +105,9 @@ function logRuntimeEvent(level, event, state, extra = {}) {
     mode: runtimeBootstrapMode || 'direct',
     state: state?.lifecycle?.state || null,
     adminAuthKind: authDescriptor?.admin?.kind || null,
+    admin_auth_kind: authDescriptor?.admin?.kind || null,
+    admin_code_configured: !!authDescriptor?.admin?.codeConfigured,
+    admin_open_access: !!authDescriptor?.admin?.openAccess,
     bootstrapId:
       extra.bootstrapId !== undefined
         ? extra.bootstrapId || null
@@ -372,7 +375,8 @@ function warnIfRuntimeUsesLegacyControlPlaneBaseUrl(env = process.env) {
 
 function warnIfAdminCodeUnset(env = process.env) {
   if (warnedAboutMissingAdminCode) return
-  if (hasValue(env.ADMIN_CODE)) return
+  const authDescriptor = resolveRuntimeAuthDescriptor(env)
+  if (authDescriptor.admin.kind !== 'admin_code' || !authDescriptor.admin.openAccess) return
   warnedAboutMissingAdminCode = true
   console.warn('[envs] ADMIN_CODE not set - admin privileges are open to all players')
 }

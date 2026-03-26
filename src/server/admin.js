@@ -227,6 +227,12 @@ function getRuntimeAuthTokenFromRequest(req) {
   return token || null
 }
 
+function normalizeSecretString(value) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed || null
+}
+
 function parseUserRank(value) {
   const rank = Number(value)
   return Number.isFinite(rank) ? rank : Ranks.VISITOR
@@ -407,34 +413,164 @@ export async function admin(
     }
   }
 
-  async function resolveRequestCapabilities(req) {
-    const codeCapabilities = getCapabilitiesFromAdminCode(getAdminCodeFromRequest(req))
-    if (codeCapabilities.builder && codeCapabilities.deploy) {
-      return codeCapabilities
+  function resolveAuthSource({ codeAccepted, tokenAccepted }) {
+    if (codeAccepted && tokenAccepted) return 'mixed'
+    if (codeAccepted) return 'admin_code'
+    if (tokenAccepted) return 'player_token'
+    return 'none'
+  }
+
+  function getAdminAuthLogLevel({ authResult, hostedAdminCodeRejected }) {
+    if (authResult === 'rejected' || hostedAdminCodeRejected) {
+      return 'warn'
     }
-    const tokenCapabilities = await getCapabilitiesFromAuthToken(getRuntimeAuthTokenFromRequest(req))
-    return {
+    return 'info'
+  }
+
+  function logAdminAuthEvent({
+    event,
+    transport,
+    authResult,
+    requiredCapability = null,
+    requestPath = null,
+    remoteAddress = null,
+    reason = null,
+    audit = {},
+  } = {}) {
+    const payload = {
+      component: 'admin',
+      event,
+      transport,
+      auth_result: authResult || 'unknown',
+      required_capability: requiredCapability,
+      request_path: requestPath,
+      remote_address: remoteAddress,
+      reason,
+      admin_auth_kind: audit.admin_auth_kind || adminAuthPolicy.kind,
+      admin_code_present: !!audit.admin_code_present,
+      admin_code_result: audit.admin_code_result || 'missing',
+      auth_token_present: !!audit.auth_token_present,
+      token_auth_result: audit.token_auth_result || 'missing',
+      auth_source: audit.auth_source || 'none',
+      hosted_admin_code_rejected: !!audit.hosted_admin_code_rejected,
+      world_id: world?.network?.worldId || process.env.WORLD_ID || null,
+    }
+    const serialized = JSON.stringify(payload)
+    if (getAdminAuthLogLevel({
+      authResult: payload.auth_result,
+      hostedAdminCodeRejected: payload.hosted_admin_code_rejected,
+    }) === 'warn') {
+      console.warn(serialized)
+      return
+    }
+    console.info(serialized)
+  }
+
+  async function resolveAdminAuthorization({ code = null, authToken = null } = {}) {
+    const normalizedCode = normalizeSecretString(code)
+    const normalizedToken = normalizeSecretString(authToken)
+    const audit = {
+      admin_auth_kind: adminAuthPolicy.kind,
+      admin_code_present: !!normalizedCode,
+      admin_code_result: 'missing',
+      auth_token_present: !!normalizedToken,
+      token_auth_result: 'missing',
+      auth_source: 'none',
+      hosted_admin_code_rejected: false,
+    }
+
+    let codeCapabilities = { builder: false, deploy: false }
+    if (normalizedCode) {
+      if (!adminAuthPolicy.allowsAdminCode) {
+        audit.admin_code_result = 'blocked'
+        audit.hosted_admin_code_rejected = true
+      } else if (isAdminCodeValid(normalizedCode)) {
+        audit.admin_code_result = 'accepted'
+        codeCapabilities = { builder: true, deploy: true }
+      } else {
+        audit.admin_code_result = 'rejected'
+      }
+    }
+
+    let tokenCapabilities = { builder: false, deploy: false }
+    if (normalizedToken) {
+      if (codeCapabilities.builder && codeCapabilities.deploy) {
+        audit.token_auth_result = 'skipped'
+      } else {
+        tokenCapabilities = await getCapabilitiesFromAuthToken(normalizedToken)
+        audit.token_auth_result = tokenCapabilities.builder || tokenCapabilities.deploy ? 'accepted' : 'rejected'
+      }
+    }
+
+    const capabilities = {
       builder: codeCapabilities.builder || tokenCapabilities.builder,
       deploy: codeCapabilities.deploy || tokenCapabilities.deploy,
     }
+    audit.auth_source = resolveAuthSource({
+      codeAccepted: codeCapabilities.builder || codeCapabilities.deploy,
+      tokenAccepted: tokenCapabilities.builder || tokenCapabilities.deploy,
+    })
+    return { capabilities, audit }
+  }
+
+  async function resolveRequestCapabilities(req) {
+    return resolveAdminAuthorization({
+      code: getAdminCodeFromRequest(req),
+      authToken: getRuntimeAuthTokenFromRequest(req),
+    })
+  }
+
+  async function requireCapability(req, reply, capability) {
+    const { capabilities, audit } = await resolveRequestCapabilities(req)
+    const allowed = capability === 'deploy' ? capabilities.deploy : capabilities.builder
+    logAdminAuthEvent({
+      event: 'authorize',
+      transport: 'http',
+      authResult: allowed ? 'accepted' : 'rejected',
+      requiredCapability: capability,
+      requestPath: req?.routeOptions?.url || req?.url || null,
+      remoteAddress: req?.socket?.remoteAddress || null,
+      reason: allowed ? null : capability === 'deploy' ? 'deploy_required' : 'admin_required',
+      audit,
+    })
+    if (!allowed) {
+      reply.code(403).send({ error: 'admin_required' })
+      return false
+    }
+    return true
   }
 
   async function requireAdmin(req, reply) {
-    const capabilities = await resolveRequestCapabilities(req)
-    if (!capabilities.builder) {
-      reply.code(403).send({ error: 'admin_required' })
-      return false
-    }
-    return true
+    return requireCapability(req, reply, 'builder')
   }
 
   async function requireDeploy(req, reply) {
-    const capabilities = await resolveRequestCapabilities(req)
-    if (!capabilities.deploy) {
-      reply.code(403).send({ error: 'admin_required' })
-      return false
-    }
-    return true
+    return requireCapability(req, reply, 'deploy')
+  }
+
+  async function resolveWsAdminAuthorization(req, data) {
+    const payloadToken = normalizeSecretString(data?.authToken)
+    const headerToken = getRuntimeAuthTokenFromRequest(req)
+    return resolveAdminAuthorization({
+      code: data?.code,
+      authToken: payloadToken || headerToken,
+    })
+  }
+
+  async function logWsAdminAuthorization(req, { capabilities, audit }) {
+    const allowed = capabilities.builder || capabilities.deploy
+    const reason =
+      allowed ? null : adminAuthPolicy.allowsAdminCode && audit.admin_code_present ? 'invalid_code' : 'unauthorized'
+    logAdminAuthEvent({
+      event: 'authorize',
+      transport: 'ws',
+      authResult: allowed ? 'accepted' : 'rejected',
+      requiredCapability: 'builder',
+      requestPath: '/admin',
+      remoteAddress: req?.socket?.remoteAddress || null,
+      reason,
+      audit,
+    })
   }
 
   function normalizeLockScope(scope) {
@@ -831,16 +967,13 @@ export async function admin(
             ws.close()
             return
           }
-          const codeCapabilities = getCapabilitiesFromAdminCode(data?.code)
-          let builderOk = codeCapabilities.builder
-          let deployOk = codeCapabilities.deploy
-          if (!builderOk || !deployOk) {
-            const payloadToken = typeof data?.authToken === 'string' ? data.authToken.trim() : ''
-            const headerToken = getRuntimeAuthTokenFromRequest(req) || ''
-            const tokenCapabilities = await getCapabilitiesFromAuthToken(payloadToken || headerToken)
-            builderOk = builderOk || tokenCapabilities.builder
-            deployOk = deployOk || tokenCapabilities.deploy
-          }
+          const { capabilities: resolvedCapabilities, audit } = await resolveWsAdminAuthorization(req, data)
+          await logWsAdminAuthorization(req, {
+            capabilities: resolvedCapabilities,
+            audit,
+          })
+          let builderOk = resolvedCapabilities.builder
+          let deployOk = resolvedCapabilities.deploy
           if (!builderOk && !deployOk) {
             const authError = adminAuthPolicy.allowsAdminCode && data?.code ? 'invalid_code' : 'unauthorized'
             sendPacket(ws, 'adminAuthError', { error: authError })

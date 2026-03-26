@@ -67,6 +67,19 @@ function createServerNetworkForAdminCommandTest(auth) {
   return { network, socket, player, sentPackets, dbUpdates, eventEmits }
 }
 
+async function withCapturedConsole(method, fn) {
+  const original = console[method]
+  const entries = []
+  console[method] = value => {
+    entries.push(value)
+  }
+  try {
+    await fn(entries)
+  } finally {
+    console[method] = original
+  }
+}
+
 test('hosted runtimes ignore /admin <code> chat escalation', async () => {
   const previousAdminCode = process.env.ADMIN_CODE
   process.env.ADMIN_CODE = 'secret-code'
@@ -78,9 +91,25 @@ test('hosted runtimes ignore /admin <code> chat escalation', async () => {
     },
   })
   try {
-    await network.onCommand(socket, {
-      cmd: 'admin',
-      args: ['/admin', 'secret-code'],
+    await withCapturedConsole('warn', async entries => {
+      await network.onCommand(socket, {
+        cmd: 'admin',
+        args: ['/admin', 'secret-code'],
+      })
+
+      assert.equal(entries.length, 1)
+      assert.deepEqual(JSON.parse(entries[0]), {
+        component: 'server_network',
+        event: 'chat_admin_code',
+        transport: 'chat',
+        admin_auth_kind: 'player_token',
+        auth_result: 'rejected',
+        hosted_admin_code_rejected: true,
+        reason: 'hosted_admin_code_rejected',
+        player_id: 'player-1',
+        user_id: 'user-1',
+        world_id: null,
+      })
     })
 
     assert.equal(player.data.rank, Ranks.VISITOR)
@@ -103,9 +132,25 @@ test('standalone runtimes still allow /admin <code> chat escalation', async () =
     },
   })
   try {
-    await network.onCommand(socket, {
-      cmd: 'admin',
-      args: ['/admin', 'secret-code'],
+    await withCapturedConsole('info', async entries => {
+      await network.onCommand(socket, {
+        cmd: 'admin',
+        args: ['/admin', 'secret-code'],
+      })
+
+      assert.equal(entries.length, 1)
+      assert.deepEqual(JSON.parse(entries[0]), {
+        component: 'server_network',
+        event: 'chat_admin_code',
+        transport: 'chat',
+        admin_auth_kind: 'admin_code',
+        auth_result: 'accepted',
+        hosted_admin_code_rejected: false,
+        reason: 'admin_granted',
+        player_id: 'player-1',
+        user_id: 'user-1',
+        world_id: null,
+      })
     })
 
     assert.equal(player.data.rank, Ranks.ADMIN)

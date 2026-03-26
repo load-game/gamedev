@@ -88,7 +88,7 @@ Definition of done:
   - slug-world deploy/snapshot flow without `X-Admin-Code`
   - standalone app-server path with `ADMIN_CODE`
   Files: `runtime/test/integration/*.test.js`, `runtime/app-server/*`. Size: 1 day.
-- [ ] Add structured runtime/admin logs that make the final auth path obvious (`admin_auth_kind`, token auth accepted/rejected, hosted admin-code rejected). Files: `runtime/src/server/admin.js`, `runtime/src/server/index.js`, `runtime/src/core/systems/ServerNetwork.js`. Size: 0.5 day.
+- [x] Add structured runtime/admin logs that make the final auth path obvious (`admin_auth_kind`, token auth accepted/rejected, hosted admin-code rejected). Files: `runtime/src/server/admin.js`, `runtime/src/server/index.js`, `runtime/src/core/systems/ServerNetwork.js`. Size: 0.5 day.
 
 Definition of done:
 
