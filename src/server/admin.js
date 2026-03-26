@@ -10,6 +10,7 @@ import {
   handleRuntimeCredentialCommand,
 } from './adminCredentials.js'
 import { ADMIN_SHUTDOWN_COMMAND, handleAdminShutdownCommand } from './adminShutdown.js'
+import { resolveRuntimeAdminAuthPolicy } from './authModes.js'
 import { describeWebSocketConnection, resolveWebSocketConnection } from './websocketConnection.js'
 import { getMaxUploadSizeBytes, getMaxUploadSizeMb } from './worldLimits.js'
 
@@ -302,6 +303,7 @@ export async function admin(
   const deployLocks = new Map()
   const lockTtlSeconds = Number.parseInt(process.env.DEPLOY_LOCK_TTL || '120', 10)
   const lockTtlMs = Number.isFinite(lockTtlSeconds) && lockTtlSeconds > 0 ? lockTtlSeconds * 1000 : 120000
+  const adminAuthPolicy = resolveRuntimeAdminAuthPolicy()
 
   fastify.addHook('onRequest', async (req, reply) => {
     const upgradeHeader = String(req.headers.upgrade || '').toLowerCase()
@@ -381,6 +383,9 @@ export async function admin(
   }
 
   function getCapabilitiesFromAdminCode(code) {
+    if (!adminAuthPolicy.allowsAdminCode) {
+      return { builder: false, deploy: false }
+    }
     if (!isAdminCodeValid(code)) {
       return { builder: false, deploy: false }
     }
@@ -837,7 +842,8 @@ export async function admin(
             deployOk = deployOk || tokenCapabilities.deploy
           }
           if (!builderOk && !deployOk) {
-            sendPacket(ws, 'adminAuthError', { error: data?.code ? 'invalid_code' : 'unauthorized' })
+            const authError = adminAuthPolicy.allowsAdminCode && data?.code ? 'invalid_code' : 'unauthorized'
+            sendPacket(ws, 'adminAuthError', { error: authError })
             ws.close()
             return
           }

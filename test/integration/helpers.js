@@ -274,14 +274,14 @@ async function launchRuntimeProcess({ env, readyUrl, timeoutMs = 20000, failureL
   }
 }
 
-export async function startWorldServer({ adminCode = 'admin' } = {}) {
+export async function startWorldServer({ adminCode = 'admin', env = {} } = {}) {
   await ensureBuildReady()
   const port = await getAvailablePort()
   const worldDir = await createTempDir('hyperfy-world-')
   const worldId = `test-${crypto.randomUUID()}`
   const worldUrl = `http://127.0.0.1:${port}`
   const wsUrl = `${toWsUrl(worldUrl)}/ws`
-  const env = {
+  const finalEnv = {
     ...process.env,
     NODE_ENV: 'test',
     PORT: String(port),
@@ -298,10 +298,11 @@ export async function startWorldServer({ adminCode = 'admin' } = {}) {
     DB_URI: 'local',
     CLEAN: 'true',
     HOST: '127.0.0.1',
+    ...env,
   }
 
   const processHandle = await launchRuntimeProcess({
-    env,
+    env: finalEnv,
     readyUrl: `${worldUrl}/health`,
     failureLabel: 'world server',
   })
@@ -311,7 +312,8 @@ export async function startWorldServer({ adminCode = 'admin' } = {}) {
     wsUrl,
     worldId,
     worldDir,
-    adminCode,
+    adminCode: finalEnv.ADMIN_CODE,
+    jwtSecret: finalEnv.JWT_SECRET,
     stop: processHandle.stop,
   }
 }
@@ -423,9 +425,10 @@ export async function startPullRuntimeServer({ env = {} } = {}) {
 }
 
 export class AdminWsClient {
-  constructor({ worldUrl, adminCode, subscriptions } = {}) {
+  constructor({ worldUrl, adminCode, authToken, subscriptions } = {}) {
     this.worldUrl = normalizeBaseUrl(worldUrl)
     this.adminCode = adminCode || null
+    this.authToken = authToken || null
     this.subscriptions = subscriptions || { snapshot: true, players: false, runtime: false }
     this.ws = null
     this.pending = new Map()
@@ -450,6 +453,7 @@ export class AdminWsClient {
         ws.send(
           writePacket('adminAuth', {
             code: this.adminCode,
+            authToken: this.authToken,
             subscriptions: this.subscriptions,
           })
         )
@@ -466,7 +470,9 @@ export class AdminWsClient {
         }
         if (method === 'onAdminAuthError') {
           cleanup()
-          reject(new Error(data?.error || 'auth_error'))
+          const err = new Error(data?.error || 'auth_error')
+          err.code = data?.error || 'auth_error'
+          reject(err)
         }
       }
 
@@ -592,13 +598,13 @@ export async function stopAppServer(server) {
   } catch {}
 }
 
-export async function fetchJson(url, { adminCode, method = 'GET', body } = {}) {
-  const headers = {}
-  if (adminCode) headers['X-Admin-Code'] = adminCode
-  if (body) headers['Content-Type'] = 'application/json'
+export async function fetchJson(url, { adminCode, method = 'GET', body, headers = {} } = {}) {
+  const requestHeaders = { ...headers }
+  if (adminCode) requestHeaders['X-Admin-Code'] = adminCode
+  if (body) requestHeaders['Content-Type'] = 'application/json'
   const res = await fetch(url, {
     method,
-    headers,
+    headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
   })
   const data = await res.json().catch(() => null)

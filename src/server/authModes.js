@@ -26,6 +26,16 @@ export function resolveRuntimeAuthDescriptor(env = process.env) {
   })
 }
 
+export function resolveRuntimeAdminAuthPolicy(env = process.env) {
+  const authDescriptor = resolveRuntimeAuthDescriptor(env)
+  const adminKind = authDescriptor.admin.kind
+  return Object.freeze({
+    kind: adminKind,
+    allowsAdminCode: adminKind === ADMIN_AUTH_KIND_ADMIN_CODE,
+    allowsPlayerToken: adminKind === ADMIN_AUTH_KIND_PLAYER_TOKEN,
+  })
+}
+
 export function resolveAuthRuntimeConfig(env = process.env) {
   const authDescriptor = resolveRuntimeAuthDescriptor(env)
 
