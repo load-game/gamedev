@@ -131,7 +131,12 @@ const authMessages = {
 function resolveAuthMessage(world, error) {
   const admin = world.admin
   if (error === 'invalid_code') return admin?.getInvalidCredentialMessage?.() || 'Invalid admin code.'
-  if (error === 'admin_code_missing' || error === 'player_session_missing' || error === 'unauthorized') {
+  if (
+    error === 'admin_code_missing' ||
+    error === 'player_session_missing' ||
+    error === 'expired_session' ||
+    error === 'unauthorized'
+  ) {
     return admin?.getCredentialHelpMessage?.() || 'Admin authentication required.'
   }
   if (error === 'auth_error') {

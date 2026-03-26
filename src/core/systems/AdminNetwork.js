@@ -15,6 +15,12 @@ function normalizeAdminAuthKind(value) {
   return value === ADMIN_AUTH_KIND_PLAYER_TOKEN ? ADMIN_AUTH_KIND_PLAYER_TOKEN : ADMIN_AUTH_KIND_ADMIN_CODE
 }
 
+function normalizeCredentialValue(value) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed || null
+}
+
 function normalizeAuthMetadata(value) {
   if (!value || typeof value !== 'object') return null
   const kind = normalizeAdminAuthKind(value?.admin?.kind)
@@ -53,7 +59,7 @@ export class AdminNetwork extends System {
 
   init({ adminUrl, adminCode, subscriptions, auth } = {}) {
     this.adminUrl = normalizeAdminUrl(adminUrl)
-    this.code = adminCode || storage.get('adminCode') || null
+    this.code = normalizeCredentialValue(adminCode || storage.get('adminCode'))
     this.setAuthMetadata(auth)
     if (subscriptions && typeof subscriptions === 'object') {
       this.subscriptions = {
@@ -77,6 +83,11 @@ export class AdminNetwork extends System {
 
   setAuthMetadata(auth) {
     this.auth = normalizeAuthMetadata(auth)
+    if (this.requiresPlayerToken()) {
+      this.code = null
+      return
+    }
+    this.code = normalizeCredentialValue(storage.get('adminCode'))
   }
 
   requiresPlayerToken() {
@@ -92,7 +103,7 @@ export class AdminNetwork extends System {
   }
 
   getMissingAuthError() {
-    if (this.requiresPlayerToken() && !storage.get('authToken')) {
+    if (this.requiresPlayerToken() && !normalizeCredentialValue(storage.get('authToken'))) {
       return 'player_session_missing'
     }
     if (!this.allowsOpenAccess() && this.requiresAdminCode() && !this.code) {
@@ -156,8 +167,13 @@ export class AdminNetwork extends System {
   }
 
   onAdminCode = code => {
-    this.code = code || null
-    storage.set('adminCode', this.code)
+    const normalized = normalizeCredentialValue(code)
+    storage.set('adminCode', normalized)
+    if (this.requiresPlayerToken()) {
+      this.code = null
+      return
+    }
+    this.code = normalized
     this.disconnect()
     this.connect()
   }
@@ -167,14 +183,17 @@ export class AdminNetwork extends System {
     this.authenticated = false
     this.error = null
     if (!this.ws) return
-    this.ws.send(
-      writePacket('adminAuth', {
-        code: this.code,
-        authToken: storage.get('authToken') || null,
-        subscriptions: this.subscriptions,
-        networkId: this.id,
-      })
-    )
+    const payload = {
+      subscriptions: this.subscriptions,
+      networkId: this.id,
+    }
+    if (this.requiresPlayerToken()) {
+      const authToken = normalizeCredentialValue(storage.get('authToken'))
+      if (authToken) payload.authToken = authToken
+    } else if (this.code) {
+      payload.code = this.code
+    }
+    this.ws.send(writePacket('adminAuth', payload))
   }
 
   onPacket = event => {

@@ -53,7 +53,7 @@ Definition of done:
 - [x] Add `WORLD_AUTH_TOKEN` env/config plumbing to the app-server CLI and direct sync path. Files: `runtime/app-server/commands.js`, `runtime/app-server/direct.js`, `runtime/.env.example`. Size: 0.5 day.
 - [x] Extend `WorldAdminClient` so token-backed SDK sessions use `Authorization: Bearer <token>` for HTTP requests and `authToken` for WebSocket `adminAuth`, omitting `code` when token-backed. Files: `runtime/app-server/WorldAdminClient.js`, `runtime/app-server/helpers.js`, `runtime/test/integration/app-server-world-url.test.js`. Size: 0.75 day.
 - [x] Keep `WORLD_ID` validation from `/admin/snapshot`, but make token-backed auth failures explicit in CLI and app-server output (`unauthorized`, `forbidden`, `expired_session`, `world_id_mismatch`). Files: `runtime/app-server/direct.js`, `runtime/app-server/commands.js`. Size: 0.5 day.
-- [ ] Update browser admin client state so hosted worlds prefer the stored runtime session token and standalone worlds keep the code-entry path. Files: `runtime/src/core/systems/AdminClient.js`, `runtime/src/core/systems/AdminNetwork.js`, `runtime/src/client/admin-client.js`. Size: 0.5 day.
+- [x] Update browser admin client state so hosted worlds prefer the stored runtime session token and standalone worlds keep the code-entry path. Files: `runtime/src/core/systems/AdminClient.js`, `runtime/src/core/systems/AdminNetwork.js`, `runtime/src/client/admin-client.js`. Size: 0.5 day.
 
 Definition of done:
 

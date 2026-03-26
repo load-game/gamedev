@@ -85,8 +85,6 @@ export class AdminClient extends System {
   }
 
   init({ adminUrl, requireAdminCode, auth } = {}) {
-    this.code = storage.get('adminCode')
-    this.refreshAuthToken()
     if (adminUrl) {
       this.adminUrl = normalizeAdminUrl(adminUrl)
       this.setAuthMetadata(
@@ -106,29 +104,49 @@ export class AdminClient extends System {
     this.adminUrl = normalizeAdminUrl(data.adminUrl) || deriveAdminUrl(data.apiUrl)
     this.setAuthMetadata(data.auth)
     this.runtimeCredentials = null
-    this.refreshAuthToken(data.authToken)
+    this.syncPreferredCredentials({ nextAuthToken: data.authToken })
     this.connect()
   }
 
   setCode(code) {
-    this.code = code
+    const normalized = normalizeRuntimeCredentialValue(code)
+    storage.set('adminCode', normalized)
+    if (this.requiresPlayerToken()) {
+      this.code = null
+      return
+    }
+    this.code = normalized
     this.runtimeCredentials = null
-    storage.set('adminCode', code)
-    this.world.emit('admin-code', code)
+    this.world.emit('admin-code', normalized)
     this.error = null
     this.disconnect()
     this.connect()
   }
 
   refreshAuthToken(nextToken) {
+    if (!this.requiresPlayerToken()) {
+      this.authToken = null
+      return null
+    }
     const tokenCandidate = typeof nextToken === 'string' ? nextToken : storage.get('authToken')
     const token = typeof tokenCandidate === 'string' ? tokenCandidate.trim() : ''
     this.authToken = token || null
     return this.authToken
   }
 
+  syncPreferredCredentials({ nextAuthToken } = {}) {
+    if (this.requiresPlayerToken()) {
+      this.code = null
+      this.refreshAuthToken(nextAuthToken)
+      return
+    }
+    this.authToken = null
+    this.code = normalizeRuntimeCredentialValue(storage.get('adminCode'))
+  }
+
   setAuthMetadata(auth) {
     this.auth = normalizeAuthMetadata(auth)
+    this.syncPreferredCredentials()
   }
 
   get adminAuthKind() {
@@ -246,12 +264,17 @@ export class AdminClient extends System {
     this.connected = true
     this.authenticated = false
     this.error = null
-    this.sendPacket('adminAuth', {
-      code: this.code,
-      authToken: this.refreshAuthToken(),
+    const payload = {
       subscriptions: { snapshot: false, players: false, runtime: false },
       networkId: this.world.network?.id || null,
-    })
+    }
+    const authToken = this.refreshAuthToken()
+    if (this.requiresPlayerToken()) {
+      if (authToken) payload.authToken = authToken
+    } else if (this.code) {
+      payload.code = this.code
+    }
+    this.sendPacket('adminAuth', payload)
   }
 
   onMessage = event => {
@@ -402,9 +425,12 @@ export class AdminClient extends System {
 
   getDeployHeaders() {
     const headers = {}
-    if (this.code) headers['X-Admin-Code'] = this.code
-    const authToken = this.refreshAuthToken()
-    if (authToken) headers.authorization = `Bearer ${authToken}`
+    if (this.requiresPlayerToken()) {
+      const authToken = this.refreshAuthToken()
+      if (authToken) headers.authorization = `Bearer ${authToken}`
+    } else if (this.code) {
+      headers['X-Admin-Code'] = this.code
+    }
     return Object.keys(headers).length > 0 ? headers : undefined
   }
 
