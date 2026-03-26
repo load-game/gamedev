@@ -237,6 +237,67 @@ export function buildWorldAdminHeaders({ adminCode, authToken } = {}, extra = {}
   return headers
 }
 
+export function createAppServerError(code, { message, ...extra } = {}) {
+  const errorCode = normalizeSyncString(code) || 'error'
+  const error = new Error(typeof message === 'string' && message ? message : errorCode)
+  error.code = errorCode
+  Object.assign(error, extra)
+  return error
+}
+
+export function parseJwtPayload(token) {
+  const normalized = normalizeOptionalSecret(token)
+  if (!normalized) return null
+  const parts = normalized.split('.')
+  if (parts.length < 2) return null
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = `${base64}${'='.repeat((4 - (base64.length % 4)) % 4)}`
+    const json = Buffer.from(padded, 'base64').toString('utf8')
+    const payload = JSON.parse(json)
+    return payload && typeof payload === 'object' ? payload : null
+  } catch {
+    return null
+  }
+}
+
+export function isJwtExpired(token, { nowMs = Date.now() } = {}) {
+  const payload = parseJwtPayload(token)
+  const exp = Number(payload?.exp)
+  if (!Number.isFinite(exp) || exp <= 0) return false
+  return exp * 1000 <= nowMs
+}
+
+export function assertWorldAuthTokenActive(authToken, options = {}) {
+  if (!normalizeOptionalSecret(authToken)) return
+  if (isJwtExpired(authToken, options)) {
+    throw createAppServerError('expired_session')
+  }
+}
+
+function normalizeAdminResponseErrorCode(code, status) {
+  const normalized = normalizeSyncString(code)
+  if (normalized === 'admin_required') return 'forbidden'
+  if (normalized === 'forbidden') return 'forbidden'
+  if (normalized === 'unauthorized') return 'unauthorized'
+  if (normalized === 'expired_session') return 'expired_session'
+  if (normalized === 'invalid_code') return 'invalid_code'
+  if (status === 401) return 'unauthorized'
+  if (status === 403) return 'forbidden'
+  return null
+}
+
+export async function buildWorldAdminResponseError(response, fallbackCode) {
+  const data = await response.json().catch(() => null)
+  const code = normalizeAdminResponseErrorCode(data?.error, response.status) || fallbackCode
+  return createAppServerError(code, {
+    status: response.status,
+    data,
+    lock: data?.lock,
+    current: data?.current,
+  })
+}
+
 export function normalizeProjectRelativePath(value) {
   if (typeof value !== 'string') return null
   const normalized = normalizeScriptRelPath(value).trim()

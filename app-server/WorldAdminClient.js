@@ -7,6 +7,9 @@ import {
   toWsUrl,
   joinUrl,
   normalizePacketData,
+  createAppServerError,
+  assertWorldAuthTokenActive,
+  buildWorldAdminResponseError,
   buildWorldAdminHeaders,
   resolveWorldAdminAuth,
 } from './helpers.js'
@@ -54,8 +57,17 @@ export class WorldAdminClient extends EventEmitter {
     return payload
   }
 
+  assertAuthReady() {
+    assertWorldAuthTokenActive(this.authToken)
+  }
+
+  async createResponseError(response, fallbackCode) {
+    return buildWorldAdminResponseError(response, fallbackCode)
+  }
+
   async connect() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return
+    this.assertAuthReady()
 
     await new Promise((resolve, reject) => {
       const ws = new WebSocket(this.wsAdminUrl, {
@@ -87,7 +99,7 @@ export class WorldAdminClient extends EventEmitter {
 
         if (method === 'onAdminAuthError') {
           cleanup()
-          reject(new Error(data?.error || 'auth_error'))
+          reject(createAppServerError(data?.error || 'auth_error'))
         }
       }
 
@@ -208,16 +220,18 @@ export class WorldAdminClient extends EventEmitter {
   }
 
   async getSnapshot() {
+    this.assertAuthReady()
     const res = await fetch(joinUrl(this.httpBase, '/admin/snapshot'), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
-      throw new Error(`snapshot_failed:${res.status}`)
+      throw await this.createResponseError(res, `snapshot_failed:${res.status}`)
     }
     return res.json()
   }
 
   async getChanges({ cursor, limit } = {}) {
+    this.assertAuthReady()
     const params = new URLSearchParams()
     if (cursor !== undefined && cursor !== null && cursor !== '') {
       params.set('cursor', String(cursor))
@@ -230,56 +244,55 @@ export class WorldAdminClient extends EventEmitter {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
-      throw new Error(`changes_failed:${res.status}`)
+      throw await this.createResponseError(res, `changes_failed:${res.status}`)
     }
     return res.json()
   }
 
   async getBlueprint(id) {
+    this.assertAuthReady()
     const res = await fetch(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
-      throw new Error(`blueprint_failed:${res.status}`)
+      throw await this.createResponseError(res, `blueprint_failed:${res.status}`)
     }
     const data = await res.json()
     return data.blueprint
   }
 
   async removeBlueprint(id) {
+    this.assertAuthReady()
     const res = await fetch(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `blueprint_remove_failed:${res.status}`)
-      err.code = data?.error || 'blueprint_remove_failed'
-      throw err
+      throw await this.createResponseError(res, `blueprint_remove_failed:${res.status}`)
     }
     return res.json().catch(() => ({ ok: true }))
   }
 
   async setSpawn({ position, quaternion }) {
+    this.assertAuthReady()
     const res = await fetch(joinUrl(this.httpBase, '/admin/spawn'), {
       method: 'PUT',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ position, quaternion }),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = data?.error ? `spawn_failed:${data.error}` : `spawn_failed:${res.status}`
-      throw new Error(err)
+      throw await this.createResponseError(res, `spawn_failed:${res.status}`)
     }
     return res.json()
   }
 
   async uploadAsset({ filename, buffer, mimeType }) {
+    this.assertAuthReady()
     const check = await fetch(joinUrl(this.httpBase, `/admin/upload-check?filename=${encodeURIComponent(filename)}`), {
       headers: this.adminHeaders(),
     })
     if (!check.ok) {
-      throw new Error(`upload_check_failed:${check.status}`)
+      throw await this.createResponseError(check, `upload_check_failed:${check.status}`)
     }
     const { exists } = await check.json()
     if (exists) return { ok: true, filename, exists: true }
@@ -294,23 +307,25 @@ export class WorldAdminClient extends EventEmitter {
       body: form,
     })
     if (!upload.ok) {
-      throw new Error(`upload_failed:${upload.status}`)
+      throw await this.createResponseError(upload, `upload_failed:${upload.status}`)
     }
     return upload.json()
   }
 
   async getDeployLockStatus({ scope } = {}) {
+    this.assertAuthReady()
     const suffix = scope ? `?scope=${encodeURIComponent(scope)}` : ''
     const res = await fetch(joinUrl(this.httpBase, `/admin/deploy-lock${suffix}`), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
-      throw new Error(`deploy_lock_status_failed:${res.status}`)
+      throw await this.createResponseError(res, `deploy_lock_status_failed:${res.status}`)
     }
     return res.json()
   }
 
   async acquireDeployLock({ owner, ttl, scope } = {}) {
+    this.assertAuthReady()
     const payload = { owner, ttl }
     if (scope) payload.scope = scope
     const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
@@ -319,16 +334,13 @@ export class WorldAdminClient extends EventEmitter {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `deploy_lock_failed:${res.status}`)
-      err.code = data?.error || 'deploy_lock_failed'
-      err.lock = data?.lock
-      throw err
+      throw await this.createResponseError(res, `deploy_lock_failed:${res.status}`)
     }
     return res.json()
   }
 
   async renewDeployLock({ token, ttl, scope } = {}) {
+    this.assertAuthReady()
     const payload = { token, ttl }
     if (scope) payload.scope = scope
     const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
@@ -337,16 +349,13 @@ export class WorldAdminClient extends EventEmitter {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `deploy_lock_renew_failed:${res.status}`)
-      err.code = data?.error || 'deploy_lock_renew_failed'
-      err.lock = data?.lock
-      throw err
+      throw await this.createResponseError(res, `deploy_lock_renew_failed:${res.status}`)
     }
     return res.json()
   }
 
   async releaseDeployLock({ token, scope } = {}) {
+    this.assertAuthReady()
     const payload = { token }
     if (scope) payload.scope = scope
     const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
@@ -355,16 +364,13 @@ export class WorldAdminClient extends EventEmitter {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `deploy_lock_release_failed:${res.status}`)
-      err.code = data?.error || 'deploy_lock_release_failed'
-      err.lock = data?.lock
-      throw err
+      throw await this.createResponseError(res, `deploy_lock_release_failed:${res.status}`)
     }
     return res.json()
   }
 
   async createDeploySnapshot({ ids, target, note, lockToken, scope } = {}) {
+    this.assertAuthReady()
     const payload = { ids, target, note, lockToken }
     if (scope) payload.scope = scope
     const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-snapshots'), {
@@ -373,16 +379,13 @@ export class WorldAdminClient extends EventEmitter {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `snapshot_failed:${res.status}`)
-      err.code = data?.error || 'snapshot_failed'
-      err.lock = data?.lock
-      throw err
+      throw await this.createResponseError(res, `snapshot_failed:${res.status}`)
     }
     return res.json()
   }
 
   async rollbackDeploySnapshot({ id, lockToken, scope } = {}) {
+    this.assertAuthReady()
     const payload = { id, lockToken }
     if (scope) payload.scope = scope
     const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-snapshots/rollback'), {
@@ -391,11 +394,7 @@ export class WorldAdminClient extends EventEmitter {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      const err = new Error(data?.error || `rollback_failed:${res.status}`)
-      err.code = data?.error || 'rollback_failed'
-      err.lock = data?.lock
-      throw err
+      throw await this.createResponseError(res, `rollback_failed:${res.status}`)
     }
     return res.json()
   }

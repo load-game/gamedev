@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { DirectAppServer } from '../../app-server/direct.js'
 import { WorldAdminClient } from '../../app-server/WorldAdminClient.js'
 import {
   buildWorldAdminHeaders,
@@ -8,6 +9,14 @@ import {
   resolveWorldAdminAuth,
   toWsUrl,
 } from '../../app-server/helpers.js'
+
+function buildTestJwt(payload) {
+  return [
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify(payload)).toString('base64url'),
+    'signature',
+  ].join('.')
+}
 
 test('normalizeWorldAdminBaseUrl strips trailing /admin suffixes', () => {
   assert.equal(
@@ -123,4 +132,49 @@ test('WorldAdminClient omits admin code from websocket auth when token-backed', 
     authToken: 'session-token',
     subscriptions: { snapshot: false, players: false, runtime: false },
   })
+})
+
+test('WorldAdminClient maps admin endpoint authorization failures to explicit codes', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ error: 'admin_required' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    })
+
+  try {
+    const client = new WorldAdminClient({
+      worldUrl: 'https://dev.lobby.ws/worlds/demo',
+      authToken: buildTestJwt({ exp: 4102444800, worldId: 'demo-world' }),
+    })
+    await assert.rejects(() => client.getSnapshot(), err => err?.code === 'forbidden')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('WorldAdminClient rejects expired world auth tokens before requesting snapshot', async () => {
+  const client = new WorldAdminClient({
+    worldUrl: 'https://dev.lobby.ws/worlds/demo',
+    authToken: buildTestJwt({ exp: 1, worldId: 'demo-world' }),
+  })
+
+  await assert.rejects(() => client.getSnapshot(), err => err?.code === 'expired_session')
+})
+
+test('DirectAppServer preserves WORLD_ID validation with an explicit mismatch code', () => {
+  const originalWorldId = process.env.WORLD_ID
+  process.env.WORLD_ID = 'local-world'
+
+  try {
+    const server = new DirectAppServer({
+      worldUrl: 'https://dev.lobby.ws/worlds/demo',
+    })
+    assert.throws(
+      () => server._validateWorldId('remote-world'),
+      err => err?.code === 'world_id_mismatch' && err?.localWorldId === 'local-world' && err?.remoteWorldId === 'remote-world'
+    )
+  } finally {
+    process.env.WORLD_ID = originalWorldId
+  }
 })

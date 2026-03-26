@@ -299,8 +299,8 @@ export class HyperfyCLI {
       await server.connect()
       return server
     } catch (err) {
-      const msg = err?.message || ''
-      const canRetry = !authToken && (msg === 'invalid_code' || msg === 'unauthorized') && process.stdin.isTTY
+      const code = err?.code || err?.message || ''
+      const canRetry = !authToken && (code === 'invalid_code' || code === 'unauthorized') && process.stdin.isTTY
       if (!canRetry) throw err
       adminCode = await this._promptAdminCode()
       this.adminCode = adminCode

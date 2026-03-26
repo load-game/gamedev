@@ -165,7 +165,11 @@ export class DirectAppServer {
       throw new Error('Missing worldId from /admin/snapshot.')
     }
     if (remoteWorldId !== localWorldId) {
-      throw new Error(`WORLD_ID mismatch: local=${localWorldId} remote=${remoteWorldId}`)
+      const error = new Error(`world_id_mismatch: local=${localWorldId} remote=${remoteWorldId}`)
+      error.code = 'world_id_mismatch'
+      error.localWorldId = localWorldId
+      error.remoteWorldId = remoteWorldId
+      throw error
     }
   }
 
@@ -4646,7 +4650,7 @@ export async function main() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => {
-    console.error(err)
+    console.error(err?.message || err)
     process.exit(1)
   })
 }
