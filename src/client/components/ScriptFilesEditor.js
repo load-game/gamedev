@@ -22,6 +22,10 @@ import {
 
 const aiDebugEnabled = (process?.env?.PUBLIC_DEBUG_AI_SCRIPT || globalThis?.env?.PUBLIC_DEBUG_AI_SCRIPT) === 'true'
 
+function getMissingAdminCredentialMessage(world) {
+  return world.admin?.getCredentialRequiredMessage?.() || 'Admin authentication required.'
+}
+
 export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = false }) {
   const mountRef = useRef(null)
   const editorRef = useRef(null)
@@ -674,8 +678,12 @@ export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = fals
         setServerConflict()
       } else if (code === 'ai_request_pending') {
         setAiPendingError()
-      } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-        setError('Admin code required.')
+      } else if (code === 'admin_required') {
+        setError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+        setError(getMissingAdminCredentialMessage(world))
+      } else if (code === 'deploy_required') {
+        setError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
       } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
         const owner = err?.lock?.owner
         setError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')
@@ -1433,8 +1441,12 @@ export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = fals
         setServerConflict()
       } else if (code === 'ai_request_pending') {
         setAiPendingError()
-      } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-        setError('Admin code required.')
+      } else if (code === 'admin_required') {
+        setError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+        setError(getMissingAdminCredentialMessage(world))
+      } else if (code === 'deploy_required') {
+        setError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
       } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
         const owner = err?.lock?.owner
         setError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')
@@ -1550,8 +1562,12 @@ export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = fals
         setServerConflict()
       } else if (code === 'ai_request_pending') {
         setAiPendingError()
-      } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-        setError('Admin code required.')
+      } else if (code === 'admin_required') {
+        setError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+        setError(getMissingAdminCredentialMessage(world))
+      } else if (code === 'deploy_required') {
+        setError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
       } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
         const owner = err?.lock?.owner
         setError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')
@@ -1730,8 +1746,12 @@ export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = fals
       const code = err?.code || err?.message
       if (code === 'ai_request_pending') {
         setAiPendingError()
-      } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-        setError('Admin code required.')
+      } else if (code === 'admin_required') {
+        setError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+        setError(getMissingAdminCredentialMessage(world))
+      } else if (code === 'deploy_required') {
+        setError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
       } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
         const owner = err?.lock?.owner
         setError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')
@@ -1938,8 +1958,12 @@ export function ScriptFilesEditor({ world, scriptRoot, onHandle, aiLocked = fals
         const code = err?.code || err?.message
         if (code === 'ai_request_pending') {
           setAiPendingError()
-        } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-          setError('Admin code required.')
+        } else if (code === 'admin_required') {
+          setError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+        } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+          setError(getMissingAdminCredentialMessage(world))
+        } else if (code === 'deploy_required') {
+          setError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
         } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
           const owner = err?.lock?.owner
           setError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')

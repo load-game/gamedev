@@ -24,6 +24,20 @@ function resolveAdminUrl() {
   return window.location.origin
 }
 
+function resolveInitialAdminAuth() {
+  const publicAuthUrl = typeof globalThis.env?.PUBLIC_AUTH_URL === 'string' ? globalThis.env.PUBLIC_AUTH_URL.trim() : ''
+  if (!publicAuthUrl) return null
+  return {
+    usesLobbyIdentity: true,
+    usesLocalIdentity: false,
+    admin: {
+      kind: 'player_token',
+      codeConfigured: false,
+      openAccess: false,
+    },
+  }
+}
+
 export function AdminClient() {
   const viewportRef = useRef()
   const cssLayerRef = useRef()
@@ -71,7 +85,8 @@ export function AdminClient() {
         fogColor: null,
       }
       const adminUrl = resolveAdminUrl()
-      world.init({ viewport, cssLayer, ui, adminUrl, baseEnvironment })
+      const auth = resolveInitialAdminAuth()
+      world.init({ viewport, cssLayer, ui, adminUrl, baseEnvironment, auth })
     }
     init()
   }, [])
@@ -119,17 +134,35 @@ export function AdminClient() {
 }
 
 const authMessages = {
-  invalid_code: 'Invalid admin code.',
-  unauthorized: 'Admin code required.',
-  auth_error: 'Admin authentication failed.',
   connection_error: 'Admin connection failed.',
+}
+
+function resolveAuthMessage(world, error) {
+  const admin = world.admin
+  if (error === 'invalid_code') return admin?.getInvalidCredentialMessage?.() || 'Invalid admin code.'
+  if (error === 'admin_code_missing' || error === 'player_session_missing' || error === 'unauthorized') {
+    return admin?.getCredentialHelpMessage?.() || 'Admin authentication required.'
+  }
+  if (error === 'auth_error') {
+    return admin?.getCredentialHelpMessage?.() || 'Admin authentication failed.'
+  }
+  return authMessages[error] || admin?.getCredentialHelpMessage?.() || 'Admin authentication required.'
 }
 
 function AdminAuthOverlay({ world, error }) {
   const [code, setCode] = useState(world.admin?.code || '')
-  const message = authMessages[error] || 'Admin authentication required.'
+  const canEnterCode = world.admin?.shouldShowAdminCodePrompt?.() !== false
+  const message = resolveAuthMessage(world, error)
 
   const submit = () => {
+    if (!canEnterCode) {
+      world.admin?.refreshAuthToken?.()
+      world.admin?.disconnect?.()
+      world.adminNetwork?.disconnect?.()
+      world.admin?.connect?.()
+      world.adminNetwork?.connect?.()
+      return
+    }
     const value = code.trim()
     if (!value) return
     world.admin?.setCode?.(value)
@@ -193,21 +226,23 @@ function AdminAuthOverlay({ world, error }) {
       <div className='admin-auth-card'>
         <div className='admin-auth-title'>Admin Access</div>
         <div className='admin-auth-msg'>{message}</div>
-        <input
-          className='admin-auth-input'
-          type='password'
-          placeholder='Enter admin code'
-          value={code}
-          onChange={e => setCode(e.target.value)}
-          onKeyDown={e => {
-            if (e.code === 'Enter' || e.key === 'Enter') {
-              submit()
-            }
-          }}
-        />
+        {canEnterCode && (
+          <input
+            className='admin-auth-input'
+            type='password'
+            placeholder='Enter admin code'
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            onKeyDown={e => {
+              if (e.code === 'Enter' || e.key === 'Enter') {
+                submit()
+              }
+            }}
+          />
+        )}
         <div className='admin-auth-actions'>
           <button className='admin-auth-btn' onClick={submit}>
-            Connect
+            {canEnterCode ? 'Connect' : 'Retry'}
           </button>
         </div>
       </div>

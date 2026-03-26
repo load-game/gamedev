@@ -72,13 +72,14 @@ export class Chat extends System {
       if (!op) return
       const admin = this.world.admin
       if (!admin?.spawnModify) return
-      if (admin.requireCode && !admin.code) {
+      const missingAuthError = admin.getMissingAuthError?.()
+      if (missingAuthError) {
         this.add(
           {
             id: uuid(),
             from: null,
             fromId: null,
-            body: 'Admin code required. Use /admin <code> first.',
+            body: admin.getCredentialHelpMessage?.() || 'Admin authentication required.',
             createdAt: moment().toISOString(),
           },
           false

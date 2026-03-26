@@ -3,9 +3,30 @@ import { storage } from '../storage'
 import { uuid } from '../utils'
 import { System } from './System'
 
+const ADMIN_AUTH_KIND_ADMIN_CODE = 'admin_code'
+const ADMIN_AUTH_KIND_PLAYER_TOKEN = 'player_token'
+
 function normalizeAdminUrl(url) {
   if (!url) return null
   return url.replace(/\/admin\/?$/, '')
+}
+
+function normalizeAdminAuthKind(value) {
+  return value === ADMIN_AUTH_KIND_PLAYER_TOKEN ? ADMIN_AUTH_KIND_PLAYER_TOKEN : ADMIN_AUTH_KIND_ADMIN_CODE
+}
+
+function normalizeAuthMetadata(value) {
+  if (!value || typeof value !== 'object') return null
+  const kind = normalizeAdminAuthKind(value?.admin?.kind)
+  return {
+    usesLobbyIdentity: !!value?.usesLobbyIdentity,
+    usesLocalIdentity: value?.usesLocalIdentity === undefined ? !value?.usesLobbyIdentity : !!value.usesLocalIdentity,
+    admin: {
+      kind,
+      codeConfigured: kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!value?.admin?.codeConfigured,
+      openAccess: kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!value?.admin?.openAccess,
+    },
+  }
 }
 
 function toWsUrl(baseUrl) {
@@ -24,14 +45,16 @@ export class AdminNetwork extends System {
     this.queue = []
     this.id = uuid()
     this.isClient = true
+    this.auth = null
     this.serverTimeOffset = 0
     this.maxUploadSize = null
     this.subscriptions = { snapshot: true, players: false, runtime: false }
   }
 
-  init({ adminUrl, adminCode, subscriptions } = {}) {
+  init({ adminUrl, adminCode, subscriptions, auth } = {}) {
     this.adminUrl = normalizeAdminUrl(adminUrl)
     this.code = adminCode || storage.get('adminCode') || null
+    this.setAuthMetadata(auth)
     if (subscriptions && typeof subscriptions === 'object') {
       this.subscriptions = {
         snapshot: !!subscriptions.snapshot,
@@ -52,8 +75,40 @@ export class AdminNetwork extends System {
     this.flush()
   }
 
+  setAuthMetadata(auth) {
+    this.auth = normalizeAuthMetadata(auth)
+  }
+
+  requiresPlayerToken() {
+    return this.auth?.admin?.kind === ADMIN_AUTH_KIND_PLAYER_TOKEN
+  }
+
+  requiresAdminCode() {
+    return this.auth?.admin?.kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!this.auth?.admin?.codeConfigured
+  }
+
+  allowsOpenAccess() {
+    return this.auth?.admin?.kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!this.auth?.admin?.openAccess
+  }
+
+  getMissingAuthError() {
+    if (this.requiresPlayerToken() && !storage.get('authToken')) {
+      return 'player_session_missing'
+    }
+    if (!this.allowsOpenAccess() && this.requiresAdminCode() && !this.code) {
+      return 'admin_code_missing'
+    }
+    return null
+  }
+
   connect() {
     if (this.ws || !this.adminUrl) return
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) {
+      this.error = missingAuthError
+      this.world.emit('admin-auth', { ok: false, error: this.error })
+      return
+    }
     const wsUrl = toWsUrl(this.adminUrl)
     this.ws = new WebSocket(wsUrl)
     this.ws.binaryType = 'arraybuffer'
@@ -178,6 +233,7 @@ export class AdminNetwork extends System {
     this.serverTimeOffset = data.serverTime - performance.now()
     this.maxUploadSize = data.maxUploadSize
     this.world.assetsUrl = data.assetsUrl
+    this.setAuthMetadata(data.auth)
     this.world.settings.deserialize(data.settings)
     this.world.settings.setAuthMetadata(data.auth)
 

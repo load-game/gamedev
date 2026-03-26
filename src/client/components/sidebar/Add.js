@@ -31,6 +31,10 @@ function normalizeBlueprintName(value) {
   return value.trim().toLowerCase()
 }
 
+function getMissingAdminCredentialMessage(world) {
+  return world.admin?.getCredentialRequiredMessage?.() || 'Admin authentication required.'
+}
+
 export function Add({ world, hidden }) {
   const span = 2
   const gap = '0.5rem'
@@ -161,8 +165,12 @@ export function Add({ world, hidden }) {
       const code = err?.code || err?.message
       if (code === 'builder_required') {
         setCreateError('Builder access required.')
-      } else if (code === 'admin_required' || code === 'admin_code_missing' || code === 'deploy_required') {
-        setCreateError('Admin code required.')
+      } else if (code === 'admin_required') {
+        setCreateError(world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      } else if (code === 'admin_code_missing' || code === 'player_session_missing') {
+        setCreateError(getMissingAdminCredentialMessage(world))
+      } else if (code === 'deploy_required') {
+        setCreateError(world.admin?.getDeployAccessRequiredMessage?.() || 'Deploy access required.')
       } else if (code === 'locked' || code === 'deploy_locked' || code === 'deploy_lock_required') {
         const owner = err?.lock?.owner
         setCreateError(owner ? `Deploy locked by ${owner}.` : 'Deploy locked by another session.')

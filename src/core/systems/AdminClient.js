@@ -157,6 +157,48 @@ export class AdminClient extends System {
     return null
   }
 
+  shouldShowAdminCodePrompt() {
+    return this.adminAuthKind !== ADMIN_AUTH_KIND_PLAYER_TOKEN
+  }
+
+  getCredentialRequiredMessage() {
+    if (this.requiresPlayerToken()) {
+      return 'Player session required.'
+    }
+    if (this.requiresAdminCode()) {
+      return 'Admin code required.'
+    }
+    return 'Admin authentication required.'
+  }
+
+  getCredentialHelpMessage() {
+    if (this.requiresPlayerToken()) {
+      return 'Player session required. Sign in to this hosted world first.'
+    }
+    if (this.requiresAdminCode()) {
+      return 'Admin code required. Use /admin <code>.'
+    }
+    return 'Admin authentication required.'
+  }
+
+  getInvalidCredentialMessage() {
+    if (this.requiresPlayerToken()) {
+      return 'Player session expired or is invalid.'
+    }
+    if (this.requiresAdminCode()) {
+      return 'Invalid admin code.'
+    }
+    return 'Admin authentication failed.'
+  }
+
+  getAdminAccessRequiredMessage() {
+    return 'Admin access required.'
+  }
+
+  getDeployAccessRequiredMessage() {
+    return 'Deploy access required.'
+  }
+
   hasAuthCredential() {
     if (this.requiresPlayerToken()) return !!this.refreshAuthToken()
     if (this.requiresAdminCode()) return !!this.code

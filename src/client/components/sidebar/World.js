@@ -75,6 +75,7 @@ function formatCredentialError(code) {
   if (code === 'admin_required') return 'Deploy access is required to view runtime credentials.'
   if (code === 'admin_url_missing') return 'Admin endpoint is unavailable for this world.'
   if (code === 'admin_code_missing') return 'Enter an admin code before requesting runtime credentials.'
+  if (code === 'player_session_missing') return 'Sign in to this hosted world before requesting runtime credentials.'
   if (code === 'clipboard_unavailable') return 'Clipboard access is unavailable in this browser context.'
   if (code === 'timeout') return 'Timed out requesting runtime credentials.'
   return 'Failed to load runtime credentials.'
@@ -84,6 +85,7 @@ function formatShutdownError(code) {
   if (code === 'admin_required') return 'Deploy access is required to shut down this world.'
   if (code === 'admin_url_missing') return 'Admin endpoint is unavailable for this world.'
   if (code === 'admin_code_missing') return 'Enter an admin code before requesting shutdown.'
+  if (code === 'player_session_missing') return 'Sign in to this hosted world before requesting shutdown.'
   if (code === 'shutdown_save_failed') return 'Failed to save the world before shutdown.'
   if (code === 'shutdown_request_failed') return 'Failed to request Agones shutdown.'
   if (code === 'shutdown_unavailable') return 'Agones shutdown is unavailable for this runtime.'
@@ -102,6 +104,7 @@ export function World({ world, hidden }) {
   const { isAdmin } = useRank(world, player)
   const worldPlayerLimitCap = getWorldPlayerLimitCap()
   const hasPlayerLimitCap = worldPlayerLimitCap > 0
+  const showRestrictedAdminControls = !world.settings.adminOpenAccess
   const [title, setTitle] = useState(world.settings.title)
   const [desc, setDesc] = useState(world.settings.desc)
   const [image, setImage] = useState(world.settings.image)
@@ -337,7 +340,7 @@ export function World({ world, hidden }) {
             onChange={value => world.settings.set('avatar', value, true)}
             world={world}
           />
-          {isAdmin && world.settings.hasAdminCode && (
+          {isAdmin && showRestrictedAdminControls && (
             <FieldToggle
               label='Custom Avatars'
               hint='Allow visitors to drag and drop custom VRM avatars.'
@@ -374,7 +377,7 @@ export function World({ world, hidden }) {
             value={ao}
             onChange={value => world.settings.set('ao', value, true)}
           />
-          {isAdmin && world.settings.hasAdminCode && (
+          {isAdmin && showRestrictedAdminControls && (
             <FieldToggle
               label='Free Build'
               hint='Allow everyone to build (and destroy) things in the world.'

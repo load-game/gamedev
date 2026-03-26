@@ -213,11 +213,12 @@ export class ClientBuilder extends System {
   getAdminGateMessage() {
     const admin = this.world.admin
     if (!admin) return 'Admin connection unavailable.'
-    if (admin.requireCode && !admin.code) return 'Admin code required. Use /admin <code>.'
-    if (admin.error === 'invalid_code') return 'Invalid admin code. Use /admin <code>.'
+    if (admin.error === 'invalid_code') return admin.getInvalidCredentialMessage?.() || 'Invalid admin code.'
+    if (admin.error === 'player_session_missing' || admin.error === 'admin_code_missing' || admin.error === 'unauthorized') {
+      return admin.getCredentialHelpMessage?.() || 'Admin authentication required.'
+    }
     if (admin.error === 'connection_error') return 'Admin connection failed.'
-    if (admin.error === 'missing_code') return 'Admin code required. Use /admin <code>.'
-    return 'Admin connection required. Use /admin <code>.'
+    return admin.getCredentialHelpMessage?.() || 'Admin connection required.'
   }
 
   ensureAdminReady(actionLabel) {
@@ -265,8 +266,12 @@ export class ClientBuilder extends System {
       this.world.emit('toast', 'Admin connection unavailable.')
       return
     }
-    if (code === 'admin_required' || code === 'admin_code_missing') {
-      this.world.emit('toast', 'Admin code required.')
+    if (code === 'admin_required') {
+      this.world.emit('toast', this.world.admin?.getAdminAccessRequiredMessage?.() || 'Admin access required.')
+      return
+    }
+    if (code === 'admin_code_missing' || code === 'player_session_missing') {
+      this.world.emit('toast', this.world.admin?.getCredentialRequiredMessage?.() || 'Admin authentication required.')
       return
     }
     if (code === 'upload_failed') {
