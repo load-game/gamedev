@@ -15,6 +15,7 @@ test('runtime credential command denies callers without deploy capability', () =
     canDeploy: false,
     worldId: 'world-123',
     adminCode: 'secret-code',
+    adminAuthKind: 'admin_code',
   })
 
   assert.deepEqual(result, {
@@ -26,11 +27,12 @@ test('runtime credential command denies callers without deploy capability', () =
   })
 })
 
-test('runtime credential command returns admin code for deploy-capable callers', () => {
+test('runtime credential command returns admin code for standalone deploy-capable callers', () => {
   const result = handleRuntimeCredentialCommand({
     canDeploy: true,
     worldId: 'world-123',
     adminCode: 'secret-code',
+    adminAuthKind: 'admin_code',
   })
 
   assert.equal(result.ok, true)
@@ -38,23 +40,26 @@ test('runtime credential command returns admin code for deploy-capable callers',
   assert.equal(result.reason, 'revealed')
   assert.deepEqual(result.credentials, {
     worldId: 'world-123',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'secret-code',
   })
 })
 
-test('runtime credential command returns world id when admin code is not configured', () => {
+test('runtime credential command redacts admin code for hosted runtimes', () => {
   const result = handleRuntimeCredentialCommand({
     canDeploy: true,
     worldId: 'world-123',
-    adminCode: '',
+    adminCode: 'secret-code',
+    adminAuthKind: 'player_token',
   })
 
   assert.equal(result.ok, true)
   assert.equal(result.revealed, false)
-  assert.equal(result.reason, 'admin_code_unset')
+  assert.equal(result.reason, 'player_token_auth')
   assert.deepEqual(result.credentials, {
     worldId: 'world-123',
+    adminAuthKind: 'player_token',
     hasAdminCode: false,
     adminCode: null,
   })
@@ -65,9 +70,11 @@ test('buildRuntimeCredentialResponse handles empty world id and missing admin co
     buildRuntimeCredentialResponse({
       worldId: '  ',
       adminCode: '',
+      adminAuthKind: 'admin_code',
     }),
     {
       worldId: null,
+      adminAuthKind: 'admin_code',
       hasAdminCode: false,
       adminCode: null,
     }

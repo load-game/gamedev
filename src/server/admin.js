@@ -911,6 +911,7 @@ export async function admin(
               canDeploy: capabilities.deploy,
               worldId: world?.network?.worldId || process.env.WORLD_ID || null,
               adminCode: process.env.ADMIN_CODE,
+              adminAuthKind: world?.network?.auth?.admin?.kind || null,
             })
             auditRuntimeCredentialReveal({
               req,

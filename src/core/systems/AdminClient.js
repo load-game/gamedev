@@ -34,10 +34,14 @@ function normalizeRuntimeCredentialValue(value) {
 
 function normalizeRuntimeCredentials(data) {
   if (!data || typeof data !== 'object') return null
+  const adminAuthKind = normalizeAdminAuthKind(data.adminAuthKind)
+  const adminCode =
+    adminAuthKind === ADMIN_AUTH_KIND_ADMIN_CODE ? normalizeRuntimeCredentialValue(data.adminCode) : null
   return {
     worldId: normalizeRuntimeCredentialValue(data.worldId),
-    hasAdminCode: !!data.hasAdminCode,
-    adminCode: normalizeRuntimeCredentialValue(data.adminCode),
+    adminAuthKind,
+    hasAdminCode: adminAuthKind === ADMIN_AUTH_KIND_ADMIN_CODE && !!data.hasAdminCode,
+    adminCode,
   }
 }
 

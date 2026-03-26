@@ -18,6 +18,7 @@ test('runtime credentials API uses runtime_credentials_get command', async () =>
     return {
       credentials: {
         worldId: 'world-123',
+        adminAuthKind: 'admin_code',
         hasAdminCode: true,
         adminCode: 'secret-code',
       },
@@ -29,6 +30,7 @@ test('runtime credentials API uses runtime_credentials_get command', async () =>
   assert.deepEqual(payload, { type: RUNTIME_CREDENTIAL_COMMAND })
   assert.deepEqual(credentials, {
     worldId: 'world-123',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'secret-code',
   })
@@ -42,6 +44,7 @@ test('runtime credentials API caches response in memory', async () => {
     return {
       credentials: {
         worldId: 'world-123',
+        adminAuthKind: 'admin_code',
         hasAdminCode: true,
         adminCode: 'secret-code',
       },
@@ -63,6 +66,7 @@ test('runtime credentials API force refresh bypasses cache', async () => {
     return {
       credentials: {
         worldId: `world-${calls}`,
+        adminAuthKind: 'admin_code',
         hasAdminCode: true,
         adminCode: `code-${calls}`,
       },
@@ -75,11 +79,13 @@ test('runtime credentials API force refresh bypasses cache', async () => {
   assert.equal(calls, 2)
   assert.deepEqual(first, {
     worldId: 'world-1',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'code-1',
   })
   assert.deepEqual(second, {
     worldId: 'world-2',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'code-2',
   })
@@ -89,6 +95,7 @@ test('runtime credential cache clears on disconnect and auth error', () => {
   const client = createAdminClient()
   client.runtimeCredentials = {
     worldId: 'world-123',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'secret',
   }
@@ -98,6 +105,7 @@ test('runtime credential cache clears on disconnect and auth error', () => {
 
   client.runtimeCredentials = {
     worldId: 'world-123',
+    adminAuthKind: 'admin_code',
     hasAdminCode: true,
     adminCode: 'secret',
   }
@@ -111,6 +119,27 @@ test('runtime credentials API rejects invalid payloads', async () => {
   const client = createAdminClient()
   client.request = async () => ({ ok: true })
   await assert.rejects(() => client.getRuntimeCredentials(), err => err?.code === 'invalid_response')
+})
+
+test('runtime credentials API redacts hosted admin codes from the response payload', async () => {
+  const client = createAdminClient()
+  client.request = async () => ({
+    credentials: {
+      worldId: 'world-123',
+      adminAuthKind: 'player_token',
+      hasAdminCode: true,
+      adminCode: 'secret-code',
+    },
+  })
+
+  const credentials = await client.getRuntimeCredentials()
+
+  assert.deepEqual(credentials, {
+    worldId: 'world-123',
+    adminAuthKind: 'player_token',
+    hasAdminCode: false,
+    adminCode: null,
+  })
 })
 
 test('admin shutdown API uses agones_shutdown command', async () => {
