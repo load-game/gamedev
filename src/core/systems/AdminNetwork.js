@@ -115,6 +115,7 @@ export class AdminNetwork extends System {
     this.ws.send(
       writePacket('adminAuth', {
         code: this.code,
+        authToken: storage.get('authToken') || null,
         subscriptions: this.subscriptions,
         networkId: this.id,
       })
@@ -178,7 +179,7 @@ export class AdminNetwork extends System {
     this.maxUploadSize = data.maxUploadSize
     this.world.assetsUrl = data.assetsUrl
     this.world.settings.deserialize(data.settings)
-    this.world.settings.setHasAdminCode(!!data.hasAdminCode)
+    this.world.settings.setAuthMetadata(data.auth)
 
     this.world.blueprints.destroy()
     this.world.entities.destroy()

@@ -26,7 +26,7 @@ Final state:
   - hosted slug world: `player_token`
   - standalone runtime: `admin_code`
   Thread that descriptor through startup, runtime snapshots, and admin snapshots. Files: `runtime/src/server/authModes.js`, `runtime/src/server/index.js`, `runtime/src/server/admin.js`, `runtime/src/core/systems/ServerNetwork.js`. Size: 0.5 day.
-- [ ] Replace `hasAdminCode` payloads and client state with explicit auth metadata. Remove `Settings.hasAdminCode` / `effectiveRank` behavior that currently treats `ADMIN_CODE` absence as implicit admin. Files: `runtime/src/core/systems/Settings.js`, `runtime/src/core/systems/ClientNetwork.js`, `runtime/src/core/systems/AdminNetwork.js`, `runtime/src/core/systems/AdminClient.js`. Size: 0.75 day.
+- [x] Replace `hasAdminCode` payloads and client state with explicit auth metadata. Remove `Settings.hasAdminCode` / `effectiveRank` behavior that currently treats `ADMIN_CODE` absence as implicit admin. Files: `runtime/src/core/systems/Settings.js`, `runtime/src/core/systems/ClientNetwork.js`, `runtime/src/core/systems/AdminNetwork.js`, `runtime/src/core/systems/AdminClient.js`. Size: 0.75 day.
 - [ ] Normalize hosted-vs-standalone admin error handling and messaging so clients talk about token/session auth for slug worlds and admin code for standalone runtimes only. Files: `runtime/src/core/systems/AdminClient.js`, `runtime/src/client/admin-client.js`, `runtime/src/client/components/sidebar/World.js`, `runtime/src/core/systems/ClientBuilder.js`. Size: 0.5 day.
 
 Definition of done:

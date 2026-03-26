@@ -189,7 +189,7 @@ export class ClientNetwork extends System {
     this.world.loader.execPreload()
 
     this.world.settings.deserialize(data.settings)
-    this.world.settings.setHasAdminCode(data.hasAdminCode)
+    this.world.settings.setAuthMetadata(data.auth)
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)

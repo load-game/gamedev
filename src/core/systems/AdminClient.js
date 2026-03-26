@@ -41,6 +41,27 @@ function normalizeRuntimeCredentials(data) {
   }
 }
 
+const ADMIN_AUTH_KIND_ADMIN_CODE = 'admin_code'
+const ADMIN_AUTH_KIND_PLAYER_TOKEN = 'player_token'
+
+function normalizeAdminAuthKind(value) {
+  return value === ADMIN_AUTH_KIND_PLAYER_TOKEN ? ADMIN_AUTH_KIND_PLAYER_TOKEN : ADMIN_AUTH_KIND_ADMIN_CODE
+}
+
+function normalizeAuthMetadata(value) {
+  if (!value || typeof value !== 'object') return null
+  const kind = normalizeAdminAuthKind(value?.admin?.kind)
+  return {
+    usesLobbyIdentity: !!value?.usesLobbyIdentity,
+    usesLocalIdentity: value?.usesLocalIdentity === undefined ? !value?.usesLobbyIdentity : !!value.usesLocalIdentity,
+    admin: {
+      kind,
+      codeConfigured: kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!value?.admin?.codeConfigured,
+      openAccess: kind === ADMIN_AUTH_KIND_ADMIN_CODE && !!value?.admin?.openAccess,
+    },
+  }
+}
+
 export class AdminClient extends System {
   constructor(world) {
     super(world)
@@ -55,23 +76,31 @@ export class AdminClient extends System {
     this.authToken = null
     this.deployLockToken = null
     this.deployLockScope = null
-    this.requireCode = false
+    this.auth = null
     this.runtimeCredentials = null
   }
 
-  init({ adminUrl, requireAdminCode } = {}) {
+  init({ adminUrl, requireAdminCode, auth } = {}) {
     this.code = storage.get('adminCode')
     this.refreshAuthToken()
     if (adminUrl) {
       this.adminUrl = normalizeAdminUrl(adminUrl)
-      this.requireCode = !!requireAdminCode
+      this.setAuthMetadata(
+        auth || {
+          admin: {
+            kind: ADMIN_AUTH_KIND_ADMIN_CODE,
+            codeConfigured: !!requireAdminCode,
+            openAccess: !requireAdminCode,
+          },
+        }
+      )
       this.connect()
     }
   }
 
   onSnapshot(data) {
     this.adminUrl = normalizeAdminUrl(data.adminUrl) || deriveAdminUrl(data.apiUrl)
-    this.requireCode = !!data.hasAdminCode
+    this.setAuthMetadata(data.auth)
     this.runtimeCredentials = null
     this.refreshAuthToken(data.authToken)
     this.connect()
@@ -94,14 +123,52 @@ export class AdminClient extends System {
     return this.authToken
   }
 
+  setAuthMetadata(auth) {
+    this.auth = normalizeAuthMetadata(auth)
+  }
+
+  get adminAuthKind() {
+    return this.auth?.admin?.kind || null
+  }
+
+  requiresPlayerToken() {
+    return this.adminAuthKind === ADMIN_AUTH_KIND_PLAYER_TOKEN
+  }
+
+  requiresAdminCode() {
+    return this.adminAuthKind === ADMIN_AUTH_KIND_ADMIN_CODE && !!this.auth?.admin?.codeConfigured
+  }
+
+  allowsOpenAccess() {
+    return this.adminAuthKind === ADMIN_AUTH_KIND_ADMIN_CODE && !!this.auth?.admin?.openAccess
+  }
+
+  getMissingAuthError() {
+    if (this.requiresPlayerToken() && !this.refreshAuthToken()) {
+      const err = new Error('player_session_missing')
+      err.code = 'player_session_missing'
+      return err
+    }
+    if (!this.allowsOpenAccess() && this.requiresAdminCode() && !this.code) {
+      const err = new Error('admin_code_missing')
+      err.code = 'admin_code_missing'
+      return err
+    }
+    return null
+  }
+
   hasAuthCredential() {
+    if (this.requiresPlayerToken()) return !!this.refreshAuthToken()
+    if (this.requiresAdminCode()) return !!this.code
+    if (this.allowsOpenAccess()) return true
     return !!(this.code || this.refreshAuthToken())
   }
 
   connect() {
     if (this.ws || !this.adminUrl) return
-    if (this.requireCode && !this.hasAuthCredential()) {
-      this.error = 'missing_code'
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) {
+      this.error = missingAuthError.code
       return
     }
     const wsUrl = toWsUrl(this.adminUrl)
@@ -222,10 +289,9 @@ export class AdminClient extends System {
       err.code = 'admin_url_missing'
       return Promise.reject(err)
     }
-    if (this.requireCode && !this.hasAuthCredential()) {
-      const err = new Error('admin_code_missing')
-      err.code = 'admin_code_missing'
-      return Promise.reject(err)
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) {
+      return Promise.reject(missingAuthError)
     }
     const requestId = uuid()
     return new Promise((resolve, reject) => {
@@ -254,7 +320,8 @@ export class AdminClient extends System {
 
   async upload(file) {
     if (!this.adminUrl) throw new Error('admin_url_missing')
-    if (this.requireCode && !this.hasAuthCredential()) throw new Error('admin_code_missing')
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) throw missingAuthError
     const hash = await hashFile(file)
     const ext = file.name.split('.').pop().toLowerCase()
     const filename = `${hash}.${ext}`
@@ -297,7 +364,8 @@ export class AdminClient extends System {
 
   async acquireDeployLock({ owner, ttl, scope } = {}) {
     if (!this.adminUrl) throw new Error('admin_url_missing')
-    if (this.requireCode && !this.hasAuthCredential()) throw new Error('admin_code_missing')
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) throw missingAuthError
     const headers = this.getDeployHeaders() || {}
     const payload = {}
     if (owner) payload.owner = owner
@@ -342,7 +410,8 @@ export class AdminClient extends System {
 
   async releaseDeployLock(token, scope) {
     if (!this.adminUrl) throw new Error('admin_url_missing')
-    if (this.requireCode && !this.hasAuthCredential()) throw new Error('admin_code_missing')
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) throw missingAuthError
     const lockToken = token || this.deployLockToken
     if (!lockToken) return { ok: true }
     const lockScope = scope || this.deployLockScope
@@ -409,7 +478,8 @@ export class AdminClient extends System {
 
   async blueprintRemove(id) {
     if (!this.adminUrl) throw new Error('admin_url_missing')
-    if (this.requireCode && !this.hasAuthCredential()) throw new Error('admin_code_missing')
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) throw missingAuthError
     const headers = this.getDeployHeaders()
     const url = joinUrl(this.adminUrl, `/admin/blueprints/${encodeURIComponent(id)}`)
     const res = await fetch(url, { method: 'DELETE', headers })
@@ -514,7 +584,8 @@ export class AdminClient extends System {
 
   async runClean({ dryrun } = {}) {
     if (!this.adminUrl) throw new Error('admin_url_missing')
-    if (this.requireCode && !this.hasAuthCredential()) throw new Error('admin_code_missing')
+    const missingAuthError = this.getMissingAuthError()
+    if (missingAuthError) throw missingAuthError
     const headers = {
       'Content-Type': 'application/json',
       ...(this.getDeployHeaders() || {}),
