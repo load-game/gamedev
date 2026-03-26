@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { writePacket } from '../../src/core/packets.js'
-import { AdminClient, ADMIN_SHUTDOWN_COMMAND, RUNTIME_CREDENTIAL_COMMAND } from '../../src/core/systems/AdminClient.js'
+import {
+  AdminClient,
+  ADMIN_SHUTDOWN_COMMAND,
+  RUNTIME_CREDENTIAL_COMMAND,
+  buildSdkSetupData,
+} from '../../src/core/systems/AdminClient.js'
 
 function createAdminClient() {
   return new AdminClient({
@@ -121,25 +126,105 @@ test('runtime credentials API rejects invalid payloads', async () => {
   await assert.rejects(() => client.getRuntimeCredentials(), err => err?.code === 'invalid_response')
 })
 
-test('runtime credentials API redacts hosted admin codes from the response payload', async () => {
+test('buildSdkSetupData returns token-backed hosted setup output', () => {
+  const setupData = buildSdkSetupData({
+    credentials: {
+      worldId: 'world-123',
+      adminAuthKind: 'player_token',
+      adminCode: null,
+    },
+    authToken: 'session-token',
+  })
+
+  assert.deepEqual(setupData, {
+    worldId: 'world-123',
+    adminAuthKind: 'player_token',
+    worldAuthToken: 'session-token',
+    adminCode: null,
+  })
+})
+
+test('getSdkSetupData returns WORLD_AUTH_TOKEN for hosted runtimes', async () => {
   const client = createAdminClient()
+  client.setAuthMetadata({
+    usesLobbyIdentity: true,
+    admin: {
+      kind: 'player_token',
+      codeConfigured: false,
+      openAccess: false,
+    },
+  })
+  client.refreshAuthToken = () => 'session-token'
   client.request = async () => ({
     credentials: {
       worldId: 'world-123',
       adminAuthKind: 'player_token',
+      hasAdminCode: false,
+      adminCode: null,
+    },
+  })
+
+  const setupData = await client.getSdkSetupData()
+
+  assert.deepEqual(setupData, {
+    worldId: 'world-123',
+    adminAuthKind: 'player_token',
+    adminCode: null,
+    worldAuthToken: 'session-token',
+  })
+})
+
+test('getSdkSetupData keeps ADMIN_CODE for standalone runtimes', async () => {
+  const client = createAdminClient()
+  client.setAuthMetadata({
+    usesLobbyIdentity: false,
+    usesLocalIdentity: true,
+    admin: {
+      kind: 'admin_code',
+      codeConfigured: true,
+      openAccess: false,
+    },
+  })
+  client.request = async () => ({
+    credentials: {
+      worldId: 'world-123',
+      adminAuthKind: 'admin_code',
       hasAdminCode: true,
       adminCode: 'secret-code',
     },
   })
 
-  const credentials = await client.getRuntimeCredentials()
+  const setupData = await client.getSdkSetupData()
 
-  assert.deepEqual(credentials, {
+  assert.deepEqual(setupData, {
     worldId: 'world-123',
-    adminAuthKind: 'player_token',
-    hasAdminCode: false,
-    adminCode: null,
+    adminAuthKind: 'admin_code',
+    worldAuthToken: null,
+    adminCode: 'secret-code',
   })
+})
+
+test('getSdkSetupData rejects hosted setup when the runtime session token is missing', async () => {
+  const client = createAdminClient()
+  client.setAuthMetadata({
+    usesLobbyIdentity: true,
+    admin: {
+      kind: 'player_token',
+      codeConfigured: false,
+      openAccess: false,
+    },
+  })
+  client.refreshAuthToken = () => null
+  client.request = async () => ({
+    credentials: {
+      worldId: 'world-123',
+      adminAuthKind: 'player_token',
+      hasAdminCode: false,
+      adminCode: null,
+    },
+  })
+
+  await assert.rejects(() => client.getSdkSetupData(), err => err?.code === 'player_session_missing')
 })
 
 test('admin shutdown API uses agones_shutdown command', async () => {
