@@ -15,8 +15,13 @@ export class Settings extends System {
     this.rank = null
     this.playerLimit = null
     this.ao = null
+    this.auth = null
 
     this.changes = null
+  }
+
+  setAuthMetadata(value) {
+    this.auth = value || null
   }
 
   setHasAdminCode(value) {

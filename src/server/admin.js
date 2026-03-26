@@ -710,6 +710,7 @@ export async function admin(
   }
 
   function sendSnapshot(ws, { includePlayers } = {}) {
+    const auth = world.network?.auth || null
     sendPacket(ws, 'snapshot', {
       serverTime: performance.now(),
       assetsUrl: assets.url,
@@ -719,7 +720,7 @@ export async function admin(
       blueprints: world.blueprints.serialize(),
       entities: serializeEntitiesForAdmin(world),
       players: includePlayers ? serializePlayersForAdmin(world) : [],
-      hasAdminCode: !!process.env.ADMIN_CODE,
+      auth,
       adminUrl: process.env.PUBLIC_ADMIN_URL,
     })
   }
@@ -1234,7 +1235,7 @@ export async function admin(
       blueprints: world.blueprints.serialize(),
       entities: serializeEntitiesForAdmin(world),
       players: serializePlayersForAdmin(world),
-      hasAdminCode: !!process.env.ADMIN_CODE,
+      auth: network.auth || null,
       adminUrl: process.env.PUBLIC_ADMIN_URL,
     }
   })

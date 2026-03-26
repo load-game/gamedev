@@ -11,6 +11,7 @@ import { validateBlueprintScriptFields } from '../blueprintValidation'
 import { ensureBlueprintSyncMetadata, ensureEntitySyncMetadata } from '../../server/syncMetadata.js'
 import { getMaxUploadSizeMb, getWorldMaxPlayers } from '../../server/worldLimits.js'
 import { deriveAdminUrlFromRequest } from '../../server/forwardedPrefix.js'
+import { resolveRuntimeAuthDescriptor } from '../../server/authModes.js'
 
 const SAVE_INTERVAL = parseInt(process.env.SAVE_INTERVAL || '60') // seconds
 const PING_RATE = 10 // seconds
@@ -188,11 +189,13 @@ export class ServerNetwork extends System {
     this.logSubscribers = new Set()
     this.authMode = 'standalone'
     this.usesLobbyIdentity = false
+    this.auth = resolveRuntimeAuthDescriptor()
   }
 
   init({ db, authConfig } = {}) {
     this.db = db
     this.usesLobbyIdentity = !!authConfig?.usesLobbyIdentity
+    this.auth = authConfig?.authDescriptor || resolveRuntimeAuthDescriptor()
   }
 
   async start() {
@@ -245,7 +248,7 @@ export class ServerNetwork extends System {
     try {
       const settings = JSON.parse(settingsRow?.value || '{}')
       this.world.settings.deserialize(settings)
-      this.world.settings.setHasAdminCode(!!process.env.ADMIN_CODE)
+      this.world.settings.setAuthMetadata(this.auth)
     } catch (err) {
       console.error(err)
     }
@@ -570,7 +573,7 @@ export class ServerNetwork extends System {
         livekit,
         ai: this.world.ai?.serialize?.() || null,
         authToken,
-        hasAdminCode: !!process.env.ADMIN_CODE,
+        auth: this.auth,
       })
 
       this.sockets.set(socket.id, socket)

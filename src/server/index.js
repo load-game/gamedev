@@ -18,7 +18,7 @@ import { createAgonesSdkHttp } from './agonesSdkHttp.js'
 import { createAgonesIdleController, resolveAgonesIdleShutdownTimeoutMs } from './agonesIdleShutdown.js'
 import { createRegistryState, getRegistryPublicStatus, registerWithRegistry } from './registry'
 import { describeWebSocketConnection, resolveWebSocketConnection } from './websocketConnection.js'
-import { resolveAuthRuntimeConfig } from './authModes'
+import { resolveAuthRuntimeConfig, resolveRuntimeAuthDescriptor } from './authModes'
 import { completeRuntimeStartup } from './runtimeStartup.js'
 import {
   applyHostedRuntimeBootstrapPayload,
@@ -98,11 +98,13 @@ function isTruthyEnvFlag(value) {
 }
 
 function logRuntimeEvent(level, event, state, extra = {}) {
+  const authDescriptor = state?.resources?.world?.network?.auth || resolveRuntimeAuthDescriptor(process.env)
   const payload = {
     component: 'runtime',
     event,
     mode: runtimeBootstrapMode || 'direct',
     state: state?.lifecycle?.state || null,
+    adminAuthKind: authDescriptor?.admin?.kind || null,
     bootstrapId:
       extra.bootstrapId !== undefined
         ? extra.bootstrapId || null
@@ -491,6 +493,7 @@ function buildPublicEnvsCode() {
 }
 
 function buildBootstrapStatusPayload(state) {
+  const authDescriptor = state?.resources?.world?.network?.auth || resolveRuntimeAuthDescriptor(process.env)
   return {
     state: state.lifecycle.state,
     bootstrapId: state.lifecycle.bootstrapId || null,
@@ -514,6 +517,7 @@ function buildBootstrapStatusPayload(state) {
     auth: {
       publicAuthUrl: process.env.PUBLIC_AUTH_URL || null,
       publicPrivyAppId: process.env.PUBLIC_PRIVY_APP_ID || null,
+      admin: authDescriptor.admin,
     },
     control: {
       internalBaseUrl: resolveControlInternalBaseUrl(process.env),
