@@ -92,7 +92,7 @@ import { isEqual } from 'lodash-es'
 import { uuid } from './utils.js'
 
 export class DirectAppServer {
-  constructor({ worldUrl, adminCode, authToken, rootDir = process.cwd() }) {
+  constructor({ worldUrl, adminCode, authToken, rootDir = process.cwd(), client = null } = {}) {
     this.rootDir = rootDir
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
     this.adminCode = adminCode || null
@@ -108,11 +108,13 @@ export class DirectAppServer {
     this.syncPolicyFile = path.join(this.lobbyDir, 'sync-policy.json')
     this.manifest = new WorldManifest(this.worldFile)
 
-    this.client = new WorldAdminClient({
-      worldUrl: this.worldUrl,
-      adminCode: this.adminCode,
-      authToken: this.authToken,
-    })
+    this.client =
+      client ||
+      new WorldAdminClient({
+        worldUrl: this.worldUrl,
+        adminCode: this.adminCode,
+        authToken: this.authToken,
+      })
     this.deployTimers = new Map()
     this.deployQueues = new Map()
     this.removeTimers = new Map()

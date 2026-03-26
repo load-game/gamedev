@@ -82,7 +82,7 @@ Definition of done:
   - standalone runtime accepts `ADMIN_CODE`
   - `/admin <code>` only works in standalone
   Files: `runtime/test/integration/*.test.js`. Size: 1 day.
-- [ ] Add SDK/app-server tests covering:
+- [x] Add SDK/app-server tests covering:
   - `WORLD_AUTH_TOKEN` HTTP requests
   - `WORLD_AUTH_TOKEN` WebSocket admin auth
   - slug-world deploy/snapshot flow without `X-Admin-Code`

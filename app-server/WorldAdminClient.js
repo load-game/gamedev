@@ -15,12 +15,15 @@ import {
 } from './helpers.js'
 
 export class WorldAdminClient extends EventEmitter {
-  constructor({ worldUrl, adminCode, authToken }) {
+  constructor({ worldUrl, adminCode, authToken, fetchImpl, webSocketFactory } = {}) {
     super()
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
     this.auth = resolveWorldAdminAuth({ adminCode, authToken })
     this.adminCode = this.auth.adminCode
     this.authToken = this.auth.authToken
+    this.fetchImpl = typeof fetchImpl === 'function' ? fetchImpl : (...args) => fetch(...args)
+    this.webSocketFactory =
+      typeof webSocketFactory === 'function' ? webSocketFactory : (url, options) => new WebSocket(url, options)
     this.ws = null
     this.pending = new Map()
   }
@@ -70,7 +73,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
 
     await new Promise((resolve, reject) => {
-      const ws = new WebSocket(this.wsAdminUrl, {
+      const ws = this.webSocketFactory(this.wsAdminUrl, {
         headers: this.adminHeaders(),
       })
       ws.binaryType = 'arraybuffer'
@@ -221,7 +224,7 @@ export class WorldAdminClient extends EventEmitter {
 
   async getSnapshot() {
     this.assertAuthReady()
-    const res = await fetch(joinUrl(this.httpBase, '/admin/snapshot'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/snapshot'), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
@@ -240,7 +243,7 @@ export class WorldAdminClient extends EventEmitter {
       params.set('limit', String(Math.floor(limit)))
     }
     const suffix = params.size > 0 ? `?${params.toString()}` : ''
-    const res = await fetch(joinUrl(this.httpBase, `/admin/changes${suffix}`), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, `/admin/changes${suffix}`), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
@@ -251,7 +254,7 @@ export class WorldAdminClient extends EventEmitter {
 
   async getBlueprint(id) {
     this.assertAuthReady()
-    const res = await fetch(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
@@ -263,7 +266,7 @@ export class WorldAdminClient extends EventEmitter {
 
   async removeBlueprint(id) {
     this.assertAuthReady()
-    const res = await fetch(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, `/admin/blueprints/${encodeURIComponent(id)}`), {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
@@ -275,7 +278,7 @@ export class WorldAdminClient extends EventEmitter {
 
   async setSpawn({ position, quaternion }) {
     this.assertAuthReady()
-    const res = await fetch(joinUrl(this.httpBase, '/admin/spawn'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/spawn'), {
       method: 'PUT',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ position, quaternion }),
@@ -288,7 +291,7 @@ export class WorldAdminClient extends EventEmitter {
 
   async uploadAsset({ filename, buffer, mimeType }) {
     this.assertAuthReady()
-    const check = await fetch(joinUrl(this.httpBase, `/admin/upload-check?filename=${encodeURIComponent(filename)}`), {
+    const check = await this.fetchImpl(joinUrl(this.httpBase, `/admin/upload-check?filename=${encodeURIComponent(filename)}`), {
       headers: this.adminHeaders(),
     })
     if (!check.ok) {
@@ -301,7 +304,7 @@ export class WorldAdminClient extends EventEmitter {
     const file = new File([buffer], filename, { type: mimeType || 'application/octet-stream' })
     form.set('file', file)
 
-    const upload = await fetch(joinUrl(this.httpBase, '/admin/upload'), {
+    const upload = await this.fetchImpl(joinUrl(this.httpBase, '/admin/upload'), {
       method: 'POST',
       headers: this.adminHeaders(),
       body: form,
@@ -315,7 +318,7 @@ export class WorldAdminClient extends EventEmitter {
   async getDeployLockStatus({ scope } = {}) {
     this.assertAuthReady()
     const suffix = scope ? `?scope=${encodeURIComponent(scope)}` : ''
-    const res = await fetch(joinUrl(this.httpBase, `/admin/deploy-lock${suffix}`), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, `/admin/deploy-lock${suffix}`), {
       headers: this.adminHeaders(),
     })
     if (!res.ok) {
@@ -328,7 +331,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
     const payload = { owner, ttl }
     if (scope) payload.scope = scope
-    const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/deploy-lock'), {
       method: 'POST',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
@@ -343,7 +346,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
     const payload = { token, ttl }
     if (scope) payload.scope = scope
-    const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/deploy-lock'), {
       method: 'PUT',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
@@ -358,7 +361,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
     const payload = { token }
     if (scope) payload.scope = scope
-    const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-lock'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/deploy-lock'), {
       method: 'DELETE',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
@@ -373,7 +376,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
     const payload = { ids, target, note, lockToken }
     if (scope) payload.scope = scope
-    const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-snapshots'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/deploy-snapshots'), {
       method: 'POST',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
@@ -388,7 +391,7 @@ export class WorldAdminClient extends EventEmitter {
     this.assertAuthReady()
     const payload = { id, lockToken }
     if (scope) payload.scope = scope
-    const res = await fetch(joinUrl(this.httpBase, '/admin/deploy-snapshots/rollback'), {
+    const res = await this.fetchImpl(joinUrl(this.httpBase, '/admin/deploy-snapshots/rollback'), {
       method: 'POST',
       headers: this.adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
