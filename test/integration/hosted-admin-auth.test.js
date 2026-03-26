@@ -108,3 +108,37 @@ test('hosted runtimes ignore ADMIN_CODE for WebSocket admin auth and accept runt
     await world.stop()
   }
 })
+
+test('standalone runtimes accept ADMIN_CODE for HTTP admin auth', async () => {
+  const world = await startWorldServer({
+    adminCode: 'secret-code',
+  })
+  try {
+    const authed = await fetchJson(`${world.worldUrl}/admin/snapshot`, {
+      adminCode: 'secret-code',
+    })
+    assert.equal(authed.res.status, 200)
+    assert.equal(authed.data?.auth?.admin?.kind, 'admin_code')
+  } finally {
+    await world.stop()
+  }
+})
+
+test('standalone runtimes accept ADMIN_CODE for WebSocket admin auth', async () => {
+  const world = await startWorldServer({
+    adminCode: 'secret-code',
+  })
+  try {
+    const client = new AdminWsClient({
+      worldUrl: world.worldUrl,
+      adminCode: 'secret-code',
+    })
+    try {
+      await client.connect()
+    } finally {
+      client.close()
+    }
+  } finally {
+    await world.stop()
+  }
+})

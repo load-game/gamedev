@@ -75,7 +75,7 @@ Definition of done:
 
 ### 5. Runtime Tests And Operability
 
-- [ ] Add targeted runtime admin auth tests covering:
+- [x] Add targeted runtime admin auth tests covering:
   - hosted runtime accepts runtime session token over HTTP admin
   - hosted runtime accepts runtime session token over WebSocket admin
   - hosted runtime rejects `ADMIN_CODE`
