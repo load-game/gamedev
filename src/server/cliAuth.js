@@ -134,7 +134,7 @@ export function buildCliAuthPage({
     worldId: normalizeString(worldId),
     requiredCapability: normalizeString(requiredCapability) || 'builder',
     publicAuthUrl: hasValue(publicAuthUrl) ? publicAuthUrl.trim() : null,
-  })
+  }).replace(/</g, '\\u003c')
 
   return `<!doctype html>
 <html lang="en">

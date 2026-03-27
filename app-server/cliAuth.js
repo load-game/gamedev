@@ -59,6 +59,13 @@ function createCallbackServer({ worldId, worldUrl, state, timeoutMs = 10 * 60 * 
   let settled = false
   let timeoutId = null
   let server = null
+  let startupResolve = null
+  let startupReject = null
+  let startupState = 'pending'
+  const startup = new Promise((resolve, reject) => {
+    startupResolve = resolve
+    startupReject = reject
+  })
 
   const close = async () => {
     if (!server) return
@@ -139,6 +146,10 @@ function createCallbackServer({ worldId, worldUrl, state, timeoutMs = 10 * 60 * 
     })
 
     server.listen(0, '127.0.0.1', () => {
+      if (startupState === 'pending') {
+        startupState = 'ready'
+        startupResolve()
+      }
       timeoutId = setTimeout(async () => {
         if (settled) return
         settled = true
@@ -148,6 +159,10 @@ function createCallbackServer({ worldId, worldUrl, state, timeoutMs = 10 * 60 * 
     })
 
     server.on('error', async error => {
+      if (startupState === 'pending') {
+        startupState = 'failed'
+        startupReject(error instanceof Error ? error : createError('callback_server_failed'))
+      }
       if (settled) return
       settled = true
       clearTimeout(timeoutId)
@@ -159,10 +174,11 @@ function createCallbackServer({ worldId, worldUrl, state, timeoutMs = 10 * 60 * 
   return {
     state: expectedState,
     async getCallbackUrl() {
-      while (!server?.address?.()) {
-        await new Promise(resolve => setTimeout(resolve, 10))
-      }
+      await startup
       const address = server.address()
+      if (!address || typeof address === 'string') {
+        throw createError('callback_server_failed')
+      }
       return `http://127.0.0.1:${address.port}/callback`
     },
     result,
