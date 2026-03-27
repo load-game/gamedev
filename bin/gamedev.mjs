@@ -2,11 +2,11 @@
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import readline from 'readline'
 import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
 import { customAlphabet } from 'nanoid'
 
+import { ensureProjectAuth } from '../app-server/cliAuth.js'
 import { runAppCommand, runScriptCommand, runSyncCommand } from '../app-server/commands.js'
 import { DirectAppServer } from '../app-server/direct.js'
 import { scaffoldBaseProject, scaffoldBuiltins, updateBuiltins, writeManifest } from '../app-server/scaffold.js'
@@ -59,10 +59,6 @@ function readDotEnv(filePath) {
 
 function writeDotEnv(filePath, content) {
   fs.writeFileSync(filePath, content.endsWith('\n') ? content : `${content}\n`, 'utf8')
-}
-
-function generateAdminCode() {
-  return crypto.randomBytes(16).toString('base64url')
 }
 
 function generateJwtSecret() {
@@ -258,7 +254,7 @@ function applyEnvToProcess(env) {
   }
 }
 
-function buildDefaultEnv({ worldUrl, worldId, adminCode, jwtSecret }) {
+function buildDefaultEnv({ worldUrl, worldId, jwtSecret }) {
   const derived = deriveUrls(worldUrl)
   if (!derived) throw new Error('Invalid WORLD_URL')
 
@@ -266,6 +262,7 @@ function buildDefaultEnv({ worldUrl, worldId, adminCode, jwtSecret }) {
   lines.push('# Hyperfy project environment')
   lines.push(`WORLD_URL=${normalizeBaseUrl(worldUrl)}`)
   lines.push(`WORLD_ID=${worldId}`)
+  lines.push('# Runtime bootstrap only. CLI auth uses "gamedev auth".')
   lines.push(`ADMIN_CODE=`)
   lines.push('')
   lines.push('# World server')
@@ -303,7 +300,6 @@ function validateBaseEnv(env) {
   const errors = []
   if (isMissingValue(env, 'WORLD_URL')) errors.push('WORLD_URL')
   if (isMissingValue(env, 'WORLD_ID')) errors.push('WORLD_ID')
-  if (!hasKey(env, 'ADMIN_CODE')) errors.push('ADMIN_CODE')
   if (env.WORLD_URL && !parseWorldUrl(env.WORLD_URL)) {
     errors.push('WORLD_URL (invalid URL)')
   }
@@ -361,21 +357,11 @@ function validateLocalEnv(env, derived) {
   return issues
 }
 
-async function promptValue(prompt) {
-  if (!process.stdin.isTTY) return null
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  const answer = await new Promise(resolve => rl.question(prompt, resolve))
-  rl.close()
-  const trimmed = typeof answer === 'string' ? answer.trim() : ''
-  return trimmed || null
-}
-
 function ensureEnvForStart() {
   if (!fs.existsSync(envPath)) {
     const worldId = `local-xxxxxxxxxx`
-    const adminCode = generateAdminCode()
     const jwtSecret = generateJwtSecret()
-    const envText = buildDefaultEnv({ worldUrl: DEFAULT_WORLD_URL, worldId, adminCode, jwtSecret })
+    const envText = buildDefaultEnv({ worldUrl: DEFAULT_WORLD_URL, worldId, jwtSecret })
 
     writeDotEnv(envPath, envText)
     console.log('Created .env with local world defaults.')
@@ -435,7 +421,6 @@ async function startCommand(args = []) {
       ...env,
       WORLD_URL: target.worldUrl || env.WORLD_URL,
       WORLD_ID: target.worldId || env.WORLD_ID,
-      ADMIN_CODE: typeof target.adminCode === 'string' ? target.adminCode : env.ADMIN_CODE,
     }
   }
 
@@ -496,6 +481,21 @@ async function startCommand(args = []) {
     console.log('World: Remote world detected, skipping local world server.')
   }
 
+  try {
+    await ensureProjectAuth({
+      rootDir: projectDir,
+      worldUrl: env.WORLD_URL,
+      worldId: env.WORLD_ID,
+      requiredCapability: 'builder',
+      interactive: process.stdin.isTTY,
+      log: console,
+    })
+  } catch (err) {
+    console.error(`Error: Authentication failed: ${err?.message || err}`)
+    if (worldChild && !worldChild.killed) worldChild.kill('SIGTERM')
+    return 1
+  }
+
   console.log('Sync: Starting app-server sync')
   children.push(
     spawnProcess('app server', process.execPath, [artifacts.appServerPath], {
@@ -549,7 +549,6 @@ async function appServerCommand(args = []) {
       ...env,
       WORLD_URL: target.worldUrl || env.WORLD_URL,
       WORLD_ID: target.worldId || env.WORLD_ID,
-      ADMIN_CODE: typeof target.adminCode === 'string' ? target.adminCode : env.ADMIN_CODE,
     }
   }
 
@@ -578,6 +577,20 @@ async function appServerCommand(args = []) {
     }
   } else {
     console.log('World: Remote world detected, skipping local world server.')
+  }
+
+  try {
+    await ensureProjectAuth({
+      rootDir: projectDir,
+      worldUrl: env.WORLD_URL,
+      worldId: env.WORLD_ID,
+      requiredCapability: 'builder',
+      interactive: process.stdin.isTTY,
+      log: console,
+    })
+  } catch (err) {
+    console.error(`Error: Authentication failed: ${err?.message || err}`)
+    return 1
   }
 
   const envBase = { ...process.env, ...env }
@@ -627,6 +640,19 @@ Usage:
 Options:
   --name <package>          Package name (defaults to folder name)
   --force, -f               Overwrite existing scaffold files
+  --help, -h                Show this help
+`)
+}
+
+function printAuthHelp() {
+  console.log(`
+Gamedev Auth
+
+Usage:
+  gamedev auth [--target <name>]
+
+Options:
+  --target <name>           Use .lobby/targets.json entry for WORLD_URL/WORLD_ID
   --help, -h                Show this help
 `)
 }
@@ -822,21 +848,90 @@ async function syncCommand(args) {
   return runSyncCommand({ command, args: commandArgs, rootDir: projectDir, helpPrefix: 'gamedev sync' })
 }
 
-async function connectAdminServer({ worldUrl, adminCode, rootDir }) {
-  let code = adminCode || process.env.ADMIN_CODE || null
-  let server = new DirectAppServer({ worldUrl, adminCode: code, rootDir })
+async function connectAdminServer({ worldUrl, worldId, rootDir }) {
+  const auth = await ensureProjectAuth({
+    rootDir,
+    worldUrl,
+    worldId,
+    requiredCapability: 'builder',
+    interactive: process.stdin.isTTY,
+    log: console,
+  })
+  const server = new DirectAppServer({
+    worldUrl,
+    worldId,
+    authToken: auth.entry.authToken,
+    rootDir,
+  })
+  await server.connect()
+  return server
+}
+
+async function authCommand(args = []) {
+  let target = null
   try {
-    await server.connect()
-    return server
+    const parsed = parseTargetArgs(args)
+    args = parsed.args
+    target = parsed.target ? resolveTarget(projectDir, parsed.target) : null
   } catch (err) {
-    const msg = err?.message || ''
-    const canRetry = (msg === 'invalid_code' || msg === 'unauthorized') && process.stdin.isTTY
-    if (!canRetry) throw err
-    code = await promptValue('Enter ADMIN_CODE: ')
-    if (!code) throw err
-    server = new DirectAppServer({ worldUrl, adminCode: code, rootDir })
-    await server.connect()
-    return server
+    console.error(`Error: ${err?.message || err}`)
+    return 1
+  }
+
+  if (!args.length && target === null) {
+    // continue with env/.env resolution
+  } else if (args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
+    printAuthHelp()
+    return 0
+  } else if (args.length) {
+    console.error(`Error: Unknown option: ${args[0]}`)
+    printAuthHelp()
+    return 1
+  }
+
+  const env = readDotEnv(envPath)
+  if (env) applyEnvToProcess(env)
+  if (target) {
+    applyTargetEnv(target)
+  }
+
+  const worldUrl = (target?.worldUrl || process.env.WORLD_URL || '').trim()
+  const worldId = (target?.worldId || process.env.WORLD_ID || '').trim()
+  if (!worldUrl || !worldId) {
+    console.error('Error: Missing WORLD_URL or WORLD_ID. Configure .env or pass --target.')
+    return 1
+  }
+
+  if (isLocalWorld({ worldUrl })) {
+    const ready = await waitForWorldReady(worldUrl, { timeoutMs: 2000, intervalMs: 250 })
+    if (!ready) {
+      console.error('Error: Local world server is not running yet.')
+      console.error('Hint: Start it first or run "gamedev dev".')
+      return 1
+    }
+  }
+
+  try {
+    const result = await ensureProjectAuth({
+      rootDir: projectDir,
+      worldUrl,
+      worldId,
+      requiredCapability: 'builder',
+      interactive: process.stdin.isTTY,
+      log: console,
+    })
+    const userName = result.status?.user?.name || result.entry?.userName || 'Authenticated user'
+    const capability =
+      result.status?.capabilities?.deploy
+        ? 'deploy'
+        : result.status?.capabilities?.builder
+          ? 'builder'
+          : 'authenticated'
+    console.log(`✅ Authenticated ${userName} for ${worldId} (${capability})`)
+    return 0
+  } catch (err) {
+    console.error(`Error: Authentication failed: ${err?.message || err}`)
+    return 1
   }
 }
 
@@ -870,9 +965,6 @@ async function worldCommand(args) {
       applyTargetEnv(target)
       process.env.WORLD_URL = target.worldUrl || process.env.WORLD_URL
       process.env.WORLD_ID = target.worldId || process.env.WORLD_ID
-      if (typeof target.adminCode === 'string') {
-        process.env.ADMIN_CODE = target.adminCode
-      }
     }
 
     const worldUrl = process.env.WORLD_URL
@@ -884,7 +976,7 @@ async function worldCommand(args) {
 
     let server
     try {
-      server = await connectAdminServer({ worldUrl, adminCode: process.env.ADMIN_CODE, rootDir: projectDir })
+      server = await connectAdminServer({ worldUrl, worldId, rootDir: projectDir })
       if (action === 'export') {
         const includeBuiltScripts = actionArgs.includes('--include-built-scripts')
         await server.exportWorldToDisk(undefined, { includeBuiltScripts })
@@ -919,6 +1011,7 @@ Usage:
 Commands:
   init                      Scaffold a new world project in the current folder
   update                    Update SDK boilerplate files (preserves user modifications)
+  auth                      Open a browser and authorize this project for a world
   dev                       Start the world (local or remote) + app-server sync
   app-server                Start app-server sync only (no world server)
   apps <command>            Manage apps (create, list, deploy, update, rollback, status)
@@ -929,7 +1022,7 @@ Commands:
   help                      Show this help
 
 Options:
-  --target <name>           Use .lobby/targets.json entry (applies to dev/app-server/apps/sync)
+  --target <name>           Use .lobby/targets.json entry (applies to auth/dev/app-server/apps/sync/world)
 `)
 }
 
@@ -944,6 +1037,9 @@ async function main() {
       break
     case 'update':
       result = await updateCommand()
+      break
+    case 'auth':
+      result = await authCommand(args)
       break
     case 'dev':
       result = await startCommand(args)

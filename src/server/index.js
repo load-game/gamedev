@@ -12,6 +12,12 @@ import statics from '@fastify/static'
 import multipart from '@fastify/multipart'
 
 import { admin } from './admin'
+import {
+  buildCliAuthPage,
+  createStandaloneGuestSession,
+  getCliAuthTokenFromRequest,
+  resolveCliAuthStatus,
+} from './cliAuth.js'
 import { createDeferredResource } from './deferredResource.js'
 import { createAgonesPlayerTracker } from './agonesPlayerTracking.js'
 import { createAgonesSdkHttp } from './agonesSdkHttp.js'
@@ -1099,6 +1105,74 @@ async function handleAuthExchange(req, reply) {
   })
 }
 
+async function handleCliAuthPage(req, reply) {
+  if (!isRuntimeReady(runtimeState)) {
+    return sendRuntimeNotReady(reply, runtimeState, { html: true })
+  }
+  const callbackUrl = typeof req.query?.callback === 'string' ? req.query.callback.trim() : ''
+  const state = typeof req.query?.state === 'string' ? req.query.state.trim() : ''
+  const worldId = typeof req.query?.worldId === 'string' ? req.query.worldId.trim() : resolveBoundWorldId() || ''
+  const requiredCapability = typeof req.query?.required === 'string' ? req.query.required.trim() : 'builder'
+  if (!callbackUrl || !state) {
+    return reply.code(400).type('text/html').send(
+      '<!doctype html><html><body>Missing callback or state.</body></html>'
+    )
+  }
+  reply.type('text/html').send(
+    buildCliAuthPage({
+      callbackUrl,
+      state,
+      worldId,
+      requiredCapability,
+      publicAuthUrl: process.env.PUBLIC_AUTH_URL || null,
+    })
+  )
+}
+
+async function handleCliAuthStatus(req, reply) {
+  if (!isRuntimeReady(runtimeState)) {
+    return sendRuntimeNotReady(reply, runtimeState)
+  }
+  const worldId = resolveBoundWorldId()
+  const status = await resolveCliAuthStatus({
+    authToken: getCliAuthTokenFromRequest(req),
+    db: runtimeState.resources.db,
+    worldId,
+    adminCode: process.env.ADMIN_CODE,
+  })
+  if (!status.authenticated) {
+    const code = status.error === 'db_unavailable' ? 503 : 401
+    return reply.code(code).send({
+      error: status.error,
+      authenticated: false,
+    })
+  }
+  return reply.code(200).send(status)
+}
+
+async function handleCliAuthGuest(req, reply) {
+  if (!isRuntimeReady(runtimeState)) {
+    return sendRuntimeNotReady(reply, runtimeState)
+  }
+  const authConfig = resolveAuthRuntimeConfig(process.env)
+  if (authConfig.usesLobbyIdentity) {
+    return reply.code(404).send({ error: 'not_found' })
+  }
+  try {
+    const session = await createStandaloneGuestSession({
+      db: runtimeState.resources.db,
+      worldId: resolveBoundWorldId(),
+    })
+    return reply.code(200).send(session)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message === 'db_unavailable') {
+      return reply.code(503).send({ error: 'db_unavailable' })
+    }
+    return reply.code(500).send({ error: 'guest_session_failed' })
+  }
+}
+
 async function handleLocalAssetsRequest(req, reply) {
   if (!isRuntimeReady(runtimeState)) {
     return sendRuntimeNotReady(reply, runtimeState)
@@ -1319,6 +1393,7 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
   app.get('/worlds/*', async (_req, reply) => {
     renderClientHtml(reply, runtimeState, clientHtmlTemplateCache)
   })
+  app.get('/auth/cli', handleCliAuthPage)
   app.get('/api/ai-docs-index', async (_req, reply) => {
     reply.send({ files: getDocsIndex() })
   })
@@ -1357,6 +1432,8 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
   })
 
   app.post('/api/auth/exchange', handleAuthExchange)
+  app.get('/api/auth/cli/status', handleCliAuthStatus)
+  app.post('/api/auth/cli/guest', handleCliAuthGuest)
 
   app.get('/healthz', async (_req, reply) => {
     const ok = runtimeState.lifecycle.state !== 'failed'

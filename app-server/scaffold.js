@@ -121,6 +121,7 @@ function buildEnvExample() {
 # Run "gamedev dev" to generate a local .env automatically.
 WORLD_URL=http://localhost:3000
 WORLD_ID=local-your-world-id
+# Runtime bootstrap only. CLI auth uses "gamedev auth" instead.
 ADMIN_CODE=your-admin-code
 
 # World server
@@ -159,12 +160,10 @@ function buildTargetsExample() {
         dev: {
           worldUrl: 'http://localhost:3000',
           worldId: 'local-your-world-id',
-          adminCode: 'your-admin-code',
         },
         prod: {
           worldUrl: 'https://world.example.com',
           worldId: 'prod-world-id',
-          adminCode: 'your-admin-code',
           confirm: true,
         },
       },

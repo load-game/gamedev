@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 import { parse as acornParse } from 'acorn'
 
 import { DirectAppServer } from './direct.js'
+import { ensureProjectAuth } from './cliAuth.js'
 import { uuid } from './utils.js'
 import { resolveBlueprintId, isBlueprintDenylist } from './blueprintUtils.js'
 import { applyTargetEnv, parseTargetArgs, resolveTarget } from './targets.js'
@@ -226,12 +227,7 @@ export class HyperfyCLI {
     this.conflictsDir = path.join(this.rootDir, '.lobby', 'conflicts')
 
     this.worldUrl = overrides.worldUrl || process.env.WORLD_URL || null
-    this.adminCode =
-      typeof overrides.adminCode === 'string'
-        ? overrides.adminCode
-        : typeof process.env.ADMIN_CODE === 'string'
-          ? process.env.ADMIN_CODE
-          : null
+    this.worldId = overrides.worldId || process.env.WORLD_ID || null
   }
 
   _requireWorldUrl() {
@@ -239,18 +235,9 @@ export class HyperfyCLI {
     throw new Error('Missing WORLD_URL in environment')
   }
 
-  async _promptAdminCode() {
-    if (!process.stdin.isTTY) return null
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
-    const answer = await new Promise(resolve => {
-      rl.question('Enter ADMIN_CODE: ', resolve)
-    })
-    rl.close()
-    const trimmed = typeof answer === 'string' ? answer.trim() : ''
-    return trimmed ? trimmed : null
+  _requireWorldId() {
+    if (this.worldId) return this.worldId
+    throw new Error('Missing WORLD_ID in environment')
   }
 
   async _confirmPrompt(message) {
@@ -275,34 +262,27 @@ export class HyperfyCLI {
 
   async _connectAdminClient() {
     this._requireWorldUrl()
-
-    let adminCode = this.adminCode
-    if (!adminCode) {
-      adminCode = await this._promptAdminCode()
-      this.adminCode = adminCode
-    }
+    this._requireWorldId()
+    const auth = await ensureProjectAuth({
+      rootDir: this.rootDir,
+      worldUrl: this.worldUrl,
+      worldId: this.worldId,
+      requiredCapability: 'builder',
+      interactive: process.stdin.isTTY,
+      log: console,
+    })
 
     const server = new DirectAppServer({
       worldUrl: this.worldUrl,
-      adminCode,
+      authToken: auth.entry.authToken,
+      worldId: this.worldId,
       rootDir: this.rootDir,
     })
     try {
       await server.connect()
       return server
     } catch (err) {
-      const msg = err?.message || ''
-      const canRetry = (msg === 'invalid_code' || msg === 'unauthorized') && process.stdin.isTTY
-      if (!canRetry) throw err
-      adminCode = await this._promptAdminCode()
-      this.adminCode = adminCode
-      const retryServer = new DirectAppServer({
-        worldUrl: this.worldUrl,
-        adminCode,
-        rootDir: this.rootDir,
-      })
-      await retryServer.connect()
-      return retryServer
+      throw err
     }
   }
 
@@ -787,7 +767,7 @@ Commands:
   reset [--force]            Delete local apps/assets/world.json
   status                     Show /admin snapshot summary
   help                       Show this help
-  --target <name>            Use .lobby/targets.json entry for WORLD_URL/WORLD_ID/ADMIN_CODE
+  --target <name>            Use .lobby/targets.json entry for WORLD_URL/WORLD_ID
 
 Options:
   --dry-run, -n              Show deploy plan without applying changes
@@ -797,12 +777,12 @@ Options:
 Environment:
   WORLD_URL                  World server base URL (e.g. http://localhost:3000)
   WORLD_ID                   World ID (must match remote worldId)
-  ADMIN_CODE                 Admin code (if the world requires it)
 
 Notes:
+  - Run "gamedev auth" to authorize this project against the target world.
   - Blueprints live at apps/<appName>/*.json with a shared index.js/js script.
   - Start the direct app-server for continuous sync:
-      WORLD_URL=... WORLD_ID=... ADMIN_CODE=... node <path-to-repo>/app-server/server.js
+      WORLD_URL=... WORLD_ID=... node <path-to-repo>/app-server/server.js
 `)
   }
 }

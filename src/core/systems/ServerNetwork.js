@@ -602,25 +602,22 @@ export class ServerNetwork extends System {
     if (cmd === 'admin') {
       const code = arg1
       if (process.env.ADMIN_CODE && process.env.ADMIN_CODE === code) {
-        const id = player.data.id
-        const userId = player.data.userId
-        const granted = !player.isAdmin()
-        let rank
-        if (granted) {
-          rank = Ranks.ADMIN
-        } else {
-          rank = Ranks.VISITOR
+        const alreadyAdmin = player.isAdmin()
+        if (!player.isAdmin()) {
+          const id = player.data.id
+          const userId = player.data.userId
+          const rank = Ranks.ADMIN
+          player.modify({ rank })
+          this.send('entityModified', { id, rank })
+          await this.db('users').where('id', userId).update({ rank })
         }
-        player.modify({ rank })
-        this.send('entityModified', { id, rank })
         socket.send('chatAdded', {
           id: uuid(),
           from: null,
           fromId: null,
-          body: granted ? 'Admin granted!' : 'Admin revoked!',
+          body: alreadyAdmin ? 'Admin already granted.' : 'Admin granted!',
           createdAt: moment().toISOString(),
         })
-        await this.db('users').where('id', userId).update({ rank })
       }
     }
     if (cmd === 'name') {

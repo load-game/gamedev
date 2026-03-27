@@ -12,7 +12,8 @@ App-server is the dev server that syncs local files to a world via `/admin`. It 
     - direct runtime: `http://localhost:3000`
     - platform slug proxy: `https://<host>/worlds/<slug>`
   - `WORLD_ID` (must match the target worldId)
-  - `ADMIN_CODE` (must match the world server, if set)
+- Run `gamedev auth` once in the project to cache a browser-authenticated world token in `.lobby/auth.json`.
+- `ADMIN_CODE` is no longer used by the CLI or app-server. If your world uses an admin code, it is only for in-world `/admin <code>` privilege escalation.
 
 ---
 
@@ -34,6 +35,7 @@ Notes
   - `gamedev world export --include-built-scripts` (legacy single-file scripts)
 - `gamedev dev` is the recommended entrypoint for continuous sync and will ask for confirmation on prod targets.
 - No browser Dev Tools / localhost relay is required.
+- If the cached token expires or the user loses access, rerun `gamedev auth`.
 
 ---
 
@@ -45,19 +47,18 @@ Define targets in `.lobby/targets.json` and pass `--target <name>` to the CLI or
 {
   "dev": {
     "worldUrl": "https://dev.lobby.ws/worlds/my-world",
-    "worldId": "dev-world",
-    "adminCode": "secret",
+    "worldId": "dev-world"
   },
   "prod": {
     "worldUrl": "https://world.example.com",
     "worldId": "prod-world",
-    "adminCode": "secret",
     "confirm": true
   }
 }
 ```
 
 ```bash
+gamedev auth --target dev
 node app-server/server.js --target dev
 gamedev dev --target dev
 gamedev apps deploy myApp --target prod
@@ -129,7 +130,7 @@ For prod targets, the CLI asks for confirmation unless you pass `--yes`.
 ### Troubleshooting
 
 - Bootstrap didn’t happen: ensure the target world is empty/default or run `gamedev world export` (add `--include-built-scripts` for legacy single-file apps).
-- Unauthorized: ensure `ADMIN_CODE` matches the world server `ADMIN_CODE`.
-- Script updates rejected: ensure `ADMIN_CODE` matches and the deploy lock is free.
+- Unauthorized: rerun `gamedev auth`, then confirm the signed-in account has builder or admin access in the world.
+- Script updates rejected: confirm the signed-in account has deploy access and the deploy lock is free.
 - WORLD_ID mismatch: set `WORLD_ID` to match the target world id.
 - Changes not appearing: confirm `apps/<appName>/index.js` (or blueprint JSON) is being edited and app-server is connected.

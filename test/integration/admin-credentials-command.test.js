@@ -26,7 +26,7 @@ test('runtime credential command denies callers without deploy capability', () =
   })
 })
 
-test('runtime credential command returns admin code for deploy-capable callers', () => {
+test('runtime credential command no longer reveals admin code to deploy-capable callers', () => {
   const result = handleRuntimeCredentialCommand({
     canDeploy: true,
     worldId: 'world-123',
@@ -34,12 +34,12 @@ test('runtime credential command returns admin code for deploy-capable callers',
   })
 
   assert.equal(result.ok, true)
-  assert.equal(result.revealed, true)
-  assert.equal(result.reason, 'revealed')
+  assert.equal(result.revealed, false)
+  assert.equal(result.reason, 'admin_code_hidden')
   assert.deepEqual(result.credentials, {
     worldId: 'world-123',
     hasAdminCode: true,
-    adminCode: 'secret-code',
+    adminCode: null,
   })
 })
 

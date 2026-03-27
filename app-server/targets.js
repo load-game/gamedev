@@ -63,7 +63,6 @@ export function applyTargetEnv(target) {
   if (typeof target.name === 'string') process.env.HYPERFY_TARGET = target.name
   if (typeof target.worldUrl === 'string') process.env.WORLD_URL = target.worldUrl
   if (typeof target.worldId === 'string') process.env.WORLD_ID = target.worldId
-  if (typeof target.adminCode === 'string') process.env.ADMIN_CODE = target.adminCode
   if (target.confirm === true || target.requireConfirm === true || target.requiresConfirm === true) {
     process.env.HYPERFY_TARGET_CONFIRM = 'true'
   }

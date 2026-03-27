@@ -43,8 +43,9 @@ test('WorldAdminClient derives admin endpoints from slug world URLs', () => {
 test('WorldAdminClient snapshot request uses slug-prefixed admin route', async () => {
   const originalFetch = globalThis.fetch
   const captured = []
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init = {}) => {
     captured.push(typeof input === 'string' ? input : input.toString())
+    captured.push(init?.headers || null)
     return new Response(
       JSON.stringify({
         worldId: 'demo-world',
@@ -73,4 +74,44 @@ test('WorldAdminClient snapshot request uses slug-prefixed admin route', async (
   }
 
   assert.equal(captured[0], 'https://dev.lobby.ws/worlds/demo/admin/snapshot')
+  assert.equal(captured[1]?.['X-Admin-Code'], 'secret')
+})
+
+test('WorldAdminClient snapshot request includes bearer auth when provided', async () => {
+  const originalFetch = globalThis.fetch
+  const calls = []
+  globalThis.fetch = async (input, init = {}) => {
+    calls.push({
+      url: typeof input === 'string' ? input : input.toString(),
+      headers: init?.headers || null,
+    })
+    return new Response(
+      JSON.stringify({
+        worldId: 'demo-world',
+        assetsUrl: 'https://assets.lobby.ws/demo',
+        settings: {},
+        spawn: {},
+        blueprints: [],
+        entities: [],
+        players: [],
+      }),
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }
+    )
+  }
+
+  try {
+    const client = new WorldAdminClient({
+      worldUrl: 'https://dev.lobby.ws/worlds/demo',
+      authToken: 'runtime-token',
+    })
+    await client.getSnapshot()
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+
+  assert.equal(calls[0]?.url, 'https://dev.lobby.ws/worlds/demo/admin/snapshot')
+  assert.equal(calls[0]?.headers?.authorization, 'Bearer runtime-token')
 })

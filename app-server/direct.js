@@ -90,12 +90,15 @@ import {
 import { isValidScriptPath } from '../src/core/blueprintValidation.js'
 import { isEqual } from 'lodash-es'
 import { uuid } from './utils.js'
+import { ensureProjectAuth } from './cliAuth.js'
 
 export class DirectAppServer {
-  constructor({ worldUrl, adminCode, rootDir = process.cwd() }) {
+  constructor({ worldUrl, adminCode, authToken, worldId = null, rootDir = process.cwd() }) {
     this.rootDir = rootDir
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
     this.adminCode = adminCode || null
+    this.authToken = authToken || null
+    this.worldId = worldId || process.env.WORLD_ID || null
     this.lobbyDir = path.join(this.rootDir, '.lobby')
     this.appsDir = path.join(this.rootDir, 'apps')
     this.assetsDir = path.join(this.rootDir, 'assets')
@@ -110,6 +113,7 @@ export class DirectAppServer {
     this.client = new WorldAdminClient({
       worldUrl: this.worldUrl,
       adminCode: this.adminCode,
+      authToken: this.authToken,
     })
     this.deployTimers = new Map()
     this.deployQueues = new Map()
@@ -4625,12 +4629,24 @@ export class DirectAppServer {
 
 export async function main() {
   const worldUrl = process.env.WORLD_URL
-  const adminCode = process.env.ADMIN_CODE
+  const worldId = process.env.WORLD_ID || null
   if (!worldUrl) {
     console.error('Missing env WORLD_URL (e.g. http://localhost:3000)')
     process.exit(1)
   }
-  const server = new DirectAppServer({ worldUrl, adminCode })
+  const auth = await ensureProjectAuth({
+    rootDir: process.cwd(),
+    worldUrl,
+    worldId,
+    requiredCapability: 'builder',
+    interactive: process.stdin.isTTY,
+    log: console,
+  })
+  const server = new DirectAppServer({
+    worldUrl,
+    authToken: auth.entry.authToken,
+    worldId,
+  })
   await server.start()
   const shutdown = async () => {
     await server.stop()

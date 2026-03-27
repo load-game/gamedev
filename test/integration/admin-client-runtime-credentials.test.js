@@ -19,7 +19,7 @@ test('runtime credentials API uses runtime_credentials_get command', async () =>
       credentials: {
         worldId: 'world-123',
         hasAdminCode: true,
-        adminCode: 'secret-code',
+        adminCode: null,
       },
     }
   }
@@ -30,7 +30,7 @@ test('runtime credentials API uses runtime_credentials_get command', async () =>
   assert.deepEqual(credentials, {
     worldId: 'world-123',
     hasAdminCode: true,
-    adminCode: 'secret-code',
+    adminCode: null,
   })
 })
 
@@ -43,7 +43,7 @@ test('runtime credentials API caches response in memory', async () => {
       credentials: {
         worldId: 'world-123',
         hasAdminCode: true,
-        adminCode: 'secret-code',
+        adminCode: null,
       },
     }
   }
@@ -64,7 +64,7 @@ test('runtime credentials API force refresh bypasses cache', async () => {
       credentials: {
         worldId: `world-${calls}`,
         hasAdminCode: true,
-        adminCode: `code-${calls}`,
+        adminCode: null,
       },
     }
   }
@@ -76,12 +76,12 @@ test('runtime credentials API force refresh bypasses cache', async () => {
   assert.deepEqual(first, {
     worldId: 'world-1',
     hasAdminCode: true,
-    adminCode: 'code-1',
+    adminCode: null,
   })
   assert.deepEqual(second, {
     worldId: 'world-2',
     hasAdminCode: true,
-    adminCode: 'code-2',
+    adminCode: null,
   })
 })
 
@@ -90,7 +90,7 @@ test('runtime credential cache clears on disconnect and auth error', () => {
   client.runtimeCredentials = {
     worldId: 'world-123',
     hasAdminCode: true,
-    adminCode: 'secret',
+    adminCode: null,
   }
 
   client.disconnect()
@@ -99,7 +99,7 @@ test('runtime credential cache clears on disconnect and auth error', () => {
   client.runtimeCredentials = {
     worldId: 'world-123',
     hasAdminCode: true,
-    adminCode: 'secret',
+    adminCode: null,
   }
   client.onMessage({
     data: writePacket('adminAuthError', { error: 'invalid_code' }),

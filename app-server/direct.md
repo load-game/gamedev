@@ -6,7 +6,7 @@ Bidirectional sync between a local project directory and a remote Hyperfy world.
 
 | Method | Description |
 |--------|-------------|
-| `constructor({ worldUrl, adminCode, rootDir })` | Initialize with world URL, admin code, and local root dir |
+| `constructor({ worldUrl, authToken, worldId, rootDir })` | Initialize with world URL, cached auth token, world id, and local root dir |
 | `connect({ refreshSyncState, syncCursorFromChangefeed })` | Connect to world admin API and load snapshot |
 | `start()` | Connect, deploy all apps, start file watchers |
 | `stop()` | Disconnect, stop watchers and timers |

@@ -15,7 +15,7 @@ export function buildRuntimeCredentialResponse({
   return {
     worldId: normalizedWorldId,
     hasAdminCode,
-    adminCode: hasAdminCode ? adminCode : null,
+    adminCode: null,
   }
 }
 
@@ -38,11 +38,12 @@ export function handleRuntimeCredentialCommand({
     worldId,
     adminCode,
   })
-  const revealed = typeof credentials.adminCode === 'string'
+  const hasAdminCode = credentials.hasAdminCode
+  const revealed = false
 
   return {
     ok: true,
-    reason: revealed ? 'revealed' : 'admin_code_unset',
+    reason: hasAdminCode ? 'admin_code_hidden' : 'admin_code_unset',
     revealed,
     credentials,
   }

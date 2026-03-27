@@ -41,14 +41,13 @@ function resolveWorldUrl() {
   }
 }
 
-function buildCredentialsEnvBlock({ worldId, adminCode, worldUrl }) {
+function buildCredentialsEnvBlock({ worldId, worldUrl }) {
   return `WORLD_ID=${normalizeCredentialValue(worldId)}
-ADMIN_CODE=${normalizeCredentialValue(adminCode)}
 WORLD_URL=${normalizeCredentialValue(worldUrl)}`
 }
 
-function buildCredentialsMarkdown({ worldId, adminCode, worldUrl }) {
-  const envBlock = buildCredentialsEnvBlock({ worldId, adminCode, worldUrl })
+function buildCredentialsMarkdown({ worldId, worldUrl }) {
+  const envBlock = buildCredentialsEnvBlock({ worldId, worldUrl })
   return `# Runtime Credentials Setup
 
 1. In your current directory, clone \`github.com/lobby-ws/sdk\`:
@@ -63,18 +62,21 @@ function buildCredentialsMarkdown({ worldId, adminCode, worldUrl }) {
    \`\`\`bash
    cat .env
    \`\`\`
-3. Before any coding agent does work in this SDK repo, require this pre-read from the repository root:
+3. From the repository root, authorize the SDK against this world:
+   \`\`\`bash
+   gamedev auth
+   \`\`\`
+4. Before any coding agent does work in this SDK repo, require this pre-read from the repository root:
    - Codex: read \`AGENTS.md\`
    - Claude Code: read \`CLAUDE.md\`
    - OpenClaw: read \`skills/lobby-ws/SKILL.md\`
    - Do not start work until the required file is read.
-4. Read \`README.md\` in the repository before running commands so you follow the expected setup and scripts.`
+5. Read \`README.md\` in the repository before running commands so you follow the expected setup and scripts.`
 }
 
 function formatCredentialError(code) {
   if (code === 'admin_required') return 'Deploy access is required to view runtime credentials.'
   if (code === 'admin_url_missing') return 'Admin endpoint is unavailable for this world.'
-  if (code === 'admin_code_missing') return 'Enter an admin code before requesting runtime credentials.'
   if (code === 'clipboard_unavailable') return 'Clipboard access is unavailable in this browser context.'
   if (code === 'timeout') return 'Timed out requesting runtime credentials.'
   return 'Failed to load runtime credentials.'
@@ -202,7 +204,6 @@ export function World({ world, hidden }) {
     if (!credentials) return
     const payload = buildCredentialsMarkdown({
       worldId: credentials.worldId,
-      adminCode: credentials.adminCode,
       worldUrl: resolveWorldUrl(),
     })
     try {
@@ -408,7 +409,7 @@ export function World({ world, hidden }) {
               )}
               <FieldToggle
                 label='Copy Setup Prompt'
-                hint='Copy a Markdown setup guide for the SDK repo and runtime env vars.'
+                hint='Copy a Markdown setup guide for the SDK repo and browser-based world auth.'
                 trueLabel='Copied'
                 falseLabel={credentialsLoading ? 'Loading...' : 'Copy'}
                 value={copiedCredentials}

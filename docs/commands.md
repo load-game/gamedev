@@ -4,9 +4,9 @@ There are a few commands that can be used by entering them in the chat.
 
 ### `/admin <code>`
 
-If your world has an admin code set, the only way to become an admin is to use this command with your code (see your .env file).
+If your world has an admin code set, this command grants admin rank to the current signed-in world account.
 
-If your .env doesn't have an ADMIN_CODE set, then all players are treated as an admin.
+If your runtime does not have `ADMIN_CODE` set, admin privileges are open to all players.
 
 ### `/spawn set`
 

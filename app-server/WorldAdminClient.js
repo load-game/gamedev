@@ -5,10 +5,11 @@ import { readPacket, writePacket } from '../src/core/packets.js'
 import { normalizeWorldAdminBaseUrl, toWsUrl, joinUrl, normalizePacketData } from './helpers.js'
 
 export class WorldAdminClient extends EventEmitter {
-  constructor({ worldUrl, adminCode }) {
+  constructor({ worldUrl, adminCode, authToken }) {
     super()
     this.worldUrl = normalizeWorldAdminBaseUrl(worldUrl)
     this.adminCode = adminCode || null
+    this.authToken = authToken || null
     this.ws = null
     this.pending = new Map()
   }
@@ -28,6 +29,7 @@ export class WorldAdminClient extends EventEmitter {
   adminHeaders(extra = {}) {
     const headers = { ...extra }
     if (this.adminCode) headers['X-Admin-Code'] = this.adminCode
+    if (this.authToken) headers.authorization = `Bearer ${this.authToken}`
     return headers
   }
 
@@ -45,6 +47,7 @@ export class WorldAdminClient extends EventEmitter {
         ws.send(
           writePacket('adminAuth', {
             code: this.adminCode,
+            authToken: this.authToken,
             subscriptions: { snapshot: false, players: false, runtime: false },
           })
         )

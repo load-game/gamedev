@@ -423,9 +423,10 @@ export async function startPullRuntimeServer({ env = {} } = {}) {
 }
 
 export class AdminWsClient {
-  constructor({ worldUrl, adminCode, subscriptions } = {}) {
+  constructor({ worldUrl, adminCode, authToken, subscriptions } = {}) {
     this.worldUrl = normalizeBaseUrl(worldUrl)
     this.adminCode = adminCode || null
+    this.authToken = authToken || null
     this.subscriptions = subscriptions || { snapshot: true, players: false, runtime: false }
     this.ws = null
     this.pending = new Map()
@@ -450,6 +451,7 @@ export class AdminWsClient {
         ws.send(
           writePacket('adminAuth', {
             code: this.adminCode,
+            authToken: this.authToken,
             subscriptions: this.subscriptions,
           })
         )
@@ -592,9 +594,10 @@ export async function stopAppServer(server) {
   } catch {}
 }
 
-export async function fetchJson(url, { adminCode, method = 'GET', body } = {}) {
+export async function fetchJson(url, { adminCode, authToken, method = 'GET', body } = {}) {
   const headers = {}
   if (adminCode) headers['X-Admin-Code'] = adminCode
+  if (authToken) headers.authorization = `Bearer ${authToken}`
   if (body) headers['Content-Type'] = 'application/json'
   const res = await fetch(url, {
     method,
