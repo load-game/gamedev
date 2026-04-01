@@ -1572,7 +1572,7 @@ if (wssServer) {
   }
 }
 
-if (hasInitialWorldBinding) {
+if (runtimeState.lifecycle.state === 'bootstrapping') {
   void initializeRuntime({
     source: runtimeState.lifecycle.source || 'startup',
     binding: runtimeState.lifecycle.binding,
