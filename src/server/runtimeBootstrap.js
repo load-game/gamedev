@@ -1,8 +1,7 @@
 import crypto from 'crypto'
 import path from 'path'
 
-const MANAGED_RUNTIME_BOOTSTRAP_MODES = new Set(['pull', 'push'])
-const PUSH_RUNTIME_BINDING_ENV_KEYS = [
+const BOOTSTRAP_RUNTIME_BINDING_ENV_KEYS = [
   'CONTROL_INTERNAL_BASE_URL',
   'DB_SCHEMA',
   'PUBLIC_ADMIN_URL',
@@ -25,25 +24,16 @@ export function hasValue(value) {
   return normalizeString(value).length > 0
 }
 
-export function resolveRuntimeBootstrapMode(env = process.env) {
-  const explicitMode = normalizeString(env.RUNTIME_BOOTSTRAP_MODE).toLowerCase()
-  if (explicitMode) {
-    if (MANAGED_RUNTIME_BOOTSTRAP_MODES.has(explicitMode)) {
-      return explicitMode
-    }
-    throw new Error("[envs] RUNTIME_BOOTSTRAP_MODE must be 'pull' or 'push'")
-  }
-
-  if (!hasValue(env.WORLD_ID)) {
-    return 'push'
-  }
-
-  return null
+function isTruthyEnvFlag(value) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value > 0
+  if (typeof value !== 'string') return false
+  const normalized = value.trim().toLowerCase()
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on'
 }
 
 export function usesHostedRuntimeBootstrap(env = process.env) {
-  if (hasValue(env.RUNTIME_BOOTSTRAP_URL)) return true
-  if (hasValue(env.RUNTIME_BOOTSTRAP_MODE)) return true
+  if (isTruthyEnvFlag(env.RUNTIME_BOOTSTRAP)) return true
   return !hasValue(env.WORLD_ID) && (hasValue(env.RUNTIME_BOOTSTRAP_INSTANCE_ID) || hasValue(env.POD_NAME))
 }
 
@@ -55,15 +45,10 @@ export function allowsOpenAdminAccess(env = process.env) {
   return !usesHostedRuntimeBootstrap(env) && !hasValue(env.ADMIN_CODE)
 }
 
-export function clearPushRuntimeBindingEnv(env = process.env) {
-  for (const key of PUSH_RUNTIME_BINDING_ENV_KEYS) {
+export function clearBootstrapRuntimeBindingEnv(env = process.env) {
+  for (const key of BOOTSTRAP_RUNTIME_BINDING_ENV_KEYS) {
     delete env[key]
   }
-}
-
-export function resolveHostedRuntimeBootstrapUrl(env = process.env) {
-  const url = normalizePublicUrl(env.RUNTIME_BOOTSTRAP_URL)
-  return url || null
 }
 
 export function derivePublicWsUrlFromApiUrl(apiUrl) {

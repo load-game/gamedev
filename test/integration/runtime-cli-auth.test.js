@@ -373,7 +373,7 @@ test('bootstrapped worlds disable admin-code auth for admin endpoints and in-wor
   const server = await startStandbyRuntimeServer({
     env: {
       ADMIN_CODE: 'secret-code',
-      RUNTIME_BOOTSTRAP_MODE: 'push',
+      RUNTIME_BOOTSTRAP: '1',
     },
   })
   t.after(async () => {

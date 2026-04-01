@@ -19,7 +19,7 @@ test('AssetsS3 init skips built-in uploads when runtime bootstrap mode is enable
   const assetManager = Object.create(AssetsS3.prototype)
   const sent = []
   let uploadCalled = false
-  const previousBootstrapMode = process.env.RUNTIME_BOOTSTRAP_MODE
+  const previousBootstrapMode = process.env.RUNTIME_BOOTSTRAP
 
   assetManager.bucketName = 'shared-assets'
   assetManager.client = {
@@ -32,14 +32,14 @@ test('AssetsS3 init skips built-in uploads when runtime bootstrap mode is enable
     uploadCalled = true
   }
 
-  process.env.RUNTIME_BOOTSTRAP_MODE = 'push'
+  process.env.RUNTIME_BOOTSTRAP = '1'
   try {
     await assetManager.init({ rootDir, worldDir: '/tmp/world' })
   } finally {
     if (previousBootstrapMode === undefined) {
-      delete process.env.RUNTIME_BOOTSTRAP_MODE
+      delete process.env.RUNTIME_BOOTSTRAP
     } else {
-      process.env.RUNTIME_BOOTSTRAP_MODE = previousBootstrapMode
+      process.env.RUNTIME_BOOTSTRAP = previousBootstrapMode
     }
   }
 

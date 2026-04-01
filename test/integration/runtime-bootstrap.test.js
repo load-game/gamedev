@@ -4,22 +4,21 @@ import {
   applyHostedRuntimeBootstrapPayload,
   buildRuntimeBootstrapAuthorization,
   buildRuntimeBootstrapId,
-  clearPushRuntimeBindingEnv,
+  clearBootstrapRuntimeBindingEnv,
   derivePublicWsUrlFromApiUrl,
   deriveRuntimeBootstrapAuthToken,
   derivePublicAdminUrl,
   parseRuntimeBootstrapPayload,
   resolveControlInternalBaseUrl,
   resolveControlInternalUrl,
-  resolveRuntimeBootstrapMode,
   resolveRuntimeWorldDir,
-  resolveHostedRuntimeBootstrapUrl,
+  usesHostedRuntimeBootstrap,
   verifyRuntimeBootstrapAuthorization,
 } from '../../src/server/runtimeBootstrap.js'
 
 test('applyHostedRuntimeBootstrapPayload backfills hosted runtime world binding', () => {
   const env = {
-    RUNTIME_BOOTSTRAP_URL: 'https://dev.lobby.ws/internal/runtime/bootstrap',
+    RUNTIME_BOOTSTRAP: '1',
     JWT_SECRET: 'secret',
     WORLD_ID: 'world-1',
   }
@@ -75,34 +74,20 @@ test('applyHostedRuntimeBootstrapPayload backfills hosted runtime world binding'
   assert.equal(env.CONTROL_INTERNAL_BASE_URL, 'https://world-service.lobby.svc.cluster.local/api')
 })
 
-test('resolveHostedRuntimeBootstrapUrl trims an explicit pull endpoint', () => {
+test('usesHostedRuntimeBootstrap recognizes explicit bootstrap runtimes and startup inference', () => {
+  assert.equal(usesHostedRuntimeBootstrap({ RUNTIME_BOOTSTRAP: '1', WORLD_ID: 'world-1' }), true)
+  assert.equal(usesHostedRuntimeBootstrap({ RUNTIME_BOOTSTRAP_INSTANCE_ID: 'runtime-1' }), true)
+  assert.equal(usesHostedRuntimeBootstrap({ WORLD_ID: 'local-world' }), false)
   assert.equal(
-    resolveHostedRuntimeBootstrapUrl({
-      RUNTIME_BOOTSTRAP_URL: 'https://dev.lobby.ws/internal/runtime/bootstrap/',
+    usesHostedRuntimeBootstrap({
+      WORLD_ID: 'local-world',
+      RUNTIME_BOOTSTRAP_INSTANCE_ID: 'runtime-1',
     }),
-    'https://dev.lobby.ws/internal/runtime/bootstrap'
+    false
   )
 })
 
-test('resolveRuntimeBootstrapMode honors the rollout switch and standby defaults', () => {
-  assert.equal(resolveRuntimeBootstrapMode({ RUNTIME_BOOTSTRAP_MODE: 'pull' }), 'pull')
-  assert.equal(resolveRuntimeBootstrapMode({ RUNTIME_BOOTSTRAP_MODE: 'push', WORLD_ID: 'world-1' }), 'push')
-  assert.equal(resolveRuntimeBootstrapMode({}), 'push')
-  assert.equal(resolveRuntimeBootstrapMode({ WORLD_ID: 'local-world' }), null)
-  assert.equal(
-    resolveRuntimeBootstrapMode({
-      WORLD_ID: 'world-1',
-      RUNTIME_BOOTSTRAP_URL: 'https://dev.lobby.ws/internal/runtime/bootstrap',
-    }),
-    null
-  )
-  assert.throws(
-    () => resolveRuntimeBootstrapMode({ RUNTIME_BOOTSTRAP_MODE: 'legacy' }),
-    /\[envs\] RUNTIME_BOOTSTRAP_MODE must be 'pull' or 'push'/
-  )
-})
-
-test('clearPushRuntimeBindingEnv removes world-bound config before standby bootstrap', () => {
+test('clearBootstrapRuntimeBindingEnv removes world-bound config before standby bootstrap', () => {
   const env = {
     WORLD_ID: 'world-1',
     WORLD: '.runtime-worlds/world-1',
@@ -119,7 +104,7 @@ test('clearPushRuntimeBindingEnv removes world-bound config before standby boots
     JWT_SECRET: 'secret',
   }
 
-  clearPushRuntimeBindingEnv(env)
+  clearBootstrapRuntimeBindingEnv(env)
 
   assert.deepEqual(env, {
     JWT_SECRET: 'secret',

@@ -575,7 +575,7 @@ test('runtime emits structured standby, bootstrap success, and rebind rejection 
   })
 
   const standbyEvent = await waitForRuntimeEvent(server, 'standby', entry => entry.state === 'standby')
-  assert.equal(standbyEvent.mode, 'push')
+  assert.equal(standbyEvent.mode, 'bootstrap')
   assert.equal(standbyEvent.runtimeInstanceId, server.runtimeInstanceId)
 
   const worldId = `world-${server.runtimeInstanceId}`
@@ -601,14 +601,14 @@ test('runtime emits structured standby, bootstrap success, and rebind rejection 
     'bootstrap_start',
     entry => entry.bootstrapId === binding.bootstrapId && entry.worldId === worldId && entry.state === 'bootstrapping'
   )
-  assert.equal(bootstrapStartEvent.source, 'push')
+  assert.equal(bootstrapStartEvent.source, 'bootstrap')
 
   const bootstrapSuccessEvent = await waitForRuntimeEvent(
     server,
     'bootstrap_success',
     entry => entry.bootstrapId === binding.bootstrapId && entry.worldId === worldId && entry.state === 'ready'
   )
-  assert.equal(bootstrapSuccessEvent.source, 'push')
+  assert.equal(bootstrapSuccessEvent.source, 'bootstrap')
 
   const rebindBootstrapId = `other-world:${server.runtimeInstanceId}`
   const rebindRes = await fetch(`${server.worldUrl}/internal/bootstrap`, {
@@ -686,7 +686,7 @@ test('runtime emits step-level bootstrap debug logs when enabled', async t => {
   const initStartEvent = await waitForRuntimeEvent(
     server,
     'bootstrap_runtime_initialize_start',
-    entry => entry.debug === true && entry.source === 'push'
+    entry => entry.debug === true && entry.source === 'bootstrap'
   )
   assert.equal(initStartEvent.stage, 'resolve_env')
 

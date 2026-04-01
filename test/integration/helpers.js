@@ -332,6 +332,8 @@ export async function startStandbyRuntimeServer({ env = {} } = {}) {
     'PUBLIC_MAX_UPLOAD_SIZE',
     'PUBLIC_PRIVY_APP_ID',
     'PUBLIC_WORLD_MAX_PLAYERS',
+    'RUNTIME_BOOTSTRAP',
+    'RUNTIME_BOOTSTRAP_MODE',
     'PUBLIC_WS_URL',
     'RUNTIME_BOOTSTRAP_URL',
     'SHUTDOWN_IDLE',
@@ -345,6 +347,7 @@ export async function startStandbyRuntimeServer({ env = {} } = {}) {
     PORT: String(port),
     HOST: '127.0.0.1',
     JWT_SECRET: env.JWT_SECRET || crypto.randomBytes(24).toString('base64url'),
+    RUNTIME_BOOTSTRAP: '1',
     RUNTIME_BOOTSTRAP_INSTANCE_ID: runtimeInstanceId,
     ASSETS: 'local',
     ASSETS_BASE_URL: `${worldUrl}/assets`,
@@ -364,62 +367,7 @@ export async function startStandbyRuntimeServer({ env = {} } = {}) {
     jwtSecret: finalEnv.JWT_SECRET,
     stop: processHandle.stop,
     getStdout: processHandle.getStdout,
-    getStderr: processHandle.getStderr,
-  }
-}
-
-export async function startPullRuntimeServer({ env = {} } = {}) {
-  await ensureBuildReady()
-  const port = env.PORT || (await getAvailablePort())
-  const worldUrl = `http://127.0.0.1:${port}`
-  const runtimeInstanceId = env.RUNTIME_BOOTSTRAP_INSTANCE_ID || `runtime-${crypto.randomUUID()}`
-  const worldId = env.WORLD_ID || `world-${runtimeInstanceId}`
-  const finalEnv = { ...process.env }
-  for (const key of [
-    'CONTROL_INTERNAL_BASE_URL',
-    'DB_SCHEMA',
-    'PUBLIC_ADMIN_URL',
-    'PUBLIC_API_URL',
-    'PUBLIC_AUTH_URL',
-    'PUBLIC_MAX_UPLOAD_SIZE',
-    'PUBLIC_PRIVY_APP_ID',
-    'PUBLIC_WORLD_MAX_PLAYERS',
-    'PUBLIC_WS_URL',
-    'SHUTDOWN_IDLE',
-    'WORLD',
-  ]) {
-    delete finalEnv[key]
-  }
-  Object.assign(finalEnv, {
-    NODE_ENV: 'test',
-    PORT: String(port),
-    HOST: '127.0.0.1',
-    JWT_SECRET: env.JWT_SECRET || crypto.randomBytes(24).toString('base64url'),
-    RUNTIME_BOOTSTRAP_MODE: 'pull',
-    RUNTIME_BOOTSTRAP_INSTANCE_ID: runtimeInstanceId,
-    WORLD_ID: worldId,
-    ASSETS: 'local',
-    ASSETS_BASE_URL: `${worldUrl}/assets`,
-    DB_URI: 'local',
-    CLEAN: 'false',
-  }, env)
-
-  if (!finalEnv.RUNTIME_BOOTSTRAP_URL) {
-    throw new Error('RUNTIME_BOOTSTRAP_URL is required for pull-mode runtime tests')
-  }
-
-  const processHandle = await launchRuntimeProcess({
-    env: finalEnv,
-    readyUrl: `${worldUrl}/health`,
-    failureLabel: 'pull-mode runtime',
-  })
-
-  return {
-    worldUrl,
-    worldId,
-    runtimeInstanceId,
-    jwtSecret: finalEnv.JWT_SECRET,
-    stop: processHandle.stop,
+      getStderr: processHandle.getStderr,
   }
 }
 

@@ -27,28 +27,11 @@ test('self-hosted runtimes can use lobby identity without control-plane rank syn
   )
 })
 
-test('hosted push-bootstrap runtimes use control-plane rank sync', () => {
+test('bootstrapped runtimes use control-plane rank sync', () => {
   assert.deepEqual(
     resolveAuthRuntimeConfig({
       PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
-      RUNTIME_BOOTSTRAP_MODE: 'push',
-    }),
-    {
-      usesLobbyIdentity: true,
-      usesLocalIdentity: false,
-      usesControlPlaneRank: true,
-      usesRuntimeLocalRank: false,
-    }
-  )
-})
-
-test('hosted pull-bootstrap runtimes use control-plane rank sync', () => {
-  assert.deepEqual(
-    resolveAuthRuntimeConfig({
-      PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
-      WORLD_ID: 'hosted-world',
-      RUNTIME_BOOTSTRAP_MODE: 'pull',
-      RUNTIME_BOOTSTRAP_URL: 'https://dev.lobby.ws/internal/runtime/bootstrap',
+      RUNTIME_BOOTSTRAP: '1',
     }),
     {
       usesLobbyIdentity: true,

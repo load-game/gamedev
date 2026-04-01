@@ -31,7 +31,7 @@ import { completeRuntimeStartup } from './runtimeStartup.js'
 import {
   applyHostedRuntimeBootstrapPayload,
   buildRuntimeBootstrapId,
-  clearPushRuntimeBindingEnv,
+  clearBootstrapRuntimeBindingEnv,
   derivePublicAdminUrl,
   derivePublicWsUrlFromApiUrl,
   hasSupportedAdminCode,
@@ -39,8 +39,6 @@ import {
   parseRuntimeBootstrapPayload,
   resolveControlInternalBaseUrl,
   resolveControlInternalUrl,
-  resolveHostedRuntimeBootstrapUrl,
-  resolveRuntimeBootstrapMode,
   resolveRuntimeBootstrapInstanceId,
   resolveRuntimeWorldDir,
   serializeRuntimeBootstrapBinding,
@@ -111,7 +109,7 @@ function logRuntimeEvent(level, event, state, extra = {}) {
   const payload = {
     component: 'runtime',
     event,
-    mode: runtimeBootstrapMode || 'direct',
+    mode: usesHostedRuntimeBootstrap(process.env) ? 'bootstrap' : 'direct',
     state: state?.lifecycle?.state || null,
     bootstrapId:
       extra.bootstrapId !== undefined
@@ -229,73 +227,6 @@ function resolveLobbyInternalUserUrl(userId) {
   return resolveControlInternalUrl(`/internal/users/${encodeURIComponent(userId.trim())}`, process.env)
 }
 
-async function syncRuntimePublicConfigFromLobby() {
-  const endpoint = resolveHostedRuntimeBootstrapUrl(process.env)
-  const authorization = resolveRuntimeControlAuthorization(process.env.WORLD_ID)
-  if (!endpoint || !authorization) return null
-
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 4000)
-  const startedAt = Date.now()
-
-  logRuntimeBootstrapDebug(null, 'bootstrap_metadata_fetch_start', {
-    url: endpoint,
-    runtimeInstanceId: resolveRuntimeBootstrapInstanceId(process.env),
-  })
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        authorization,
-      },
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      logRuntimeBootstrapDebug(null, 'bootstrap_metadata_fetch_failed', {
-        durationMs: Date.now() - startedAt,
-        responseStatus: response.status,
-        runtimeInstanceId: resolveRuntimeBootstrapInstanceId(process.env),
-      })
-      console.warn(`[startup] runtime bootstrap metadata request failed (${response.status})`)
-      return null
-    }
-
-    const payload = await response.json().catch(() => null)
-    const binding = parseRuntimeBootstrapPayload(payload, {
-      runtimeInstanceId: resolveRuntimeBootstrapInstanceId(process.env),
-    })
-    const appliedKeys = applyHostedRuntimeBootstrapPayload(process.env, binding)
-
-    if (appliedKeys.length) {
-      console.info(`[startup] runtime bootstrap metadata applied: ${appliedKeys.join(', ')}`)
-    }
-    logRuntimeBootstrapDebug(null, 'bootstrap_metadata_fetch_success', {
-      appliedKeys,
-      bootstrapId: binding?.bootstrapId || null,
-      durationMs: Date.now() - startedAt,
-      responseStatus: response.status,
-      runtimeInstanceId: resolveRuntimeBootstrapInstanceId(process.env),
-      worldId: binding?.world?.id || process.env.WORLD_ID || null,
-      worldSlug: binding?.world?.slug || null,
-    })
-    return binding
-  } catch (err) {
-    const message = err?.name === 'AbortError' ? 'timeout' : err?.message || String(err)
-    logRuntimeBootstrapDebug(null, 'bootstrap_metadata_fetch_failed', {
-      durationMs: Date.now() - startedAt,
-      error: err,
-      runtimeInstanceId: resolveRuntimeBootstrapInstanceId(process.env),
-    })
-    console.warn(`[startup] runtime bootstrap metadata request failed (${message})`)
-    return null
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
-
 function mapLobbyRoleToRank(role) {
   if (role === 'admin') return Ranks.ADMIN
   if (role === 'builder') return Ranks.BUILDER
@@ -406,7 +337,7 @@ function finalizeBoundRuntimeEnv(env = process.env) {
     throw new Error('[envs] WORLD_ID not set')
   }
 
-  if (isPostgresDbEnv(env) && resolveRuntimeBootstrapMode(env) && !hasValue(env.DB_SCHEMA)) {
+  if (isPostgresDbEnv(env) && usesHostedRuntimeBootstrap(env) && !hasValue(env.DB_SCHEMA)) {
     throw new Error('[envs] DB_SCHEMA must be resolved for hosted postgres runtimes')
   }
 
@@ -449,21 +380,6 @@ function validateStandbyRuntimeEnv(env = process.env) {
   const runtimeInstanceId = resolveRuntimeBootstrapInstanceId(env)
   if (!runtimeInstanceId) {
     throw new Error('[envs] RUNTIME_BOOTSTRAP_INSTANCE_ID not set')
-  }
-}
-
-function validatePullRuntimeEnv(env = process.env) {
-  if (!hasValue(env.WORLD_ID)) {
-    throw new Error('[envs] WORLD_ID not set')
-  }
-  if (!resolveHostedRuntimeBootstrapUrl(env)) {
-    throw new Error('[envs] RUNTIME_BOOTSTRAP_URL must be set when RUNTIME_BOOTSTRAP_MODE=pull')
-  }
-}
-
-function validateRuntimeBootstrapMode(env = process.env) {
-  if (!hasValue(env.RUNTIME_BOOTSTRAP_MODE) && hasValue(env.RUNTIME_BOOTSTRAP_URL) && hasValue(env.WORLD_ID)) {
-    throw new Error('[envs] RUNTIME_BOOTSTRAP_MODE=pull is required when RUNTIME_BOOTSTRAP_URL is set')
   }
 }
 
@@ -710,40 +626,18 @@ function buildRuntimeState({ initialBinding = null, initialSource = null } = {})
 }
 
 validateStaticRuntimeEnv(process.env)
-validateRuntimeBootstrapMode(process.env)
 
-const runtimeBootstrapMode = resolveRuntimeBootstrapMode(process.env)
+const bootstrapRuntimeEnabled = usesHostedRuntimeBootstrap(process.env)
 const runtimeBootstrapDebugEnabled = isTruthyEnvFlag(process.env.RUNTIME_BOOTSTRAP_DEBUG)
-if (runtimeBootstrapMode === 'push' && !hasValue(process.env.RUNTIME_BOOTSTRAP_MODE)) {
-  process.env.RUNTIME_BOOTSTRAP_MODE = 'push'
-}
-if (runtimeBootstrapMode === 'push') {
-  clearPushRuntimeBindingEnv(process.env)
-}
-
-const hasInitialWorldBinding = hasValue(process.env.WORLD_ID)
-const usesPullBootstrapMetadata = runtimeBootstrapMode === 'pull'
-let initialRuntimeBinding = null
-let initialRuntimeSource = hasInitialWorldBinding ? 'startup' : null
-
-if (!hasInitialWorldBinding) {
+if (bootstrapRuntimeEnabled) {
+  process.env.RUNTIME_BOOTSTRAP = '1'
+  clearBootstrapRuntimeBindingEnv(process.env)
   validateStandbyRuntimeEnv(process.env)
 } else {
-  if (usesPullBootstrapMetadata) {
-    validatePullRuntimeEnv(process.env)
-    initialRuntimeBinding = await syncRuntimePublicConfigFromLobby()
-    initialRuntimeSource = 'pull'
-  }
-  if (usesPullBootstrapMetadata && !resolveRuntimeBootstrapInstanceId(process.env)) {
-    console.warn('[startup] RUNTIME_BOOTSTRAP_INSTANCE_ID not set; push bootstrap auth cannot be verified yet')
-  }
   finalizeBoundRuntimeEnv(process.env)
 }
 
-const runtimeState = buildRuntimeState({
-  initialBinding: initialRuntimeBinding,
-  initialSource: initialRuntimeSource,
-})
+const runtimeState = buildRuntimeState()
 
 if (runtimeState.lifecycle.state === 'standby' && hasValue(process.env.AGONES_SDK_HTTP_PORT)) {
   const standbyAgones = createAgonesSdkHttp({ env: process.env })
@@ -986,7 +880,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
       agonesIdleController: agonesIntegration.agonesIdleController,
       agonesIdleControllerEnabled: agonesIntegration.agonesIdleControllerEnabled,
       idleTimeoutMs: agonesIntegration.idleTimeoutMs,
-      requestAgonesReady: source !== 'push',
+      requestAgonesReady: source !== 'bootstrap',
       registryState: runtimeState.registryState,
       worldId: world?.network?.worldId || process.env.WORLD_ID || null,
       commitHash: process.env.COMMIT_HASH || null,
@@ -1455,7 +1349,7 @@ async function handleBootstrapRequest(req, reply) {
         runtimeInstanceId: expectedRuntimeInstanceId || normalizedBinding.runtime.instanceId,
       }),
     binding: normalizedBinding,
-    source: 'push',
+    source: 'bootstrap',
     worldId: normalizedBinding.world.id,
     worldSlug: normalizedBinding.world.slug,
   })
@@ -1468,7 +1362,7 @@ async function handleBootstrapRequest(req, reply) {
   })
 
   try {
-    await initializeRuntime({ source: 'push', binding: normalizedBinding })
+    await initializeRuntime({ source: 'bootstrap', binding: normalizedBinding })
   } catch (err) {
     return reply.code(500).send({
       error: 'bootstrap_failed',

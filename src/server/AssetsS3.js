@@ -8,6 +8,7 @@ import {
 import fs from 'fs-extra'
 import path from 'path'
 import { hashFile } from '../core/utils-server'
+import { usesHostedRuntimeBootstrap } from './runtimeBootstrap.js'
 
 const contentTypes = {
   // Images
@@ -147,7 +148,7 @@ export class AssetsS3 {
 
     // Upload built-in assets from local directory to S3
     const builtInAssetsDir = path.join(rootDir, 'src/world/assets')
-    if (process.env.RUNTIME_BOOTSTRAP_MODE) {
+    if (usesHostedRuntimeBootstrap(process.env)) {
       return
     }
     if (await fs.exists(builtInAssetsDir)) {
