@@ -87,15 +87,14 @@ export function createVRMFactory(glb, setupMaterial) {
   // we'll update matrix ourselves
   glb.scene.matrixAutoUpdate = false
   glb.scene.matrixWorldAutoUpdate = false
-  // remove expressions from scene
-  const expressions = glb.scene.children.filter(n => n.type === 'VRMExpression') // prettier-ignore
-  for (const node of expressions) node.removeFromParent()
+  // get expression manager before removing expressions from scene
+  const expressionManager = glb.userData.vrmExpressionManager
   // remove VRMHumanoidRig
   const vrmHumanoidRigs = glb.scene.children.filter(n => n.name === 'VRMHumanoidRig') // prettier-ignore
   for (const node of vrmHumanoidRigs) node.removeFromParent()
-  // remove secondary
-  const secondaries = glb.scene.children.filter(n => n.name === 'secondary') // prettier-ignore
-  for (const node of secondaries) node.removeFromParent()
+  // keep `secondary` (VRM0 spring bone container). Previously removed; needed for spring bones to function.
+  // const secondaries = glb.scene.children.filter(n => n.name === 'secondary')
+  // for (const node of secondaries) node.removeFromParent()
   // enable shadows
   glb.scene.traverse(obj => {
     if (obj.isMesh) {
@@ -169,7 +168,7 @@ export function createVRMFactory(glb, setupMaterial) {
   }
 
   return {
-    create,
+    create: (matrix, hooks, node) => create(matrix, hooks, node, expressionManager),
     applyStats(stats) {
       glb.scene.traverse(obj => {
         if (obj.geometry && !stats.geometries.has(obj.geometry.uuid)) {
@@ -184,11 +183,42 @@ export function createVRMFactory(glb, setupMaterial) {
     },
   }
 
-  function create(matrix, hooks, node) {
+  function create(matrix, hooks, node, expressionManager) {
     const vrm = cloneGLB(glb)
     const tvrm = vrm.userData.vrm
+
+    // use expression manager from cloned vrm if available, otherwise use factory one
+    const exprManager = vrm.userData.vrmExpressionManager || expressionManager
     const skinnedMeshes = getSkinnedMeshes(vrm.scene)
-    const skeleton = skinnedMeshes[0].skeleton // should be same across all skinnedMeshes
+    const skeleton = skinnedMeshes[0].skeleton // primary skeleton
+
+    // Rewire spring bone joints to use cloned skeleton
+    try {
+      const springManager = tvrm?.springBoneManager
+      if (springManager?.joints && skeleton) {
+        springManager.joints.forEach(joint => {
+          if (joint.bone?.name) {
+            const clonedBone = skeleton.getBoneByName(joint.bone.name)
+            if (clonedBone) {
+              joint.bone = clonedBone
+            }
+          }
+          // Also rewire collider groups to use cloned bones
+          if (joint.colliderGroups) {
+            joint.colliderGroups.forEach(group => {
+              if (group.bone?.name) {
+                const clonedGroupBone = skeleton.getBoneByName(group.bone.name)
+                if (clonedGroupBone) {
+                  group.bone = clonedGroupBone
+                }
+              }
+            })
+          }
+        })
+      }
+    } catch (e) {
+      console.warn('[VRM] Spring bone rewiring failed:', e)
+    }
     const rootBone = skeleton.bones[0] // should always be 0
     rootBone.parent.remove(rootBone)
     rootBone.updateMatrixWorld(true)
@@ -242,6 +272,150 @@ export function createVRMFactory(glb, setupMaterial) {
       if (!bone) return null
       // combine the scene's world matrix with the bone's world matrix
       return mt.multiplyMatrices(vrm.scene.matrixWorld, bone.matrixWorld)
+    }
+
+    // expressions setup (blink + mouth/viseme)
+    // expressions from the cloned scene (fallback path if no manager)
+    // expressions live on the top-level scene of the GLB, not the skinned subtree
+    // when we cloned, `vrm.scene` is the cloned top-level scene, so look directly there
+    const expressionsByName = (() => {
+      const map = new Map()
+      // expressions are added as direct children in the VRM loader
+      for (const child of vrm.scene.children) {
+        if (child && child.type === 'VRMExpression') {
+          // cloning may drop the custom .expressionName; derive from .name if needed
+          let exprName = child.expressionName
+          if (!exprName && typeof child.name === 'string' && child.name.startsWith('VRMExpression_')) {
+            exprName = child.name.substring('VRMExpression_'.length)
+          }
+          if (exprName) map.set(exprName, child)
+        }
+      }
+      return map
+    })()
+    const expressionWeights = {
+      blink: 0,
+      blinkLeft: 0,
+      blinkRight: 0,
+      aa: 0,
+      ee: 0,
+      ih: 0,
+      oh: 0,
+      ou: 0,
+    }
+    const expressionsEnabled = !!exprManager || expressionsByName.size > 0
+    // map canonical names -> actual names present in this VRM
+    const resolveName = (...candidates) => {
+      // prefer manager lookup
+      for (const c of candidates) {
+        const v = exprManager?.getValue?.(c)
+        if (v !== null && v !== undefined) return c
+      }
+      // fallback to cloned expression nodes
+      for (const c of candidates) {
+        if (expressionsByName.has(c)) return c
+      }
+      return null
+    }
+    const nameMap = {
+      blink: resolveName('blink', 'Blink', 'BLINK'),
+      aa: resolveName('aa', 'A'),
+      ee: resolveName('ee', 'E'),
+      ih: resolveName('ih', 'I'),
+      oh: resolveName('oh', 'O'),
+      ou: resolveName('ou', 'U'),
+    }
+    let blinkingEnabled = true
+    // blink state
+    let blinkCooldown = 0
+    let blinkPhase = 0 // 0 = idle, 1 = closing, 2 = opening
+    let blinkTime = 0
+    const BLINK_INTERVAL_MIN = 2.5
+    const BLINK_INTERVAL_MAX = 5.0
+    const BLINK_CLOSE_DURATION = 0.06
+    const BLINK_OPEN_DURATION = 0.12
+    function resetBlinkCooldown() {
+      blinkCooldown = THREE.MathUtils.lerp(BLINK_INTERVAL_MIN, BLINK_INTERVAL_MAX, Math.random())
+    }
+    resetBlinkCooldown()
+    // mouth/viseme state (driven when talking)
+    const visemes = ['aa', 'ih', 'oh', 'ee', 'ou']
+    let currentViseme = 'aa'
+    let visemeTimer = 0
+    let visemeSwitchInterval = 0.18 + Math.random() * 0.12 // 180-300ms
+    let mouthTime = 0
+
+    function setExpression(name, weight) {
+      if (!expressionsEnabled) return
+      if (expressionWeights[name] === undefined) return
+      const clamped = THREE.MathUtils.clamp(weight, 0, 1)
+      expressionWeights[name] = clamped
+      const actual = nameMap[name] || name
+      exprManager?.setValue?.(actual, clamped)
+    }
+
+    function clearMouth() {
+      setExpression('aa', 0)
+      setExpression('ee', 0)
+      setExpression('ih', 0)
+      setExpression('oh', 0)
+      setExpression('ou', 0)
+    }
+
+    function updateBlink(delta) {
+      if (!expressionsEnabled || !blinkingEnabled) return
+      if (blinkPhase === 0) {
+        blinkCooldown -= delta
+        if (blinkCooldown <= 0) {
+          blinkPhase = 1
+          blinkTime = 0
+        }
+      }
+      if (blinkPhase === 1) {
+        blinkTime += delta
+        const t = THREE.MathUtils.clamp(blinkTime / BLINK_CLOSE_DURATION, 0, 1)
+        const w = t // linear close
+        setExpression('blink', w)
+        if (t >= 1) {
+          blinkPhase = 2
+          blinkTime = 0
+        }
+      } else if (blinkPhase === 2) {
+        blinkTime += delta
+        const t = THREE.MathUtils.clamp(blinkTime / BLINK_OPEN_DURATION, 0, 1)
+        const w = 1 - t // open back to 0
+        setExpression('blink', w)
+        if (t >= 1) {
+          blinkPhase = 0
+          resetBlinkCooldown()
+        }
+      }
+    }
+
+    function updateMouth(delta, isTalking) {
+      if (!expressionsEnabled) return
+      if (!isTalking) {
+        clearMouth()
+        return
+      }
+      mouthTime += delta
+      visemeTimer += delta
+      if (visemeTimer >= visemeSwitchInterval) {
+        visemeTimer = 0
+        visemeSwitchInterval = 0.18 + Math.random() * 0.12
+        currentViseme = visemes[(Math.random() * visemes.length) | 0]
+      }
+      // simple oscillation for mouth opening while speaking
+      const oscillation = (Math.sin(mouthTime * 12 + Math.random() * 0.5) + 1) * 0.5 // 0..1
+      const weight = 0.4 + 0.6 * oscillation
+      clearMouth()
+      setExpression(currentViseme, weight)
+    }
+
+    // speaking state (drives mouth and optional talk overlay)
+    let talking = false
+    const setSpeaking = value => {
+      talking = !!value
     }
 
     const loco = {
@@ -342,6 +516,8 @@ export function createVRMFactory(glb, setupMaterial) {
         mixer.update(elapsed)
         skeleton.bones.forEach(bone => bone.updateMatrixWorld())
         skeleton.update = THREE.Skeleton.prototype.update
+        updateBlink(elapsed)
+        updateMouth(elapsed, talking)
         if (!currentEmote) {
           updateLocomotion(delta)
         }
@@ -721,6 +897,7 @@ export function createVRMFactory(glb, setupMaterial) {
       set paused(v) { paused = v },
       setEmote,
       setFirstPerson,
+      setSpeaking,
       update,
       updateRate,
       getBoneTransform,
