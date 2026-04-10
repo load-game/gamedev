@@ -50,7 +50,6 @@ import { Ranks } from '../core/extras/ranks'
 
 const rootDir = path.join(__dirname, '../')
 const publicDir = path.join(__dirname, 'public')
-const adminHtmlPath = path.join(publicDir, 'admin.html')
 const MIME_TYPES = {
   '.aac': 'audio/aac',
   '.bin': 'application/octet-stream',
@@ -1466,7 +1465,6 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
   app.register(admin, {
     world: worldProxy,
     assets: assetsProxy,
-    adminHtmlPath,
     getAgones: () => runtimeState.resources.agones,
     isRuntimeReady: () => isRuntimeReady(runtimeState),
     getRuntimeState: () => runtimeState.lifecycle.state,

@@ -13,7 +13,6 @@ import { MicIcon, MicOffIcon, VRIcon } from './Icons'
 import { sortBy } from 'lodash-es'
 import * as THREE from '../../core/extras/three'
 import { Ranks } from '../../core/extras/ranks'
-import { storage } from '../../core/storage'
 import { syncLobbyProfilePatch } from '../../core/profileSync'
 import { sanitizeWsUrl } from '../../core/utils'
 import { getPreferredServerUrl, resolveConnectionPolicy, navigateToServer } from '../../core/utils-client'
@@ -480,8 +479,6 @@ function PlayersSection({ world }) {
   const localPlayer = world.entities.player
   const isAdmin = localPlayer.isAdmin()
   const [players, setPlayers] = useState(() => getPlayers(world))
-  const [livePlayers, setLivePlayers] = useState(() => storage.get('admin-live', false))
-  const canToggleLive = !!world.isAdminClient
   useEffect(() => {
     const onChange = () => {
       setPlayers(getPlayers(world))
@@ -501,11 +498,6 @@ function PlayersSection({ world }) {
       world.off('name', onChange)
     }
   }, [])
-  useEffect(() => {
-    if (!world.isAdminClient || !world.network?.setSubscriptions) return
-    world.network.setSubscriptions({ snapshot: true, players: livePlayers, runtime: false })
-    storage.set('admin-live', livePlayers)
-  }, [livePlayers])
   const toggleBuilder = player => {
     if (player.data.rank === Ranks.BUILDER) {
       world.admin.modifyRank(player.data.id, Ranks.VISITOR)
@@ -607,20 +599,6 @@ function PlayersSection({ world }) {
         }
       `}
     >
-      {canToggleLive && (
-        <div className='mainmenu-players-head'>
-          <button
-            type='button'
-            className={cls('mainmenu-players-live', { active: livePlayers })}
-            onClick={() => setLivePlayers(!livePlayers)}
-            onPointerEnter={() => setHint('Toggle live player overlays')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <span className='mainmenu-players-live-dot' />
-            {livePlayers ? 'Live' : 'Live Off'}
-          </button>
-        </div>
-      )}
       {players.map(player => (
         <div className='mainmenu-players-item' key={player.data.id}>
           <div className='mainmenu-players-name'>
