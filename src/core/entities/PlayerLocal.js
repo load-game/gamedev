@@ -12,6 +12,8 @@ import { ControlPriorities } from '../extras/ControlPriorities'
 import { isBoolean, isNumber } from 'lodash-es'
 import { hasRank, Ranks } from '../extras/ranks'
 import { Ragdoll } from '../extras/Ragdoll'
+import { tickArmOverride, applyArmIK } from '../extras/armOverride'
+import { getRef } from '../nodes/Node'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -128,6 +130,14 @@ export class PlayerLocal extends Entity {
     this.gaze = new THREE.Vector3()
 
     this.speaking = false
+
+    this._armOverride = {
+      left:  { active: false, blend: 0, target: new THREE.Vector3(), wristRoll: 0,
+               prevUpperQ: new THREE.Quaternion(), prevLowerQ: new THREE.Quaternion(), hasPrev: false },
+      right: { active: false, blend: 0, target: new THREE.Vector3(), wristRoll: 0,
+               prevUpperQ: new THREE.Quaternion(), prevLowerQ: new THREE.Quaternion(), hasPrev: false },
+    }
+    this._weaponArms = null
 
     this.lastSendAt = 0
 
@@ -1187,6 +1197,89 @@ export class PlayerLocal extends Entity {
     }
   }
 
+  setArmTarget(side, worldPos, opts) {
+    if (side === 'both') {
+      this.setArmTarget('left', worldPos, opts)
+      this.setArmTarget('right', worldPos, opts)
+      return
+    }
+    const s = side === 'left' ? this._armOverride.left : this._armOverride.right
+    s.target.copy(worldPos)
+    s.wristRoll = opts?.wristRoll || 0
+    s.active = true
+  }
+
+  clearArmTarget(side) {
+    if (side === 'both') {
+      this._armOverride.left.active = false
+      this._armOverride.right.active = false
+      return
+    }
+    const s = side === 'left' ? this._armOverride.left : this._armOverride.right
+    s.active = false
+  }
+
+  attachWeaponArms(nodeProxy, leftGripLocal, rightGripLocal) {
+    const node = getRef(nodeProxy)
+    this._weaponArms = {
+      node,
+      leftGripLocal: new THREE.Vector3().copy(leftGripLocal),
+      rightGripLocal: new THREE.Vector3().copy(rightGripLocal),
+      _nodeQuat: new THREE.Quaternion(),
+      _nodePos: new THREE.Vector3(),
+    }
+    this._armOverride.left.active = true
+    this._armOverride.right.active = true
+  }
+
+  detachWeaponArms() {
+    this._weaponArms = null
+    this._armOverride.left.active = false
+    this._armOverride.right.active = false
+  }
+
+  _applyArmOverride(delta) {
+    const ao = this._armOverride
+    const instance = this.avatar?.instance
+    if (!instance) return
+
+    if (this._weaponArms) {
+      const wa = this._weaponArms
+      wa.node.matrixWorld.decompose(wa._nodePos, wa._nodeQuat, v1)
+      ao.left.target.copy(wa.leftGripLocal).applyQuaternion(wa._nodeQuat).add(wa._nodePos)
+      ao.right.target.copy(wa.rightGripLocal).applyQuaternion(wa._nodeQuat).add(wa._nodePos)
+    }
+
+    tickArmOverride(ao, delta)
+
+    const sceneMatrix = this.base.matrixWorld
+    const hipsWorldQuat = null
+
+    if (ao.left.blend > 0) {
+      applyArmIK({
+        upperBone: instance.findBone('leftUpperArm'),
+        lowerBone: instance.findBone('leftLowerArm'),
+        handBone: instance.findBone('leftHand'),
+        sceneMatrix,
+        hipsWorldQuat,
+      }, 'left', ao.left, delta)
+    } else if (ao.left.hasPrev) {
+      ao.left.hasPrev = false
+    }
+
+    if (ao.right.blend > 0) {
+      applyArmIK({
+        upperBone: instance.findBone('rightUpperArm'),
+        lowerBone: instance.findBone('rightLowerArm'),
+        handBone: instance.findBone('rightHand'),
+        sceneMatrix,
+        hipsWorldQuat,
+      }, 'right', ao.right, delta)
+    } else if (ao.right.hasPrev) {
+      ao.right.hasPrev = false
+    }
+  }
+
   lateUpdate(delta) {
     if (this._ragdoll) {
       this.cam.position.copy(this.base.position)
@@ -1197,6 +1290,7 @@ export class PlayerLocal extends Entity {
         this.cam.position.add(right.multiplyScalar(0.3))
       }
       simpleCamLerp(this.world, this.control.camera, this.cam, delta)
+      this._applyArmOverride(delta)
       if (this.avatar) {
         const matrix = this.avatar.getBoneTransform('head')
         if (matrix) this.aura.position.setFromMatrixPosition(matrix)
@@ -1239,6 +1333,7 @@ export class PlayerLocal extends Entity {
       // otherwise interpolate camera towards target
       simpleCamLerp(this.world, this.control.camera, this.cam, delta)
     }
+    this._applyArmOverride(delta)
     if (this.avatar) {
       const matrix = this.avatar.getBoneTransform('head')
       if (matrix) this.aura.position.setFromMatrixPosition(matrix)

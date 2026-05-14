@@ -191,6 +191,18 @@ export function createPlayerProxy(entity, player) {
         world.network.sendTo(player.data.owner, 'playerPush', msg)
       }
     },
+    setArmTarget(side, worldPos, opts) {
+      player.setArmTarget(side, worldPos, opts)
+    },
+    clearArmTarget(side) {
+      player.clearArmTarget(side)
+    },
+    attachWeaponArms(actor, leftGripLocal, rightGripLocal) {
+      player.attachWeaponArms(actor, leftGripLocal, rightGripLocal)
+    },
+    detachWeaponArms() {
+      player.detachWeaponArms()
+    },
     replaceAnimations(newEmotes, reset = false) {
       if (!world.network.isClient) {
         return console.error('replaceAnimations can only be called on the client')
