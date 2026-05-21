@@ -57,6 +57,7 @@
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
     "index.plugin-lods-client.d.ts",
+    "index.plugin-logs.d.ts",
     "index.plugin-monitor-server.d.ts",
     "index.plugin-nametags-client.d.ts",
     "index.plugin-network-admin.d.ts",
@@ -237,6 +238,12 @@
       "import": "./packages/core/plugins/livekit/server.js",
       "require": "./packages/core/plugins/livekit/server.js",
       "default": "./packages/core/plugins/livekit/server.js"
+    },
+    "./plugins/logs": {
+      "types": "./index.plugin-logs.d.ts",
+      "import": "./packages/core/plugins/logs.js",
+      "require": "./packages/core/plugins/logs.js",
+      "default": "./packages/core/plugins/logs.js"
     },
     "./plugins/monitor/server": {
       "types": "./index.plugin-monitor-server.d.ts",

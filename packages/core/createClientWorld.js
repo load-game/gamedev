@@ -17,6 +17,7 @@ import { browserClientPlugin } from './plugins/browser/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
+import { logsPlugin } from './plugins/logs.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
 import { networkClientPlugin } from './plugins/network/client.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
@@ -42,6 +43,7 @@ export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
   plugins: [
     coreSystemsPlugin,
+    logsPlugin,
     spatialPlugin,
     chatPlugin,
     prefsClientPlugin,

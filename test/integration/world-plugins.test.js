@@ -20,6 +20,7 @@ import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
+import { logsPlugin } from '@gamedev/core/plugins/logs.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 import { networkAdminPlugin } from '@gamedev/core/plugins/network/admin.js'
 import { networkClientPlugin } from '@gamedev/core/plugins/network/client.js'
@@ -138,6 +139,7 @@ test('runtime factories are preset compositions', () => {
     adminPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
@@ -171,6 +173,7 @@ test('runtime factories are preset compositions', () => {
     clientPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
@@ -207,6 +210,7 @@ test('runtime factories are preset compositions', () => {
     nodeClientPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-controls/client',
@@ -221,6 +225,7 @@ test('runtime factories are preset compositions', () => {
     viewerPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
@@ -236,6 +241,7 @@ test('runtime factories are preset compositions', () => {
     serverPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
@@ -255,6 +261,7 @@ test('runtime factories are preset compositions', () => {
     serverWorld.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-logs',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
@@ -270,6 +277,7 @@ test('runtime factories are preset compositions', () => {
     ]
   )
   assert.ok(serverWorld.loader)
+  assert.ok(serverWorld.logs)
   assert.ok(serverWorld.physics)
   assert.ok(serverWorld.stage)
   assert.ok(serverWorld.network)
@@ -282,6 +290,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.logs.plugin, '@gamedev/plugin-logs')
   assert.equal(serverWorld.physics.plugin, '@gamedev/plugin-spatial')
   assert.equal(serverWorld.stage.plugin, '@gamedev/plugin-spatial')
   assert.equal(serverWorld.network.plugin, '@gamedev/plugin-network/server')
@@ -315,6 +324,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   const coreWorld = new World({ plugins: [coreSystemsPlugin] })
   assert.equal(coreWorld.evm, undefined)
   assert.equal(coreWorld.hyperliquid, undefined)
+  assert.equal(coreWorld.logs, undefined)
   assert.equal(coreWorld.livekit, undefined)
   assert.equal(coreWorld.ai, undefined)
   assert.equal(coreWorld.aiScripts, undefined)
@@ -381,6 +391,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof spatialWorld.apps.worldMethods.createLayerMask, 'function')
   assert.equal(typeof spatialWorld.apps.worldMethods.raycast, 'function')
   assert.equal(typeof spatialWorld.apps.worldMethods.overlapSphere, 'function')
+
+  const logsWorld = new World({
+    plugins: [coreSystemsPlugin, logsPlugin],
+  })
+  assert.ok(logsWorld.logs)
+  assert.equal(logsWorld.logs.plugin, '@gamedev/plugin-logs')
 
   const serverRuntimeStub = definePlugin({
     name: 'test-server-runtime',

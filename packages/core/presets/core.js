@@ -6,7 +6,6 @@ import { Events } from '../systems/Events.js'
 import { Blueprints } from '../systems/Blueprints.js'
 import { Entities } from '../systems/Entities.js'
 import { Scripts } from '../systems/Scripts.js'
-import { Logs } from '../systems/Logs.js'
 
 export const coreSystemsPlugin = definePlugin({
   name: '@gamedev/core/systems',
@@ -18,6 +17,5 @@ export const coreSystemsPlugin = definePlugin({
     ['scripts', Scripts],
     ['blueprints', Blueprints],
     ['entities', Entities],
-    ['logs', Logs],
   ],
 })

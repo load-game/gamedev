@@ -5,6 +5,7 @@ import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentNodeClientPlugin } from './plugins/environment/node-client.js'
 import { loaderServerPlugin } from './plugins/loader/server.js'
+import { logsPlugin } from './plugins/logs.js'
 import { networkClientPlugin } from './plugins/network/client.js'
 import { spatialPlugin } from './plugins/spatial.js'
 
@@ -20,6 +21,7 @@ export const nodeClientPreset = definePreset({
   name: '@gamedev/preset-node-client',
   plugins: [
     coreSystemsPlugin,
+    logsPlugin,
     spatialPlugin,
     chatPlugin,
     controlsClientPlugin,

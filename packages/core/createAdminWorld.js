@@ -14,6 +14,7 @@ import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
+import { logsPlugin } from './plugins/logs.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
 import { networkAdminPlugin } from './plugins/network/admin.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
@@ -59,6 +60,7 @@ export const adminPreset = definePreset({
   name: '@gamedev/preset-admin',
   plugins: [
     coreSystemsPlugin,
+    logsPlugin,
     spatialPlugin,
     chatPlugin,
     prefsClientPlugin,
