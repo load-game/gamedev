@@ -6,7 +6,7 @@ export { ClientBuilder, ClientDrafts }
 
 export const builderClientPlugin = definePlugin({
   name: '@gamedev/plugin-builder/client',
-  requires: ['core', 'client', 'network', 'controls', 'ui', 'loader', 'admin', 'snaps'],
+  requires: ['core', 'client', 'network', 'controls', 'ui', 'loader', 'admin', 'snaps', 'stage'],
   provides: ['@gamedev/plugin-builder', 'builder', 'drafts'],
   systems: [
     ['builder', ClientBuilder],

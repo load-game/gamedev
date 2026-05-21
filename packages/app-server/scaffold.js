@@ -51,6 +51,7 @@ const DEFAULT_TSCONFIG = {
     lib: ['ES2022', 'DOM'],
     strict: false,
     noEmit: true,
+    allowJs: true,
     skipLibCheck: true,
     types: [
       'gamedev',
@@ -59,6 +60,7 @@ const DEFAULT_TSCONFIG = {
       'gamedev/plugins/network/server',
       'gamedev/plugins/ui/client',
       'gamedev/plugins/loader/client',
+      'gamedev/plugins/spatial',
       'gamedev/plugins/storage',
       'gamedev/plugins/evm',
       'gamedev/plugins/hyperliquid',

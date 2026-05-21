@@ -1,10 +1,9 @@
 import moment from 'moment'
-import { isArray, isFunction, isNumber } from 'lodash-es'
+import { isArray, isFunction } from 'lodash-es'
 import * as THREE from '../extras/three.js'
 
 import { System } from './System.js'
 import { getRef } from '../nodes/Node.js'
-import { Layers } from '../extras/Layers.js'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { warn } from '../extras/warn.js'
 
@@ -190,7 +189,6 @@ export class Apps extends System {
   }
 
   initWorldHooks() {
-    const self = this
     const world = this.world
     this.worldGetters = {}
     this.worldSetters = {
@@ -258,50 +256,6 @@ export class Apps extends System {
           players.push(entity.getPlayerProxy(player.data.id))
         })
         return players
-      },
-      createLayerMask(entity, ...groups) {
-        let mask = 0
-        for (const group of groups) {
-          if (!Layers[group]) throw new Error(`[createLayerMask] invalid group: ${group}`)
-          mask |= Layers[group].group
-        }
-        return mask
-      },
-      raycast(entity, origin, direction, maxDistance, layerMask, opts) {
-        if (!origin?.isVector3) throw new Error('[raycast] origin must be Vector3')
-        if (!direction?.isVector3) throw new Error('[raycast] direction must be Vector3')
-        if (maxDistance !== undefined && maxDistance !== null && !isNumber(maxDistance)) {
-          throw new Error('[raycast] maxDistance must be number')
-        }
-        if (layerMask !== undefined && layerMask !== null && !isNumber(layerMask)) {
-          throw new Error('[raycast] layerMask must be number')
-        }
-        const ignorePlayerId = opts?.ignoreLocalPlayer ? world.network.id : opts?.ignorePlayerId
-        const hit = world.physics.raycast(origin, direction, maxDistance, layerMask, ignorePlayerId)
-        if (!hit) return null
-        if (!self.raycastHit) {
-          self.raycastHit = {
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-            tag: null,
-            playerId: null,
-            bone: null,
-          }
-        }
-        self.raycastHit.point.copy(hit.point)
-        self.raycastHit.normal.copy(hit.normal)
-        self.raycastHit.distance = hit.distance
-        self.raycastHit.tag = hit.handle?.tag
-        self.raycastHit.playerId = hit.handle?.playerId
-        self.raycastHit.bone = hit.handle?.bone || null
-        return self.raycastHit
-      },
-      overlapSphere(entity, radius, origin, layerMask) {
-        const hits = world.physics.overlapSphere(radius, origin, layerMask)
-        return hits.map(hit => {
-          return hit.proxy
-        })
       },
       open(entity, url, newWindow = false) {
         if (!url) {

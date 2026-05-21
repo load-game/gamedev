@@ -5,7 +5,7 @@ export { ClientGraphics }
 
 export const graphicsClientPlugin = definePlugin({
   name: '@gamedev/plugin-graphics/client',
-  requires: ['core', 'prefs'],
+  requires: ['core', 'prefs', 'stage'],
   provides: ['@gamedev/plugin-graphics', 'graphics'],
   systems: [['graphics', ClientGraphics]],
 })

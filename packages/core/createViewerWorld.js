@@ -6,6 +6,7 @@ import { environmentClientPlugin } from './plugins/environment/client.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
+import { spatialPlugin } from './plugins/spatial.js'
 
 import { Client } from './systems/Client.js'
 
@@ -21,6 +22,7 @@ export const viewerPreset = definePreset({
   name: '@gamedev/preset-viewer',
   plugins: [
     coreSystemsPlugin,
+    spatialPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,
     controlsClientPlugin,

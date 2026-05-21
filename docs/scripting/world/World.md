@@ -92,6 +92,7 @@ Unsubscribes from world events.
 ### `.raycast(origin: Vector3, direction: Vector3, maxDistance: ?Number, layerMask: ?Number, opts: ?Object)`
 
 Raycasts the physics scene.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
 If `maxDistance` is not specified, max distance is infinite.
 If `layerMask` is not specified, it will hit anything.
 
@@ -102,7 +103,13 @@ If `layerMask` is not specified, it will hit anything.
 ### `.createLayerMask(...groups)`
 
 Creates a bitmask to be used in `world.raycast()`.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
 Currently the only groups available are `environment` and `player`.
+
+### `.overlapSphere(radius: Number, origin: Vector3, layerMask: ?Number)`
+
+Returns physics proxies overlapping a sphere.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
 
 ### `.getPlayer(playerId)`: Player
 

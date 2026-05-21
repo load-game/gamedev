@@ -39,9 +39,11 @@ test('scaffold writes scene scaffold and world manifest', async () => {
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/network/client'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/network/server'))
+  assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/spatial'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/evm'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/hyperliquid'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/storage'))
+  assert.equal(tsconfig.compilerOptions.allowJs, true)
   assert.equal(await fileExists(path.join(rootDir, 'hyperfy.app-runtime.d.ts')), false)
 
   const nvmrc = await fs.readFile(path.join(rootDir, '.nvmrc'), 'utf8')

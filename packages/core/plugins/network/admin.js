@@ -6,7 +6,7 @@ export { AdminNetwork, networkScriptApi }
 
 export const networkAdminPlugin = definePlugin({
   name: '@gamedev/plugin-network/admin',
-  requires: ['core', 'client'],
+  requires: ['core', 'client', 'spatial'],
   provides: ['@gamedev/plugin-network', 'network'],
   systems: [['network', AdminNetwork]],
   scripts: networkScriptApi,

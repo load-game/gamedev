@@ -890,19 +890,6 @@ export interface Player {
   setVoiceLevel(level: 'disabled' | 'spatial' | 'global' | null): void
 }
 
-// -----------------------------
-// World API
-// -----------------------------
-type LayerGroup = 'environment' | 'player' | (string & {})
-
-interface RaycastHit {
-  point: Vector3
-  normal: Vector3
-  distance: number
-  tag: string | null
-  playerId: string | null
-}
-
 export interface WorldAPI {
   // Scene management
   add(node: BaseNode): void
@@ -912,15 +899,6 @@ export interface WorldAPI {
   // Events
   on(event: string, callback: (data?: any) => void): void
   off(event: string, callback: (data?: any) => void): void
-
-  // Physics
-  raycast(
-    origin: Vector3,
-    direction: Vector3,
-    maxDistance?: number | null,
-    layerMask?: number | null
-  ): RaycastHit | null
-  createLayerMask(...groups: LayerGroup[]): number
 
   // Players
   getPlayer(playerId?: string): Player | null

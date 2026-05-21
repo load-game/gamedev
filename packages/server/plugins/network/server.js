@@ -6,7 +6,7 @@ export { ServerNetwork, networkScriptApi }
 
 export const networkServerPlugin = definePlugin({
   name: '@gamedev/plugin-network/server',
-  requires: ['core', 'server', 'chat'],
+  requires: ['core', 'server', 'chat', 'spatial'],
   provides: ['@gamedev/plugin-network', 'network'],
   systems: [['network', ServerNetwork]],
   scripts: networkScriptApi,

@@ -22,6 +22,7 @@ import { particlesClientPlugin } from './plugins/particles/client.js'
 import { pointerClientPlugin } from './plugins/pointer/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { snapsClientPlugin } from './plugins/snaps/client.js'
+import { spatialPlugin } from './plugins/spatial.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
@@ -40,6 +41,7 @@ export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
   plugins: [
     coreSystemsPlugin,
+    spatialPlugin,
     chatPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,

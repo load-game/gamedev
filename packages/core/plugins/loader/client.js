@@ -6,7 +6,7 @@ export { ClientLoader, loaderScriptApi }
 
 export const loaderClientPlugin = definePlugin({
   name: '@gamedev/plugin-loader/client',
-  requires: ['core', 'client'],
+  requires: ['core', 'client', 'stage'],
   provides: ['@gamedev/plugin-loader', 'loader'],
   systems: [['loader', ClientLoader]],
   scripts: loaderScriptApi,

@@ -28,6 +28,7 @@ import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js
 import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { snapsClientPlugin } from '@gamedev/core/plugins/snaps/client.js'
+import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
@@ -136,6 +137,7 @@ test('runtime factories are preset compositions', () => {
     adminPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
@@ -167,6 +169,7 @@ test('runtime factories are preset compositions', () => {
     clientPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
@@ -201,6 +204,7 @@ test('runtime factories are preset compositions', () => {
     nodeClientPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-controls/client',
       '@gamedev/node-client/runtime',
@@ -214,6 +218,7 @@ test('runtime factories are preset compositions', () => {
     viewerPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
@@ -227,6 +232,7 @@ test('runtime factories are preset compositions', () => {
     serverPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
@@ -245,6 +251,7 @@ test('runtime factories are preset compositions', () => {
     serverWorld.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
@@ -259,6 +266,8 @@ test('runtime factories are preset compositions', () => {
     ]
   )
   assert.ok(serverWorld.loader)
+  assert.ok(serverWorld.physics)
+  assert.ok(serverWorld.stage)
   assert.ok(serverWorld.network)
   assert.ok(serverWorld.environment)
   assert.ok(serverWorld.monitor)
@@ -269,6 +278,8 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.physics.plugin, '@gamedev/plugin-spatial')
+  assert.equal(serverWorld.stage.plugin, '@gamedev/plugin-spatial')
   assert.equal(serverWorld.network.plugin, '@gamedev/plugin-network/server')
   assert.equal(serverWorld.environment.plugin, '@gamedev/plugin-environment/server')
   assert.equal(serverWorld.monitor.plugin, '@gamedev/plugin-monitor/server')
@@ -281,6 +292,9 @@ test('runtime factories are preset compositions', () => {
   assert.equal(typeof serverWorld.apps.worldGetters.isServer, 'function')
   assert.equal(typeof serverWorld.apps.worldGetters.networkId, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.getTime, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.createLayerMask, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.raycast, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.overlapSphere, 'function')
   assert.equal(typeof serverWorld.apps.appMethods.send, 'function')
   assert.equal(typeof serverWorld.apps.appMethods.sendTo, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.get, 'function')
@@ -322,6 +336,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
   assert.equal(coreWorld.drafts, undefined)
+  assert.equal(coreWorld.anchors, undefined)
+  assert.equal(coreWorld.avatars, undefined)
+  assert.equal(coreWorld.animation, undefined)
+  assert.equal(coreWorld.physics, undefined)
+  assert.equal(coreWorld.stage, undefined)
   assert.equal(coreWorld.apps.worldMethods.load, undefined)
   assert.equal(coreWorld.apps.worldGetters.isServer, undefined)
   assert.equal(coreWorld.apps.worldGetters.isClient, undefined)
@@ -333,8 +352,25 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.commitStorage, undefined)
   assert.equal(coreWorld.apps.worldMethods.chat, undefined)
   assert.equal(coreWorld.apps.worldMethods.setReticle, undefined)
+  assert.equal(coreWorld.apps.worldMethods.createLayerMask, undefined)
+  assert.equal(coreWorld.apps.worldMethods.raycast, undefined)
+  assert.equal(coreWorld.apps.worldMethods.overlapSphere, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
+
+  const spatialWorld = new World({
+    plugins: [coreSystemsPlugin, spatialPlugin],
+  })
+  assert.ok(spatialWorld.anchors)
+  assert.ok(spatialWorld.avatars)
+  assert.ok(spatialWorld.animation)
+  assert.ok(spatialWorld.physics)
+  assert.ok(spatialWorld.stage)
+  assert.equal(spatialWorld.physics.plugin, '@gamedev/plugin-spatial')
+  assert.equal(spatialWorld.stage.plugin, '@gamedev/plugin-spatial')
+  assert.equal(typeof spatialWorld.apps.worldMethods.createLayerMask, 'function')
+  assert.equal(typeof spatialWorld.apps.worldMethods.raycast, 'function')
+  assert.equal(typeof spatialWorld.apps.worldMethods.overlapSphere, 'function')
 
   const serverRuntimeStub = definePlugin({
     name: 'test-server-runtime',
@@ -370,6 +406,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   )
 
   assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, graphicsClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-graphics\/client:stage/
+  )
+
+  assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, cssClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-css\/client:graphics/
   )
@@ -380,8 +421,18 @@ test('feature APIs only appear when their plugins are selected', () => {
   )
 
   assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, controlsClientPlugin, pointerClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-pointer\/client:stage/
+  )
+
+  assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, chatPlugin, networkClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-network\/client:client/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-network\/client:spatial/
   )
 
   const controlsWorld = new World({
@@ -407,7 +458,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(storageWorld.storage.values.get('next'), 42)
 
   const networkWorld = new World({
-    plugins: [coreSystemsPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
+    plugins: [coreSystemsPlugin, spatialPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
   })
   assert.ok(networkWorld.network)
   assert.equal(networkWorld.network.plugin, '@gamedev/plugin-network/client')
@@ -416,7 +467,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof networkWorld.apps.appMethods.send, 'function')
 
   const adminNetworkWorld = new World({
-    plugins: [coreSystemsPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
+    plugins: [coreSystemsPlugin, spatialPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
   })
   assert.ok(adminNetworkWorld.network)
   assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
@@ -438,7 +489,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   )
 
   const actionsWorld = new World({
-    plugins: [coreSystemsPlugin, clientRuntimeStub, actionsClientPlugin],
+    plugins: [coreSystemsPlugin, spatialPlugin, clientRuntimeStub, actionsClientPlugin],
   })
   assert.ok(actionsWorld.actions)
   assert.equal(actionsWorld.actions.plugin, '@gamedev/plugin-actions/client')
@@ -450,7 +501,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
 
   const graphicsWorld = new World({
-    plugins: [coreSystemsPlugin, prefsClientPlugin, graphicsClientPlugin],
+    plugins: [coreSystemsPlugin, spatialPlugin, prefsClientPlugin, graphicsClientPlugin],
   })
   assert.ok(graphicsWorld.graphics)
   assert.equal(graphicsWorld.graphics.plugin, '@gamedev/plugin-graphics/client')
@@ -492,6 +543,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   const uiWorld = new World({
     plugins: [
       coreSystemsPlugin,
+      spatialPlugin,
       chatPlugin,
       prefsClientPlugin,
       clientRuntimeStub,
