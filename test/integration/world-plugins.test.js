@@ -13,6 +13,7 @@ import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
+import { graphicsClientPlugin } from '@gamedev/core/plugins/graphics/client.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
@@ -132,6 +133,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
+      '@gamedev/plugin-graphics/client',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/admin',
@@ -160,6 +162,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
+      '@gamedev/plugin-graphics/client',
       '@gamedev/client/runtime',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/client',
@@ -201,6 +204,7 @@ test('runtime factories are preset compositions', () => {
     [
       '@gamedev/core/systems',
       '@gamedev/plugin-prefs/client',
+      '@gamedev/plugin-graphics/client',
       '@gamedev/viewer/runtime',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-environment/client',
@@ -272,6 +276,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.environment, undefined)
   assert.equal(coreWorld.monitor, undefined)
+  assert.equal(coreWorld.graphics, undefined)
   assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.pointer, undefined)
   assert.equal(coreWorld.xr, undefined)
@@ -320,6 +325,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   )
 
   assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, graphicsClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-graphics\/client:prefs/
+  )
+
+  assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, cssClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-css\/client:graphics/
   )
@@ -350,6 +360,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(statsWorld.stats)
   assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
+
+  const graphicsWorld = new World({
+    plugins: [coreSystemsPlugin, prefsClientPlugin, graphicsClientPlugin],
+  })
+  assert.ok(graphicsWorld.graphics)
+  assert.equal(graphicsWorld.graphics.plugin, '@gamedev/plugin-graphics/client')
 
   const targetWorld = new World({
     plugins: [coreSystemsPlugin, clientRuntimeStub, targetClientPlugin],

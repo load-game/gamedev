@@ -47,6 +47,7 @@
     "index.plugin-environment-node-client.d.ts",
     "index.plugin-environment-server.d.ts",
     "index.plugin-evm.d.ts",
+    "index.plugin-graphics-client.d.ts",
     "index.plugin-hyperliquid.d.ts",
     "index.plugin-loader-client.d.ts",
     "index.plugin-loader-server.d.ts",
@@ -181,6 +182,12 @@
       "import": "./packages/core/plugins/environment/server.js",
       "require": "./packages/core/plugins/environment/server.js",
       "default": "./packages/core/plugins/environment/server.js"
+    },
+    "./plugins/graphics/client": {
+      "types": "./index.plugin-graphics-client.d.ts",
+      "import": "./packages/core/plugins/graphics/client.js",
+      "require": "./packages/core/plugins/graphics/client.js",
+      "default": "./packages/core/plugins/graphics/client.js"
     },
     "./plugins/loader/client": {
       "types": "./index.plugin-loader-client.d.ts",

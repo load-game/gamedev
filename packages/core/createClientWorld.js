@@ -9,6 +9,7 @@ import { chatPlugin } from './plugins/chat.js'
 import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { evmClientPlugin } from './plugins/evm.js'
+import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
@@ -28,16 +29,14 @@ import { xrClientPlugin } from './plugins/xr/client.js'
 import { Client } from './systems/Client.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
-import { ClientGraphics } from './systems/ClientGraphics.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
-  requires: ['core', 'chat', 'prefs'],
+  requires: ['core', 'chat', 'graphics'],
   systems: [
     ['client', Client],
     ['controls', ClientControls],
     ['network', ClientNetwork],
-    ['graphics', ClientGraphics],
   ],
 })
 
@@ -47,6 +46,7 @@ export const clientPreset = definePreset({
     coreSystemsPlugin,
     chatPlugin,
     prefsClientPlugin,
+    graphicsClientPlugin,
     clientRuntimePlugin,
     pointerClientPlugin,
     xrClientPlugin,

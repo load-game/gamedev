@@ -8,6 +8,7 @@ import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
 import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
+import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
@@ -25,19 +26,17 @@ import { xrAdminPlugin } from './plugins/xr/admin.js'
 import { Client } from './systems/Client.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
-import { ClientGraphics } from './systems/ClientGraphics.js'
 
 import { FreeCam } from './entities/FreeCam.js'
 import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
 
 export const adminRuntimePlugin = definePlugin({
   name: '@gamedev/admin/runtime',
-  requires: ['core', 'chat', 'prefs'],
+  requires: ['core', 'chat', 'graphics'],
   systems: [
     ['client', Client],
     ['controls', ClientControls],
     ['network', AdminNetwork],
-    ['graphics', ClientGraphics],
   ],
   setup(world) {
     world.isAdminClient = true
@@ -64,6 +63,7 @@ export const adminPreset = definePreset({
     coreSystemsPlugin,
     chatPlugin,
     prefsClientPlugin,
+    graphicsClientPlugin,
     adminRuntimePlugin,
     pointerClientPlugin,
     xrAdminPlugin,

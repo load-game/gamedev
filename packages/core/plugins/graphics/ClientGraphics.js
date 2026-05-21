@@ -1,4 +1,4 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 import { N8AOPostPass } from 'n8ao'
 import {
   EffectComposer,
@@ -8,19 +8,11 @@ import {
   SMAAEffect,
   ToneMappingEffect,
   ToneMappingMode,
-  SelectiveBloomEffect,
   BlendFunction,
-  Selection,
   BloomEffect,
-  KernelSize,
-  DepthPass,
-  Pass,
-  DepthEffect,
 } from 'postprocessing'
 
-import { System } from './System.js'
-
-const v1 = new THREE.Vector3()
+import { System } from '../../systems/System.js'
 
 let renderer
 function getRenderer() {
@@ -67,11 +59,8 @@ export class ClientGraphics extends System {
     this.maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy()
     THREE.Texture.DEFAULT_ANISOTROPY = this.maxAnisotropy
     this.usePostprocessing = this.world.prefs.postprocessing
-    const context = this.renderer.getContext()
-    const maxMultisampling = context.getParameter(context.MAX_SAMPLES)
     this.composer = new EffectComposer(this.renderer, {
       frameBufferType: THREE.HalfFloatType,
-      // multisampling: Math.min(8, maxMultisampling),
     })
     this.renderPass = new RenderPass(this.world.stage.scene, this.world.camera)
     this.composer.addPass(this.renderPass)
@@ -219,16 +208,8 @@ export class ClientGraphics extends System {
     // Get frame information
     const frame = this.renderer.xr.getFrame()
     if (frame && referenceSpace) {
-      // Get view information which contains projection matrices
       const views = frame.getViewerPose(referenceSpace)?.views
       if (views && views.length > 0) {
-        // Use the first view's projection matrix
-        const projectionMatrix = views[0].projectionMatrix
-        // Extract the relevant factors from the projection matrix
-        // This is a simplified approach
-        const fovFactor = projectionMatrix[5] // Approximation of FOV scale
-        // You might need to consider the XR display's physical properties
-        // which can be accessed via session.renderState
         const renderState = this.xrSession.renderState
         const baseLayer = renderState.baseLayer
         if (baseLayer) {
@@ -236,7 +217,6 @@ export class ClientGraphics extends System {
           this.xrWidth = baseLayer.framebufferWidth
           this.xrHeight = baseLayer.framebufferHeight
           this.xrDimensionsNeeded = false
-          console.log({ xrWidth: this.xrWidth, xrHeight: this.xrHeight })
         }
       }
     }
@@ -245,7 +225,6 @@ export class ClientGraphics extends System {
   onSettingsChange = changes => {
     if (changes.ao) {
       this.aoPass.enabled = changes.ao.value && this.world.prefs.ao
-      console.log(this.aoPass.enabled)
     }
   }
 
