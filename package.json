@@ -64,6 +64,8 @@
     "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
     "index.plugin-wind-client.d.ts",
+    "index.plugin-xr-admin.d.ts",
+    "index.plugin-xr-client.d.ts",
     "index.presets-core.d.ts",
     "README.md",
     "LICENSE"
@@ -275,6 +277,18 @@
       "import": "./packages/core/plugins/wind/client.js",
       "require": "./packages/core/plugins/wind/client.js",
       "default": "./packages/core/plugins/wind/client.js"
+    },
+    "./plugins/xr/admin": {
+      "types": "./index.plugin-xr-admin.d.ts",
+      "import": "./packages/core/plugins/xr/admin.js",
+      "require": "./packages/core/plugins/xr/admin.js",
+      "default": "./packages/core/plugins/xr/admin.js"
+    },
+    "./plugins/xr/client": {
+      "types": "./index.plugin-xr-client.d.ts",
+      "import": "./packages/core/plugins/xr/client.js",
+      "require": "./packages/core/plugins/xr/client.js",
+      "default": "./packages/core/plugins/xr/client.js"
     },
     "./presets/core": {
       "types": "./index.presets-core.d.ts",

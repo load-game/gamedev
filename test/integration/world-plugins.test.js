@@ -28,6 +28,7 @@ import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
+import { xrClientPlugin } from '@gamedev/core/plugins/xr/client.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
 import { System } from '@gamedev/core/systems/System.js'
 
@@ -133,6 +134,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-pointer/client',
+      '@gamedev/plugin-xr/admin',
       '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
@@ -160,6 +162,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
       '@gamedev/plugin-pointer/client',
+      '@gamedev/plugin-xr/client',
       '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
@@ -271,6 +274,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.pointer, undefined)
+  assert.equal(coreWorld.xr, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
   assert.equal(coreWorld.actions, undefined)
@@ -323,6 +327,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, pointerClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-pointer\/client:controls/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, xrClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-xr\/client:graphics/
   )
 
   assert.throws(

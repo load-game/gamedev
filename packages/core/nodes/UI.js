@@ -348,7 +348,7 @@ export class UI extends Node {
       const sca = v4
       this.matrixWorld.decompose(pos, qua, sca)
       if (this._billboard === 'full') {
-        if (world.xr.session) {
+        if (world.xr?.session) {
           // full in XR means lookAt camera (excludes roll)
           v5.subVectors(camPosition, pos).normalize()
           qua.setFromUnitVectors(FORWARD, v5)
@@ -360,7 +360,7 @@ export class UI extends Node {
           qua.copy(world.rig.quaternion)
         }
       } else if (this._billboard === 'y') {
-        if (world.xr.session) {
+        if (world.xr?.session) {
           // full in XR means lookAt camera (only y)
           v5.subVectors(camPosition, pos).normalize()
           qua.setFromUnitVectors(FORWARD, v5)

@@ -68,6 +68,7 @@ import { statsClientPlugin } from 'gamedev/plugins/stats/client'
 import { targetClientPlugin } from 'gamedev/plugins/target/client'
 import { uiClientPlugin } from 'gamedev/plugins/ui/client'
 import { windClientPlugin } from 'gamedev/plugins/wind/client'
+import { xrClientPlugin } from 'gamedev/plugins/xr/client'
 import { coreSystemsPlugin } from 'gamedev/presets/core'
 
 export const clientPreset = definePreset({
@@ -78,6 +79,7 @@ export const clientPreset = definePreset({
     prefsClientPlugin,
     clientRuntimePlugin,
     pointerClientPlugin,
+    xrClientPlugin,
     cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,
@@ -103,7 +105,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party chat, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. Server also includes the monitor plugin for runtime stats. Client also includes prefs, pointer dispatch, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, pointer dispatch, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
+The default client and server presets include the first-party chat, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. Server also includes the monitor plugin for runtime stats. Client also includes prefs, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 

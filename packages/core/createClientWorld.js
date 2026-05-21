@@ -23,12 +23,12 @@ import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 import { windClientPlugin } from './plugins/wind/client.js'
+import { xrClientPlugin } from './plugins/xr/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
-import { XR } from './systems/XR.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
@@ -38,7 +38,6 @@ export const clientRuntimePlugin = definePlugin({
     ['controls', ClientControls],
     ['network', ClientNetwork],
     ['graphics', ClientGraphics],
-    ['xr', XR],
   ],
 })
 
@@ -50,6 +49,7 @@ export const clientPreset = definePreset({
     prefsClientPlugin,
     clientRuntimePlugin,
     pointerClientPlugin,
+    xrClientPlugin,
     cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,

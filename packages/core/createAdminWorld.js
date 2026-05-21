@@ -20,12 +20,12 @@ import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 import { windClientPlugin } from './plugins/wind/client.js'
+import { xrAdminPlugin } from './plugins/xr/admin.js'
 
 import { Client } from './systems/Client.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
-import { AdminXR } from './systems/AdminXR.js'
 
 import { FreeCam } from './entities/FreeCam.js'
 import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
@@ -38,7 +38,6 @@ export const adminRuntimePlugin = definePlugin({
     ['controls', ClientControls],
     ['network', AdminNetwork],
     ['graphics', ClientGraphics],
-    ['xr', AdminXR],
   ],
   setup(world) {
     world.isAdminClient = true
@@ -67,6 +66,7 @@ export const adminPreset = definePreset({
     prefsClientPlugin,
     adminRuntimePlugin,
     pointerClientPlugin,
+    xrAdminPlugin,
     cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,

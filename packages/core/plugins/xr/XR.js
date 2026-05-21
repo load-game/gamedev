@@ -1,5 +1,4 @@
-import { System } from './System.js'
-import * as THREE from '../extras/three.js'
+import { System } from '../../systems/System.js'
 
 /**
  * XR System
@@ -31,8 +30,7 @@ export class XR extends System {
     try {
       session.updateTargetFrameRate(72)
     } catch (err) {
-      console.error(err)
-      console.error('xr session.updateTargetFrameRate(72) failed')
+      this.world.logs?.add('client', 'warn', ['xr session.updateTargetFrameRate(72) failed', err])
     }
     this.world.graphics.renderer.xr.setSession(session)
     session.addEventListener('end', this.onSessionEnd)

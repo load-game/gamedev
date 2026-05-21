@@ -38,7 +38,7 @@ export function MainMenu({ world, open, onClose }) {
   const [sfx, setSFX] = useState(world.prefs.sfx)
   const [voice, setVoice] = useState(world.prefs.voice)
   const [ui, setUI] = useState(world.prefs.ui)
-  const [canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
+  const [_canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
   const [actions, setActions] = useState(world.prefs.actions)
   const [stats, setStats] = useState(world.prefs.stats)
   const [tab, setTab] = useState('settings')
@@ -230,8 +230,8 @@ export function MainMenu({ world, open, onClose }) {
               <img className='mainmenu-logo' src={assetPath('/logo.png')} />
               <div className='mainmenu-head-spacer' />
               <div className='mainmenu-actions'>
-                {world.xr.isSupported && (
-                  <div className='mainmenu-action' onClick={() => world.xr.start()}>
+                {world.xr?.supportsVR && (
+                  <div className='mainmenu-action' onClick={() => world.xr.enter()}>
                     <VRIcon size='1.125rem' />
                   </div>
                 )}
@@ -289,7 +289,7 @@ export function MainMenu({ world, open, onClose }) {
                 <FieldToggle
                   label='Stats'
                   hint='Show or hide performance stats'
-                  value={world.prefs.stats}
+                  value={stats}
                   onChange={stats => world.prefs.setStats(stats)}
                   trueLabel='Visible'
                   falseLabel='Hidden'
