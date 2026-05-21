@@ -1,0 +1,11 @@
+import { definePlugin } from '../../plugins.js'
+import { ClientTarget } from './ClientTarget.js'
+
+export { ClientTarget }
+
+export const targetClientPlugin = definePlugin({
+  name: '@gamedev/plugin-target/client',
+  requires: ['core', 'client'],
+  provides: ['@gamedev/plugin-target', 'target'],
+  systems: [['target', ClientTarget]],
+})

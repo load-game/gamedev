@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 export class ClientTarget extends System {
   constructor(world) {

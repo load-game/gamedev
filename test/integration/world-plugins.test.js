@@ -17,6 +17,7 @@ import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
+import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
@@ -126,6 +127,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
+      '@gamedev/plugin-target/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -144,6 +146,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
+      '@gamedev/plugin-target/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -230,6 +233,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.actions, undefined)
   assert.equal(coreWorld.audio, undefined)
   assert.equal(coreWorld.stats, undefined)
+  assert.equal(coreWorld.target, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -275,8 +279,22 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.ok(statsWorld.stats)
   assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
 
+  const targetWorld = new World({
+    plugins: [coreSystemsPlugin, clientRuntimeStub, targetClientPlugin],
+  })
+  assert.ok(targetWorld.target)
+  assert.equal(targetWorld.target.plugin, '@gamedev/plugin-target/client')
+
   const uiWorld = new World({
-    plugins: [coreSystemsPlugin, chatPlugin, prefsClientPlugin, clientRuntimeStub, actionsClientPlugin, uiClientPlugin],
+    plugins: [
+      coreSystemsPlugin,
+      chatPlugin,
+      prefsClientPlugin,
+      clientRuntimeStub,
+      actionsClientPlugin,
+      targetClientPlugin,
+      uiClientPlugin,
+    ],
   })
   assert.ok(uiWorld.ui)
   assert.equal(uiWorld.ui.plugin, '@gamedev/plugin-ui/client')

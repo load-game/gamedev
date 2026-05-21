@@ -51,6 +51,7 @@
     "index.plugin-livekit-server.d.ts",
     "index.plugin-prefs-client.d.ts",
     "index.plugin-stats-client.d.ts",
+    "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
     "index.presets-core.d.ts",
     "README.md",
@@ -185,6 +186,12 @@
       "import": "./packages/core/plugins/stats/client.js",
       "require": "./packages/core/plugins/stats/client.js",
       "default": "./packages/core/plugins/stats/client.js"
+    },
+    "./plugins/target/client": {
+      "types": "./index.plugin-target-client.d.ts",
+      "import": "./packages/core/plugins/target/client.js",
+      "require": "./packages/core/plugins/target/client.js",
+      "default": "./packages/core/plugins/target/client.js"
     },
     "./plugins/ui/client": {
       "types": "./index.plugin-ui-client.d.ts",

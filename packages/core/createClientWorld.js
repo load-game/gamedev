@@ -13,6 +13,7 @@ import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
+import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 
 import { Client } from './systems/Client.js'
@@ -22,7 +23,6 @@ import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
-import { ClientTarget } from './systems/ClientTarget.js'
 import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
@@ -41,7 +41,6 @@ export const clientRuntimePlugin = definePlugin({
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
-    ['target', ClientTarget],
     ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
@@ -61,6 +60,7 @@ export const clientPreset = definePreset({
     actionsClientPlugin,
     audioClientPlugin,
     statsClientPlugin,
+    targetClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
