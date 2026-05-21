@@ -1,8 +1,7 @@
-import { fillRoundRect } from '../extras/roundRect.js'
-import * as THREE from '../extras/three.js'
-import CustomShaderMaterial from '../libs/three-custom-shader-material/index.js'
-import { uuid } from '../utils.js'
-import { System } from './System.js'
+import { fillRoundRect } from '../../extras/roundRect.js'
+import * as THREE from '../../extras/three.js'
+import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
+import { System } from '../../systems/System.js'
 
 /**
  * Nametags System
@@ -16,7 +15,6 @@ import { System } from './System.js'
 const RES = 2
 const NAMETAG_WIDTH = 200 * RES
 const NAMETAG_HEIGHT = 35 * RES
-const NAMETAG_BORDER_RADIUS = 10 * RES
 
 const NAME_FONT_SIZE = 16 * RES
 const NAME_OUTLINE_SIZE = 4 * RES
@@ -33,8 +31,6 @@ const MAX_INSTANCES = PER_ROW * PER_COLUMN
 
 const defaultQuaternion = new THREE.Quaternion(0, 0, 0, 1)
 const defaultScale = new THREE.Vector3(1, 1, 1)
-
-const v1 = new THREE.Vector3()
 
 export class Nametags extends System {
   constructor(world) {
@@ -201,7 +197,10 @@ export class Nametags extends System {
 
   add({ name, health }) {
     const idx = this.nametags.length
-    if (idx >= MAX_INSTANCES) return console.error('nametags: reached max')
+    if (idx >= MAX_INSTANCES) {
+      this.world.logs?.add('client', 'error', ['nametags: reached max'])
+      return null
+    }
 
     // inc instances
     this.mesh.count++
@@ -237,7 +236,6 @@ export class Nametags extends System {
         if (nametag.health === health) return
         nametag.health = health
         this.draw(nametag)
-        console.log('SET HEALTH', health)
       },
       destroy: () => {
         this.remove(nametag)
@@ -251,7 +249,8 @@ export class Nametags extends System {
 
   remove(nametag) {
     if (!this.nametags.includes(nametag)) {
-      return console.warn('nametags: attempted to remove non-existent nametag')
+      this.world.logs?.add('client', 'warn', ['nametags: attempted to remove non-existent nametag'])
+      return
     }
     const last = this.nametags[this.nametags.length - 1]
     const isLast = nametag === last

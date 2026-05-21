@@ -134,6 +134,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-lods/client',
       '@gamedev/plugin-snaps/client',
       '@gamedev/plugin-wind/client',
+      '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -156,6 +157,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-lods/client',
       '@gamedev/plugin-snaps/client',
       '@gamedev/plugin-wind/client',
+      '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -246,6 +248,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.lods, undefined)
   assert.equal(coreWorld.snaps, undefined)
   assert.equal(coreWorld.wind, undefined)
+  assert.equal(coreWorld.nametags, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
