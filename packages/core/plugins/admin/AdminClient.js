@@ -1,8 +1,8 @@
-import { readPacket, writePacket } from '../packets.js'
-import { storage } from '../storage.js'
-import { uuid } from '../utils.js'
-import { hashFile } from '../utils-client.js'
-import { System } from './System.js'
+import { readPacket, writePacket } from '../../packets.js'
+import { storage } from '../../storage.js'
+import { uuid } from '../../utils.js'
+import { hashFile } from '../../utils-client.js'
+import { System } from '../../systems/System.js'
 
 function normalizeAdminUrl(url) {
   if (!url) return null

@@ -1,6 +1,8 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { adminClientPlugin } from './plugins/admin/client.js'
+import { builderClientPlugin } from './plugins/builder/client.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
@@ -12,17 +14,14 @@ import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
-import { AdminClient } from './systems/AdminClient.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { ClientAudio } from './systems/ClientAudio.js'
 import { ClientStats } from './systems/ClientStats.js'
-import { ClientBuilder } from './systems/ClientBuilder.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
 import { ClientUI } from './systems/ClientUI.js'
-import { ClientDrafts } from './systems/ClientDrafts.js'
 import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
@@ -39,17 +38,14 @@ export const clientRuntimePlugin = definePlugin({
     ['prefs', ClientPrefs],
     ['controls', ClientControls],
     ['network', ClientNetwork],
-    ['admin', AdminClient],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
     ['audio', ClientAudio],
     ['stats', ClientStats],
-    ['builder', ClientBuilder],
     ['actions', ClientActions],
     ['target', ClientTarget],
     ['ui', ClientUI],
-    ['drafts', ClientDrafts],
     ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
@@ -65,6 +61,8 @@ export const clientPreset = definePreset({
     coreSystemsPlugin,
     clientRuntimePlugin,
     loaderClientPlugin,
+    adminClientPlugin,
+    builderClientPlugin,
     livekitClientPlugin,
     aiClientPlugin,
     evmClientPlugin,

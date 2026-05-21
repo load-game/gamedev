@@ -1,19 +1,19 @@
 import moment from 'moment'
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 import { cloneDeep, isBoolean, merge } from 'lodash-es'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
-import { hashFile } from '../utils-client.js'
-import { uuid } from '../utils.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
-import { DEG2RAD, RAD2DEG } from '../extras/general.js'
-import { createNode } from '../extras/createNode.js'
-import { importApp } from '../extras/appTools.js'
-import { buildScriptGroups, getScriptGroupMain } from '../extras/blueprintGroups.js'
-import { syncLobbyProfilePatch } from '../profileSync.js'
-import { BUILTIN_APP_TEMPLATES } from '../builtinApps.js'
+import { hashFile } from '../../utils-client.js'
+import { uuid } from '../../utils.js'
+import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { DEG2RAD, RAD2DEG } from '../../extras/general.js'
+import { createNode } from '../../extras/createNode.js'
+import { importApp } from '../../extras/appTools.js'
+import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'
+import { syncLobbyProfilePatch } from '../../profileSync.js'
+import { BUILTIN_APP_TEMPLATES } from '../../builtinApps.js'
 
 const FORWARD = new THREE.Vector3(0, 0, -1)
 const SNAP_DISTANCE = 1
@@ -102,12 +102,6 @@ const modeLabels = {
 }
 
 const SCRIPT_BLUEPRINT_FIELDS = new Set(['script', 'scriptEntry', 'scriptFiles', 'scriptFormat', 'scriptRef'])
-
-const DEFAULT_MODULE_SCRIPT_ENTRY = 'index.js'
-const DEFAULT_MODULE_SCRIPT_SOURCE = `export default (world, app, fetch, props, setTimeout) => {
-
-}
-`
 
 function hasScriptFields(data) {
   if (!data || typeof data !== 'object') return false
@@ -474,8 +468,8 @@ export class ClientBuilder extends System {
       if (releaseLock && lockToken && this.world.admin?.releaseDeployLock) {
         try {
           await this.world.admin.releaseDeployLock(lockToken, lockScope)
-        } catch (releaseErr) {
-          console.error('failed to release deploy lock', releaseErr)
+        } catch {
+          // Ignore cleanup failures; the server will expire stale deploy locks.
         }
       }
     }
@@ -558,7 +552,7 @@ export class ClientBuilder extends System {
     // xr menu updates
     if (xr) {
       this.xrMenu.update(delta)
-      this.updateXRLaser(delta)
+      this.updateXRLaser()
     }
     // inspect in pointer-lock
     if (this.beam.active && this.control.mouseRight.pressed) {
@@ -797,11 +791,6 @@ export class ClientBuilder extends System {
       !this.control.shiftLeft.down &&
       (this.control.metaLeft.down || this.control.controlLeft.down)
     ) {
-      console.log('undo', {
-        shiftLeft: this.control.shiftLeft.down,
-        metaLeft: this.control.metaLeft.down,
-        controlLeft: this.control.controlLeft.down,
-      })
       this.undo()
     }
     // translate updates
@@ -1156,12 +1145,10 @@ export class ClientBuilder extends System {
         menu.stick.capture = true
         menu.state = 'open'
         $root.activate({ world: this.world, entity: null })
-        console.log('OPEN')
       },
       hide: () => {
         menu.state = 'hidden'
         $root.deactivate()
-        console.log('HIDe')
       },
       close: () => {
         menu.ray = null
@@ -1169,9 +1156,8 @@ export class ClientBuilder extends System {
         menu.stick = null
         menu.state = 'closed'
         $root.deactivate()
-        console.log('CLOSE')
       },
-      update: delta => {
+      update: () => {
         if (menu.state !== 'open') return
         // attach to hand
         $root.position.copy(menu.ray.position)
@@ -1220,7 +1206,7 @@ export class ClientBuilder extends System {
     this.xrMenu = menu
   }
 
-  updateXRLaser(delta) {
+  updateXRLaser() {
     if (!this.beam.xr) {
       if (this.xrLaser) this.xrLaser.visible = false
       return
@@ -1401,7 +1387,6 @@ export class ClientBuilder extends System {
         body: `File size too large (>${this.world.network.maxUploadSize}mb)`,
         createdAt: moment().toISOString(),
       })
-      console.error(`File too large. Maximum size is ${maxSize / (1024 * 1024)}MB`)
       return
     }
     // builder rank required for non-vrm files
@@ -1452,7 +1437,6 @@ export class ClientBuilder extends System {
               body: `File size too large (>${maxUploadSize}mb)`,
               createdAt: moment().toISOString(),
             })
-            console.error(`File too large. Maximum size is ${maxUploadSize}MB`)
             return
           }
         }
@@ -1587,9 +1571,7 @@ export class ClientBuilder extends System {
       }
       if (blueprint) {
         this.world.blueprints.remove(blueprint.id)
-        this.world.admin
-          ?.blueprintRemove?.(blueprint.id)
-          .catch(removeErr => console.error('failed to remove blueprint', removeErr))
+        this.world.admin?.blueprintRemove?.(blueprint.id).catch(() => {})
       }
       if (sceneRevert) {
         this.world.blueprints.modify(sceneRevert)
@@ -1599,8 +1581,8 @@ export class ClientBuilder extends System {
       if (lockToken && this.world.admin?.releaseDeployLock) {
         try {
           await this.world.admin.releaseDeployLock(lockToken)
-        } catch (releaseErr) {
-          console.error('failed to release deploy lock', releaseErr)
+        } catch {
+          // Ignore cleanup failures; the server will expire stale deploy locks.
         }
       }
     }
@@ -1652,9 +1634,7 @@ export class ClientBuilder extends System {
         app.destroy(true)
       }
       this.world.blueprints.remove(blueprint.id)
-      this.world.admin
-        ?.blueprintRemove?.(blueprint.id)
-        .catch(removeErr => console.error('failed to remove blueprint', removeErr))
+      this.world.admin?.blueprintRemove?.(blueprint.id).catch(() => {})
       this.handleAdminError(err, 'Import failed')
     }
   }
@@ -1731,9 +1711,7 @@ export class ClientBuilder extends System {
           }
           if (blueprint) {
             this.world.blueprints.remove(blueprint.id)
-            this.world.admin
-              ?.blueprintRemove?.(blueprint.id)
-              .catch(removeErr => console.error('failed to remove blueprint', removeErr))
+            this.world.admin?.blueprintRemove?.(blueprint.id).catch(() => {})
           }
           this.handleAdminError(err, 'Place failed')
         }
@@ -1748,7 +1726,6 @@ export class ClientBuilder extends System {
         try {
           await this.world.admin.upload(file)
         } catch (err) {
-          console.error(err)
           this.handleAdminError(err, 'Avatar upload failed')
           return
         }

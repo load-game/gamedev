@@ -46,7 +46,9 @@ Presets are ordered plugin compositions:
 
 ```js
 import { definePreset } from 'gamedev/plugins'
+import { adminClientPlugin } from 'gamedev/plugins/admin/client'
 import { aiClientPlugin } from 'gamedev/plugins/ai/client'
+import { builderClientPlugin } from 'gamedev/plugins/builder/client'
 import { evmClientPlugin } from 'gamedev/plugins/evm'
 import { hyperliquidPlugin } from 'gamedev/plugins/hyperliquid'
 import { loaderClientPlugin } from 'gamedev/plugins/loader/client'
@@ -59,6 +61,8 @@ export const clientPreset = definePreset({
     coreSystemsPlugin,
     clientRuntimePlugin,
     loaderClientPlugin,
+    adminClientPlugin,
+    builderClientPlugin,
     livekitClientPlugin,
     aiClientPlugin,
     evmClientPlugin,
@@ -69,7 +73,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party loader, LiveKit, AI, EVM, and Hyperliquid plugins. Admin includes the client loader and LiveKit admin no-op/moderation bridge. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
+The default client and server presets include the first-party loader, LiveKit, AI, EVM, and Hyperliquid plugins. Client also includes the admin bridge and builder/drafts plugins so build tools remain explicit capabilities. Admin includes the client loader, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
 ## Script APIs
 

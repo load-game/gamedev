@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
-import { ClientBuilder } from '@gamedev/core/systems/ClientBuilder.js'
+import { ClientBuilder } from '@gamedev/core/plugins/builder/client.js'
 import { ServerAIScripts } from '@gamedev/core/plugins/ai/server.js'
 
 function createBlueprintStore(blueprints) {

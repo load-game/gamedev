@@ -1,6 +1,6 @@
-import { System } from './System.js'
-import { uuid } from '../utils.js'
-import { hashFile } from '../utils-client.js'
+import { System } from '../../systems/System.js'
+import { uuid } from '../../utils.js'
+import { hashFile } from '../../utils-client.js'
 
 function buildPlaceholderScript({ blueprintId }) {
   return `export default (world, app, fetch, props, setTimeout) => {
@@ -208,17 +208,15 @@ async function createPlaceholderApp({ world, name, props }) {
     }
     if (blueprint) {
       world.blueprints.remove(blueprint.id)
-      world.admin
-        ?.blueprintRemove?.(blueprint.id)
-        .catch(removeErr => console.error('failed to remove blueprint', removeErr))
+      world.admin?.blueprintRemove?.(blueprint.id).catch(() => {})
     }
     throw err
   } finally {
     if (lockToken && world.admin?.releaseDeployLock) {
       try {
         await world.admin.releaseDeployLock(lockToken)
-      } catch (releaseErr) {
-        console.error('failed to release deploy lock', releaseErr)
+      } catch {
+        // Ignore cleanup failures; the server will expire stale deploy locks.
       }
     }
   }

@@ -1,6 +1,8 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { adminClientPlugin } from './plugins/admin/client.js'
+import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 
@@ -9,13 +11,11 @@ import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
-import { AdminClient } from './systems/AdminClient.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { ClientAudio } from './systems/ClientAudio.js'
 import { ClientStats } from './systems/ClientStats.js'
-import { AdminBuilder } from './systems/AdminBuilder.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
 import { ClientUI } from './systems/ClientUI.js'
@@ -38,13 +38,11 @@ export const adminRuntimePlugin = definePlugin({
     ['prefs', ClientPrefs],
     ['controls', ClientControls],
     ['network', AdminNetwork],
-    ['admin', AdminClient],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
     ['audio', ClientAudio],
     ['stats', ClientStats],
-    ['builder', AdminBuilder],
     ['actions', ClientActions],
     ['target', ClientTarget],
     ['ui', ClientUI],
@@ -76,7 +74,14 @@ export const adminRuntimePlugin = definePlugin({
 
 export const adminPreset = definePreset({
   name: '@gamedev/preset-admin',
-  plugins: [coreSystemsPlugin, adminRuntimePlugin, loaderClientPlugin, livekitAdminPlugin],
+  plugins: [
+    coreSystemsPlugin,
+    adminRuntimePlugin,
+    loaderClientPlugin,
+    adminClientPlugin,
+    builderAdminPlugin,
+    livekitAdminPlugin,
+  ],
 })
 
 export function createAdminWorld(options = {}) {

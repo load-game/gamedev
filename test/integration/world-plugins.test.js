@@ -116,6 +116,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-admin/client',
+      '@gamedev/plugin-builder/admin',
       '@gamedev/plugin-livekit/admin',
     ]
   )
@@ -126,6 +128,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/client/runtime',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-admin/client',
+      '@gamedev/plugin-builder/client',
       '@gamedev/plugin-livekit/client',
       '@gamedev/plugin-ai/client',
       '@gamedev/plugin-evm/client',
@@ -193,6 +197,9 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.ai, undefined)
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
+  assert.equal(coreWorld.admin, undefined)
+  assert.equal(coreWorld.builder, undefined)
+  assert.equal(coreWorld.drafts, undefined)
   assert.equal(coreWorld.apps.worldMethods.load, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
