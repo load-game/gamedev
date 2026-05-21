@@ -6,7 +6,7 @@ This migration moves the runtime away from implicit all-in-core construction and
 
 `World` is the engine kernel. A new `World()` starts without systems. Systems are installed through plugins or presets.
 
-The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/presets/core`. It installs the kernel-level settings, app/script runtime, event, blueprint, and entity systems.
+The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/presets/core`. It installs the kernel-level settings, app/script runtime, event, blueprint, and entity systems, and advertises the built-in script proxy methods such as `script:world.add` and `script:app.create`.
 
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions.
 
@@ -44,7 +44,7 @@ Plugin fields:
 - `scripts`: app-runtime APIs exposed on `world`, `app`, or `player`.
 - `setup(world)`: optional build-time setup after systems are registered.
 
-System keys are also capabilities, so a plugin that installs `['loader', Loader]` provides `loader`.
+System keys, node types, entity types, and script APIs are also capabilities. A plugin that installs `['loader', Loader]` provides `loader`, a node contribution named `group` provides `node:group`, an entity contribution named `app` provides `entity:app`, and a script contribution named `world.evm` provides `script:world.evm`.
 
 ## Presets
 
@@ -135,7 +135,9 @@ Builder-owned built-in app templates are exported from `gamedev/plugins/builder/
 
 ## Script APIs
 
-Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.copy`, `world.raycast`, `world.evm`, `world.hyperliquid`, `player.evm`, network helpers like `world.isServer`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
+Plugins can expose script-facing APIs through `scripts`. Contributions are validated when the plugin is defined. Collisions are rejected before the plugin mutates the world, and each contribution is also available as a capability such as `script:world.load`, `script:world.evm`, or `script:player.evm`. Other plugins can list those capability names in `requires`.
+
+A world only exposes APIs such as `world.copy`, `world.raycast`, `world.evm`, `world.hyperliquid`, `player.evm`, network helpers like `world.isServer`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
 

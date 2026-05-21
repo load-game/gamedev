@@ -241,13 +241,32 @@ export class Apps extends System {
     throw new Error(`script_api_invalid_scope:${scope}`)
   }
 
-  assertScriptApiSlot(scope, key, source) {
+  assertScriptApiSlotAvailable(scope, key, source) {
     const registry = this.scriptApiSources[scope]
     const previousSource = registry.get(key)
     if (previousSource && previousSource !== source) {
       throw new Error(`script_api_collision:${scope}.${key}:${previousSource}:${source}`)
     }
+  }
+
+  claimScriptApiSlot(scope, key, source) {
+    this.assertScriptApiSlotAvailable(scope, key, source)
+    const registry = this.scriptApiSources[scope]
     registry.set(key, source)
+  }
+
+  assertScriptApiScopeAvailable(scope, api, source) {
+    if (!api) return
+    this.getScriptApiTargets(scope)
+    for (const key in api) {
+      this.assertScriptApiSlotAvailable(scope, key, source)
+    }
+  }
+
+  assertScriptApiAvailable({ world, app, player }, source = 'unknown') {
+    this.assertScriptApiScopeAvailable('world', world, source)
+    this.assertScriptApiScopeAvailable('app', app, source)
+    this.assertScriptApiScopeAvailable('player', player, source)
   }
 
   exposeScriptApiScope(scope, api, source) {
@@ -256,22 +275,35 @@ export class Apps extends System {
     for (const key in api) {
       const value = api[key]
       const isFn = typeof value === 'function'
-      this.assertScriptApiSlot(scope, key, source)
       if (isFn) {
+        this.claimScriptApiSlot(scope, key, source)
         targets.methods[key] = value
         continue
       }
       if (!value || typeof value !== 'object') {
         throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
       }
-      if (value.get) {
+      const hasGet = Object.prototype.hasOwnProperty.call(value, 'get')
+      const hasSet = Object.prototype.hasOwnProperty.call(value, 'set')
+      if (hasGet) {
+        if (typeof value.get !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+      }
+      if (hasSet) {
+        if (typeof value.set !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+      }
+      if (!hasGet && !hasSet) {
+        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+      }
+      this.claimScriptApiSlot(scope, key, source)
+      if (hasGet) {
         targets.getters[key] = value.get
       }
-      if (value.set) {
+      if (hasSet) {
         targets.setters[key] = value.set
-      }
-      if (!value.get && !value.set) {
-        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
       }
     }
   }

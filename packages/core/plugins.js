@@ -3,6 +3,8 @@ function toArray(value) {
   return Array.isArray(value) ? value : [value]
 }
 
+const scriptScopes = ['world', 'app', 'player']
+
 function normalizeSystemEntry(entry, pluginName) {
   if (Array.isArray(entry)) {
     const [key, System] = entry
@@ -103,6 +105,72 @@ function normalizeEntityEntries(value, pluginName) {
   throw new Error(`plugin_invalid_entities:${pluginName}`)
 }
 
+function normalizeScriptApiEntry(entry, pluginName, scope, key) {
+  if (typeof entry === 'function') {
+    return entry
+  }
+
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+  }
+
+  const descriptor = {}
+  if (Object.prototype.hasOwnProperty.call(entry, 'get')) {
+    if (typeof entry.get !== 'function') {
+      throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+    }
+    descriptor.get = entry.get
+  }
+  if (Object.prototype.hasOwnProperty.call(entry, 'set')) {
+    if (typeof entry.set !== 'function') {
+      throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+    }
+    descriptor.set = entry.set
+  }
+  if (!descriptor.get && !descriptor.set) {
+    throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+  }
+  return Object.freeze(descriptor)
+}
+
+function normalizeScriptApiScope(value, pluginName, scope) {
+  if (!value) return null
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`plugin_invalid_script_scope:${pluginName}:${scope}`)
+  }
+
+  const entries = {}
+  for (const [key, entry] of Object.entries(value)) {
+    if (!key || typeof key !== 'string') {
+      throw new Error(`plugin_invalid_script_key:${pluginName}:${scope}`)
+    }
+    entries[key] = normalizeScriptApiEntry(entry, pluginName, scope, key)
+  }
+  return Object.freeze(entries)
+}
+
+function normalizeScriptApiContribution(value, pluginName) {
+  if (!value) return null
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`plugin_invalid_scripts:${pluginName}`)
+  }
+
+  for (const scope of Object.keys(value)) {
+    if (!scriptScopes.includes(scope)) {
+      throw new Error(`plugin_invalid_script_scope:${pluginName}:${scope}`)
+    }
+  }
+
+  const contribution = {}
+  for (const scope of scriptScopes) {
+    const normalized = normalizeScriptApiScope(value[scope], pluginName, scope)
+    if (normalized && Object.keys(normalized).length) {
+      contribution[scope] = normalized
+    }
+  }
+  return Object.keys(contribution).length ? Object.freeze(contribution) : null
+}
+
 export function definePlugin(definition) {
   if (!definition || typeof definition !== 'object') {
     throw new Error('plugin_invalid_definition')
@@ -115,6 +183,7 @@ export function definePlugin(definition) {
   const systems = toArray(definition.systems).map(system => normalizeSystemEntry(system, name))
   const nodes = normalizeNodeEntries(definition.nodes, name)
   const entities = normalizeEntityEntries(definition.entities, name)
+  const scripts = normalizeScriptApiContribution(definition.scripts || definition.scriptApi, name)
 
   return Object.freeze({
     kind: 'plugin',
@@ -125,7 +194,7 @@ export function definePlugin(definition) {
     systems: Object.freeze(systems),
     nodes: Object.freeze(nodes),
     entities: Object.freeze(entities),
-    scripts: definition.scripts || definition.scriptApi || null,
+    scripts,
     setup: typeof definition.setup === 'function' ? definition.setup : null,
   })
 }
@@ -158,7 +227,19 @@ function getProvidedCapabilities(plugin) {
     ...plugin.systems.map(system => system.key),
     ...plugin.nodes.map(node => `node:${node.key}`),
     ...plugin.entities.map(entity => `entity:${entity.key}`),
+    ...getScriptCapabilities(plugin.scripts),
   ])
+}
+
+function getScriptCapabilities(scripts) {
+  if (!scripts) return []
+  const capabilities = []
+  for (const scope of scriptScopes) {
+    for (const key of Object.keys(scripts[scope] || {})) {
+      capabilities.push(`script:${scope}.${key}`)
+    }
+  }
+  return capabilities
 }
 
 function installPlugin(world, pluginDefinition) {
@@ -181,6 +262,9 @@ function installPlugin(world, pluginDefinition) {
     if (world.pluginCapabilities.has(capability)) {
       throw new Error(`plugin_capability_collision:${plugin.name}:${capability}`)
     }
+  }
+  if (plugin.scripts && world.apps?.assertScriptApiAvailable) {
+    world.apps.assertScriptApiAvailable(plugin.scripts, source)
   }
 
   for (const node of plugin.nodes) {

@@ -70,6 +70,9 @@ test('World starts as a kernel and installs systems through plugins', () => {
       world: {
         testApi: (entity, value) => `${entity.data.id}:${value}`,
       },
+      app: {
+        testApp: entity => entity.data.id,
+      },
       player: {
         testValue: {
           get: player => player.data.testValue,
@@ -86,9 +89,25 @@ test('World starts as a kernel and installs systems through plugins', () => {
   assert.equal(world.pluginCapabilities.has('core'), true)
   assert.equal(world.pluginCapabilities.has('test-capability'), true)
   assert.equal(world.pluginCapabilities.has('entity:testEntity'), true)
+  assert.equal(world.pluginCapabilities.has('script:world.add'), true)
+  assert.equal(world.pluginCapabilities.has('script:app.create'), true)
+  assert.equal(world.pluginCapabilities.has('script:world.testApi'), true)
+  assert.equal(world.pluginCapabilities.has('script:app.testApp'), true)
+  assert.equal(world.pluginCapabilities.has('script:player.testValue'), true)
   assert.ok(world.createEntity({ id: 'entity-1', type: 'testEntity' }, true) instanceof TestEntity)
   assert.equal(world.apps.worldMethods.testApi({ data: { id: 'app-1' } }, 'ok'), 'app-1:ok')
+  assert.equal(world.apps.appMethods.testApp({ data: { id: 'app-1' } }), 'app-1')
   assert.equal(world.apps.playerGetters.testValue({ data: { testValue: 42 } }), 42)
+
+  const scriptDependentPlugin = definePlugin({
+    name: 'script-dependent-plugin',
+    requires: ['script:world.testApi'],
+  })
+  assert.ok(new World({ plugins: [coreSystemsPlugin, testPlugin, scriptDependentPlugin] }))
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, scriptDependentPlugin] }),
+    /plugin_missing_requirement:script-dependent-plugin:script:world\.testApi/
+  )
 })
 
 test('presets install ordered plugins and validate requirements', () => {
@@ -184,7 +203,96 @@ test('plugins reject system and script API collisions', () => {
           }),
         ],
       }),
-    /script_api_collision:world\.add:core:bad-script-api/
+    /plugin_capability_collision:bad-script-api:script:world\.add/
+  )
+
+  assert.throws(
+    () =>
+      new World({
+        plugins: [
+          coreSystemsPlugin,
+          definePlugin({
+            name: 'script-one',
+            scripts: {
+              world: {
+                custom: () => null,
+              },
+            },
+          }),
+          definePlugin({
+            name: 'script-two',
+            scripts: {
+              world: {
+                custom: () => null,
+              },
+            },
+          }),
+        ],
+      }),
+    /plugin_capability_collision:script-two:script:world\.custom/
+  )
+
+  const collisionWorld = new World({ plugins: [coreSystemsPlugin] })
+  assert.throws(
+    () =>
+      collisionWorld.install(
+        definePlugin({
+          name: 'bad-script-api-with-system',
+          systems: [['badScriptSystem', TestSystem]],
+          scripts: {
+            world: {
+              add: () => null,
+            },
+          },
+        })
+      ),
+    /plugin_capability_collision:bad-script-api-with-system:script:world\.add/
+  )
+  assert.equal(collisionWorld.badScriptSystem, undefined)
+  assert.equal(collisionWorld.pluginCapabilities.has('bad-script-api-with-system'), false)
+  assert.equal(collisionWorld.pluginCapabilities.has('badScriptSystem'), false)
+})
+
+test('plugins validate script API descriptors at definition time', () => {
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-script-scope',
+        scripts: {
+          entity: {
+            test: () => null,
+          },
+        },
+      }),
+    /plugin_invalid_script_scope:bad-script-scope:entity/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-script-entry',
+        scripts: {
+          world: {
+            test: 1,
+          },
+        },
+      }),
+    /plugin_invalid_script_descriptor:bad-script-entry:world\.test/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-script-getter',
+        scripts: {
+          world: {
+            test: {
+              get: 'nope',
+            },
+          },
+        },
+      }),
+    /plugin_invalid_script_descriptor:bad-script-getter:world\.test/
   )
 })
 
