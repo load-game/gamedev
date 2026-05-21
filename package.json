@@ -32,6 +32,7 @@
     "index.node-client.js",
     "index.d.ts",
     "index.node-client.d.ts",
+    "index.plugin-actions-client.d.ts",
     "index.plugin-admin-client.d.ts",
     "index.plugin-ai-client.d.ts",
     "index.plugin-ai-server.d.ts",
@@ -76,6 +77,12 @@
       "import": "./packages/core/plugins.js",
       "require": "./packages/core/plugins.js",
       "default": "./packages/core/plugins.js"
+    },
+    "./plugins/actions/client": {
+      "types": "./index.plugin-actions-client.d.ts",
+      "import": "./packages/core/plugins/actions/client.js",
+      "require": "./packages/core/plugins/actions/client.js",
+      "default": "./packages/core/plugins/actions/client.js"
     },
     "./plugins/admin/client": {
       "types": "./index.plugin-admin-client.d.ts",

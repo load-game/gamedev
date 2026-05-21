@@ -13,7 +13,7 @@ export const uiClientScriptApi = Object.freeze({
 
 export const uiClientPlugin = definePlugin({
   name: '@gamedev/plugin-ui/client',
-  requires: ['core', 'chat', 'client', 'controls', 'prefs'],
+  requires: ['core', 'chat', 'client', 'controls', 'prefs', 'actions'],
   provides: ['@gamedev/plugin-ui', 'ui'],
   systems: [['ui', ClientUI]],
   scripts: uiClientScriptApi,

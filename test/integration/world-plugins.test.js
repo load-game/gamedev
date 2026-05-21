@@ -6,6 +6,7 @@ import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { adminPreset } from '@gamedev/core/createAdminWorld.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
+import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
@@ -122,6 +123,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
@@ -139,6 +141,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
@@ -224,6 +227,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
+  assert.equal(coreWorld.actions, undefined)
   assert.equal(coreWorld.audio, undefined)
   assert.equal(coreWorld.stats, undefined)
   assert.equal(coreWorld.ui, undefined)
@@ -259,6 +263,12 @@ test('feature APIs only appear when their plugins are selected', () => {
     /plugin_missing_requirement:@gamedev\/plugin-audio\/client:client/
   )
 
+  const actionsWorld = new World({
+    plugins: [coreSystemsPlugin, clientRuntimeStub, actionsClientPlugin],
+  })
+  assert.ok(actionsWorld.actions)
+  assert.equal(actionsWorld.actions.plugin, '@gamedev/plugin-actions/client')
+
   const statsWorld = new World({
     plugins: [coreSystemsPlugin, prefsClientPlugin, clientRuntimeStub, statsClientPlugin],
   })
@@ -266,7 +276,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
 
   const uiWorld = new World({
-    plugins: [coreSystemsPlugin, chatPlugin, prefsClientPlugin, clientRuntimeStub, uiClientPlugin],
+    plugins: [coreSystemsPlugin, chatPlugin, prefsClientPlugin, clientRuntimeStub, actionsClientPlugin, uiClientPlugin],
   })
   assert.ok(uiWorld.ui)
   assert.equal(uiWorld.ui.plugin, '@gamedev/plugin-ui/client')

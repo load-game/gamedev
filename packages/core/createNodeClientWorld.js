@@ -8,9 +8,6 @@ import { NodeClient } from './systems/NodeClient.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { NodeEnvironment } from './systems/NodeEnvironment.js'
-// import { ClientActions } from './systems/ClientActions.js'
-// import { LODs } from './systems/LODs.js'
-// import { Nametags } from './systems/Nametags.js'
 
 export const nodeClientRuntimePlugin = definePlugin({
   name: '@gamedev/node-client/runtime',
@@ -21,9 +18,6 @@ export const nodeClientRuntimePlugin = definePlugin({
     ['network', ClientNetwork],
     ['environment', NodeEnvironment],
   ],
-  // world.register('actions', ClientActions)
-  // world.register('lods', LODs)
-  // world.register('nametags', Nametags)
 })
 
 export const nodeClientPreset = definePreset({

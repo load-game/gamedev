@@ -1,9 +1,9 @@
 import * as THREE from 'three'
 
-import { System } from './System.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
-import { isTouch } from '../isTouch.js'
-import { clamp } from '../utils.js'
+import { System } from '../../systems/System.js'
+import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { isTouch } from '../../isTouch.js'
+import { clamp } from '../../utils.js'
 
 const BATCH_SIZE = 500
 const FORWARD = new THREE.Vector3(0, 0, 1)
@@ -12,10 +12,8 @@ const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
 const v3 = new THREE.Vector3()
 const v4 = new THREE.Vector3()
-const v5 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
 const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
-const m1 = new THREE.Matrix4()
 
 export class ClientActions extends System {
   constructor(world) {
@@ -147,7 +145,7 @@ function createAction(world) {
     update(delta) {
       if (!node) return
       let distance
-      if (world.xr.session) {
+      if (world.xr?.session) {
         const pos = v1
         const qua = q1
         const sca = v2
@@ -175,7 +173,7 @@ function createAction(world) {
       // When distance is at min, scale is 1.0 (or some other base scale)
       // When distance is at max, scale adjusts proportionally
       let scaleFactor = baseScale * (worldToScreenFactor * clampedDistance) * 100
-      if (world.xr.session) scaleFactor *= 0.2 // shrink because its HUGE in VR
+      if (world.xr?.session) scaleFactor *= 0.2 // shrink because its HUGE in VR
       mesh.scale.setScalar(scaleFactor)
       if (world.actions.btnDown) {
         if (node.progress === 0) {
@@ -183,7 +181,7 @@ function createAction(world) {
           try {
             node._onStart()
           } catch (err) {
-            console.error('action.onStart:', err)
+            reportActionError(world, 'onStart', err)
           }
         }
         node.progress += delta
@@ -194,7 +192,7 @@ function createAction(world) {
           try {
             node._onTrigger({ playerId: world.entities.player.data.id })
           } catch (err) {
-            console.error('action.onTrigger:', err)
+            reportActionError(world, 'onTrigger', err)
           }
         }
       } else if (node.progress > 0) {
@@ -202,7 +200,7 @@ function createAction(world) {
           try {
             node._onCancel()
           } catch (err) {
-            console.error('action.onCancel:', err)
+            reportActionError(world, 'onCancel', err)
           }
           cancelled = true
         }
@@ -218,6 +216,10 @@ function createAction(world) {
       }
     },
   }
+}
+
+function reportActionError(world, hook, err) {
+  world.logs?.add('client', 'error', [`action.${hook}:`, err])
 }
 
 const sizes = [128, 256, 512, 2048, 4096]
