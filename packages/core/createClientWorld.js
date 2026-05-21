@@ -9,6 +9,7 @@ import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
+import { uiClientPlugin } from './plugins/ui/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -22,7 +23,6 @@ import { ClientAudio } from './systems/ClientAudio.js'
 import { ClientStats } from './systems/ClientStats.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
-import { ClientUI } from './systems/ClientUI.js'
 import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
@@ -46,7 +46,6 @@ export const clientRuntimePlugin = definePlugin({
     ['stats', ClientStats],
     ['actions', ClientActions],
     ['target', ClientTarget],
-    ['ui', ClientUI],
     ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
@@ -62,6 +61,7 @@ export const clientPreset = definePreset({
     coreSystemsPlugin,
     chatPlugin,
     clientRuntimePlugin,
+    uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
     builderClientPlugin,

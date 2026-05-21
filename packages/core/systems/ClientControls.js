@@ -402,7 +402,7 @@ export class ClientControls extends System {
             reticleSupressor?.()
             reticleSupressor = null
           } else {
-            reticleSupressor = self.world.ui.suppressReticle()
+            reticleSupressor = self.world.ui?.suppressReticle?.() || null
           }
         },
         setActions(value) {

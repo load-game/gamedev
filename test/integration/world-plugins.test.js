@@ -13,6 +13,7 @@ import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
+import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
 import { System } from '@gamedev/core/systems/System.js'
@@ -117,6 +118,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/admin',
@@ -130,6 +132,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/client',
@@ -206,11 +209,13 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.chat, undefined)
+  assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
   assert.equal(coreWorld.drafts, undefined)
   assert.equal(coreWorld.apps.worldMethods.load, undefined)
   assert.equal(coreWorld.apps.worldMethods.chat, undefined)
+  assert.equal(coreWorld.apps.worldMethods.setReticle, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
 
@@ -221,6 +226,21 @@ test('feature APIs only appear when their plugins are selected', () => {
       ['network', DependentSystem],
     ],
   })
+
+  const clientRuntimeStub = definePlugin({
+    name: 'test-client-runtime',
+    systems: [
+      ['client', TestSystem],
+      ['controls', DependentSystem],
+    ],
+  })
+
+  const uiWorld = new World({
+    plugins: [coreSystemsPlugin, clientRuntimeStub, uiClientPlugin],
+  })
+  assert.ok(uiWorld.ui)
+  assert.equal(uiWorld.ui.plugin, '@gamedev/plugin-ui/client')
+  assert.equal(typeof uiWorld.apps.worldMethods.setReticle, 'function')
 
   const featureWorld = new World({
     plugins: [

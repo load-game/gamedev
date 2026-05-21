@@ -642,6 +642,8 @@ Notes:
 
 ### `.setReticle(options: ?Object)`
 
+Requires the UI plugin (`gamedev/plugins/ui/client`).
+
 Customizes the center-screen reticle. Pass `null` to reset to default.
 
 Top-level fields:

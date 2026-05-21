@@ -6,6 +6,7 @@ import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
+import { uiClientPlugin } from './plugins/ui/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -19,7 +20,6 @@ import { ClientAudio } from './systems/ClientAudio.js'
 import { ClientStats } from './systems/ClientStats.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
-import { ClientUI } from './systems/ClientUI.js'
 import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
@@ -46,7 +46,6 @@ export const adminRuntimePlugin = definePlugin({
     ['stats', ClientStats],
     ['actions', ClientActions],
     ['target', ClientTarget],
-    ['ui', ClientUI],
     ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
@@ -79,6 +78,7 @@ export const adminPreset = definePreset({
     coreSystemsPlugin,
     chatPlugin,
     adminRuntimePlugin,
+    uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
     builderAdminPlugin,

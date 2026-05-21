@@ -47,6 +47,7 @@
     "index.plugin-livekit-admin.d.ts",
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
+    "index.plugin-ui-client.d.ts",
     "index.presets-core.d.ts",
     "README.md",
     "LICENSE"
@@ -156,6 +157,12 @@
       "import": "./packages/core/plugins/livekit/server.js",
       "require": "./packages/core/plugins/livekit/server.js",
       "default": "./packages/core/plugins/livekit/server.js"
+    },
+    "./plugins/ui/client": {
+      "types": "./index.plugin-ui-client.d.ts",
+      "import": "./packages/core/plugins/ui/client.js",
+      "require": "./packages/core/plugins/ui/client.js",
+      "default": "./packages/core/plugins/ui/client.js"
     },
     "./presets/core": {
       "types": "./index.presets-core.d.ts",
