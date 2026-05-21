@@ -261,10 +261,6 @@ export class Apps extends System {
         if (!format) return moment().toISOString()
         return moment().format(format)
       },
-      chat(entity, msg, broadcast) {
-        if (!msg) return
-        world.chat.add(msg, broadcast)
-      },
       getPlayer(entity, playerId) {
         return entity.getPlayerProxy(playerId)
       },

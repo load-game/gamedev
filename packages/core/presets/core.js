@@ -6,7 +6,6 @@ import { Anchors } from '../systems/Anchors.js'
 import { Avatars } from '../systems/Avatars.js'
 import { Animation } from '../systems/Animation.js'
 import { Events } from '../systems/Events.js'
-import { Chat } from '../systems/Chat.js'
 import { Blueprints } from '../systems/Blueprints.js'
 import { Entities } from '../systems/Entities.js'
 import { Physics } from '../systems/Physics.js'
@@ -25,7 +24,6 @@ export const coreSystemsPlugin = definePlugin({
     ['animation', Animation],
     ['events', Events],
     ['scripts', Scripts],
-    ['chat', Chat],
     ['blueprints', Blueprints],
     ['entities', Entities],
     ['physics', Physics],

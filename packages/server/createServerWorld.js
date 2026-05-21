@@ -1,6 +1,7 @@
 import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
+import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
@@ -14,7 +15,7 @@ import { ServerNetwork } from './ServerNetwork.js'
 
 export const serverRuntimePlugin = definePlugin({
   name: '@gamedev/server/runtime',
-  requires: ['core'],
+  requires: ['core', 'chat'],
   systems: [
     ['server', Server],
     ['network', ServerNetwork],
@@ -27,6 +28,7 @@ export const serverPreset = definePreset({
   name: '@gamedev/preset-server',
   plugins: [
     coreSystemsPlugin,
+    chatPlugin,
     serverRuntimePlugin,
     loaderServerPlugin,
     livekitServerPlugin,

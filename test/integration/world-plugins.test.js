@@ -7,6 +7,7 @@ import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { adminPreset } from '@gamedev/core/createAdminWorld.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
+import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
@@ -114,6 +115,7 @@ test('runtime factories are preset compositions', () => {
     adminPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-chat',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -126,6 +128,7 @@ test('runtime factories are preset compositions', () => {
     clientPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-chat',
       '@gamedev/client/runtime',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -139,7 +142,7 @@ test('runtime factories are preset compositions', () => {
 
   assert.deepEqual(
     nodeClientPreset.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/node-client/runtime', '@gamedev/plugin-loader/server']
+    ['@gamedev/core/systems', '@gamedev/plugin-chat', '@gamedev/node-client/runtime', '@gamedev/plugin-loader/server']
   )
 
   assert.deepEqual(
@@ -151,6 +154,7 @@ test('runtime factories are preset compositions', () => {
     serverPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
@@ -164,6 +168,7 @@ test('runtime factories are preset compositions', () => {
     serverWorld.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
@@ -173,18 +178,21 @@ test('runtime factories are preset compositions', () => {
     ]
   )
   assert.ok(serverWorld.loader)
+  assert.ok(serverWorld.chat)
   assert.ok(serverWorld.livekit)
   assert.ok(serverWorld.ai)
   assert.ok(serverWorld.aiScripts)
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.chat.plugin, '@gamedev/plugin-chat')
   assert.equal(serverWorld.livekit.plugin, '@gamedev/plugin-livekit/server')
   assert.equal(serverWorld.ai.plugin, '@gamedev/plugin-ai/server')
   assert.equal(serverWorld.aiScripts.plugin, '@gamedev/plugin-ai/server')
   assert.equal(serverWorld.evm.plugin, '@gamedev/plugin-evm/server')
   assert.equal(serverWorld.hyperliquid.plugin, '@gamedev/plugin-hyperliquid')
   assert.equal(typeof serverWorld.apps.worldMethods.load, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.chat, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.evm, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.hyperliquid, 'function')
 })
@@ -197,10 +205,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.ai, undefined)
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
+  assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
   assert.equal(coreWorld.drafts, undefined)
   assert.equal(coreWorld.apps.worldMethods.load, undefined)
+  assert.equal(coreWorld.apps.worldMethods.chat, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
 
@@ -215,6 +225,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   const featureWorld = new World({
     plugins: [
       coreSystemsPlugin,
+      chatPlugin,
       serverRuntimeStub,
       loaderServerPlugin,
       livekitServerPlugin,
@@ -224,16 +235,19 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
   assert.ok(featureWorld.loader)
+  assert.ok(featureWorld.chat)
   assert.ok(featureWorld.livekit)
   assert.ok(featureWorld.ai)
   assert.ok(featureWorld.aiScripts)
   assert.ok(featureWorld.evm)
   assert.ok(featureWorld.hyperliquid)
   assert.equal(featureWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(featureWorld.chat.plugin, '@gamedev/plugin-chat')
   assert.equal(featureWorld.livekit.plugin, '@gamedev/plugin-livekit/server')
   assert.equal(featureWorld.ai.plugin, '@gamedev/plugin-ai/server')
   assert.equal(featureWorld.aiScripts.plugin, '@gamedev/plugin-ai/server')
   assert.equal(typeof featureWorld.apps.worldMethods.load, 'function')
+  assert.equal(typeof featureWorld.apps.worldMethods.chat, 'function')
   assert.equal(typeof featureWorld.apps.worldMethods.evm, 'function')
   assert.equal(typeof featureWorld.apps.playerGetters.evm, 'function')
   assert.equal(typeof featureWorld.apps.playerGetters.evmChainId, 'function')

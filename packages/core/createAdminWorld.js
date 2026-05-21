@@ -3,6 +3,7 @@ import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { adminClientPlugin } from './plugins/admin/client.js'
 import { builderAdminPlugin } from './plugins/builder/admin.js'
+import { chatPlugin } from './plugins/chat.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 
@@ -31,7 +32,7 @@ import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
 
 export const adminRuntimePlugin = definePlugin({
   name: '@gamedev/admin/runtime',
-  requires: ['core'],
+  requires: ['core', 'chat'],
   systems: [
     ['client', Client],
     ['pointer', ClientPointer],
@@ -76,6 +77,7 @@ export const adminPreset = definePreset({
   name: '@gamedev/preset-admin',
   plugins: [
     coreSystemsPlugin,
+    chatPlugin,
     adminRuntimePlugin,
     loaderClientPlugin,
     adminClientPlugin,

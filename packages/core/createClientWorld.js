@@ -3,6 +3,7 @@ import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { adminClientPlugin } from './plugins/admin/client.js'
 import { builderClientPlugin } from './plugins/builder/client.js'
+import { chatPlugin } from './plugins/chat.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
@@ -31,7 +32,7 @@ import { XR } from './systems/XR.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
-  requires: ['core'],
+  requires: ['core', 'chat'],
   systems: [
     ['client', Client],
     ['pointer', ClientPointer],
@@ -59,6 +60,7 @@ export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
   plugins: [
     coreSystemsPlugin,
+    chatPlugin,
     clientRuntimePlugin,
     loaderClientPlugin,
     adminClientPlugin,
