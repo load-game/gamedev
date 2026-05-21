@@ -137,19 +137,24 @@ export class EVM extends System {
   }
 
   init() {
-    this.world.inject?.({
-      world: {
-        evm: (...args) => this.getRuntimeAPI(extractInjectedChainId(args)),
-      },
-      player: {
-        evm: {
-          get: player => getPlayerEvmAddress(player),
+    const exposeScripts = this.world.exposeScripts || this.world.inject
+    exposeScripts?.call(
+      this.world,
+      {
+        world: {
+          evm: (...args) => this.getRuntimeAPI(extractInjectedChainId(args)),
         },
-        evmChainId: {
-          get: player => getPlayerEvmChainId(player),
+        player: {
+          evm: {
+            get: player => getPlayerEvmAddress(player),
+          },
+          evmChainId: {
+            get: player => getPlayerEvmChainId(player),
+          },
         },
       },
-    })
+      '@gamedev/plugin-evm'
+    )
   }
 
   getRuntimeAPI(chainId = null) {

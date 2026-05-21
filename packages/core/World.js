@@ -1,22 +1,9 @@
 import * as THREE from './extras/three.js'
 import EventEmitter from 'eventemitter3'
-
-import { Settings } from './systems/Settings.js'
-import { Apps } from './systems/Apps.js'
-import { Anchors } from './systems/Anchors.js'
-import { Avatars } from './systems/Avatars.js'
-import { Animation } from './systems/Animation.js'
-import { Events } from './systems/Events.js'
-import { Chat } from './systems/Chat.js'
-import { Blueprints } from './systems/Blueprints.js'
-import { Entities } from './systems/Entities.js'
-import { Physics } from './systems/Physics.js'
-import { Stage } from './systems/Stage.js'
-import { Scripts } from './systems/Scripts.js'
-import { Logs } from './systems/Logs.js'
+import { installWorldExtension } from './plugins.js'
 
 export class World extends EventEmitter {
-  constructor() {
+  constructor(options = {}) {
     super()
 
     this.maxDeltaTime = 1 / 30 // 0.33333
@@ -29,6 +16,9 @@ export class World extends EventEmitter {
     this.assetsUrl = null
     this.assetsDir = null
     this.hot = new Set()
+    this.plugins = []
+    this.pluginCapabilities = new Set()
+    this.pendingScriptApi = []
 
     this.rig = new THREE.Object3D()
     // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
@@ -36,26 +26,45 @@ export class World extends EventEmitter {
     this.camera = new THREE.PerspectiveCamera(70, 0, 0.2, 1200)
     this.rig.add(this.camera)
 
-    this.register('settings', Settings)
-    this.register('apps', Apps)
-    this.register('anchors', Anchors)
-    this.register('avatars', Avatars)
-    this.register('animation', Animation)
-    this.register('events', Events)
-    this.register('scripts', Scripts)
-    this.register('chat', Chat)
-    this.register('blueprints', Blueprints)
-    this.register('entities', Entities)
-    this.register('physics', Physics)
-    this.register('stage', Stage)
-    this.register('logs', Logs)
+    if (options.plugins) {
+      this.install(options.plugins)
+    }
   }
 
-  register(key, System) {
+  install(extension) {
+    installWorldExtension(this, extension)
+    return this
+  }
+
+  register(key, System, options = {}) {
+    if (this[key]) {
+      throw new Error(`world_system_collision:${key}`)
+    }
     const system = new System(this)
+    system.plugin = options.plugin || null
     this.systems.push(system)
     this[key] = system
+    if (key === 'apps') {
+      this.flushPendingScriptApi()
+    }
     return system
+  }
+
+  exposeScripts(api, source = 'world') {
+    if (!api) return
+    if (this.apps?.exposeScriptApi) {
+      this.apps.exposeScriptApi(api, source)
+    } else {
+      this.pendingScriptApi.push({ api, source })
+    }
+  }
+
+  flushPendingScriptApi() {
+    if (!this.apps?.exposeScriptApi || !this.pendingScriptApi.length) return
+    const pending = this.pendingScriptApi.splice(0)
+    for (const entry of pending) {
+      this.apps.exposeScriptApi(entry.api, entry.source)
+    }
   }
 
   async init(options) {
@@ -195,7 +204,7 @@ export class World extends EventEmitter {
   }
 
   setupMaterial = material => {
-    this.environment.csm?.setupMaterial(material)
+    this.environment?.csm?.setupMaterial(material)
   }
 
   setHot(item, hot) {
@@ -235,7 +244,7 @@ export class World extends EventEmitter {
   }
 
   inject(runtime) {
-    this.apps.inject(runtime)
+    this.exposeScripts(runtime, 'world.inject')
   }
 
   destroy() {

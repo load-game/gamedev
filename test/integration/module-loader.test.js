@@ -4,6 +4,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
+import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { ServerLoader } from '@gamedev/core/systems/ServerLoader.js'
 import { createTempDir } from './helpers.js'
 
@@ -23,7 +24,7 @@ test('module scripts load and execute on server runtime', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World()
+  const world = new World({ plugins: [coreSystemsPlugin] })
   world.register('loader', ServerLoader)
   world.assetsDir = assetsDir
 
@@ -61,7 +62,7 @@ test('legacy-body entry preserves imports and wraps body', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World()
+  const world = new World({ plugins: [coreSystemsPlugin] })
   world.register('loader', ServerLoader)
   world.assetsDir = assetsDir
 
@@ -102,7 +103,7 @@ test('shared import aliases resolve to shared script files', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'shared-math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World()
+  const world = new World({ plugins: [coreSystemsPlugin] })
   world.register('loader', ServerLoader)
   world.assetsDir = assetsDir
 

@@ -1,4 +1,6 @@
 import { World } from './World.js'
+import { definePlugin, definePreset } from './plugins.js'
+import { coreSystemsPlugin } from './presets/core.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -27,48 +29,61 @@ import { AdminLiveKit } from './systems/AdminLiveKit.js'
 import { FreeCam } from './entities/FreeCam.js'
 import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
 
-export function createAdminWorld() {
-  const world = new World()
-  world.isAdminClient = true
+export const adminRuntimePlugin = definePlugin({
+  name: '@gamedev/admin/runtime',
+  requires: ['core'],
+  systems: [
+    ['client', Client],
+    ['livekit', AdminLiveKit],
+    ['pointer', ClientPointer],
+    ['prefs', ClientPrefs],
+    ['controls', ClientControls],
+    ['network', AdminNetwork],
+    ['admin', AdminClient],
+    ['loader', ClientLoader],
+    ['css', ClientCSS],
+    ['graphics', ClientGraphics],
+    ['environment', ClientEnvironment],
+    ['audio', ClientAudio],
+    ['stats', ClientStats],
+    ['builder', AdminBuilder],
+    ['actions', ClientActions],
+    ['target', ClientTarget],
+    ['ui', ClientUI],
+    ['lods', LODs],
+    ['nametags', Nametags],
+    ['particles', Particles],
+    ['snaps', Snaps],
+    ['wind', Wind],
+    ['xr', AdminXR],
+  ],
+  setup(world) {
+    world.isAdminClient = true
+    world.adminNetwork = world.network
 
-  world.register('client', Client)
-  world.register('livekit', AdminLiveKit)
-  world.register('pointer', ClientPointer)
-  world.register('prefs', ClientPrefs)
-  world.register('controls', ClientControls)
-  world.register('network', AdminNetwork)
-  world.register('admin', AdminClient)
-  world.register('loader', ClientLoader)
-  world.register('css', ClientCSS)
-  world.register('graphics', ClientGraphics)
-  world.register('environment', ClientEnvironment)
-  world.register('audio', ClientAudio)
-  world.register('stats', ClientStats)
-  world.register('builder', AdminBuilder)
-  world.register('actions', ClientActions)
-  world.register('target', ClientTarget)
-  world.register('ui', ClientUI)
-  world.register('lods', LODs)
-  world.register('nametags', Nametags)
-  world.register('particles', Particles)
-  world.register('snaps', Snaps)
-  world.register('wind', Wind)
-  world.register('xr', AdminXR)
+    const adminPlayer = new AdminLocalPlayer(world, { id: world.network.id })
+    world.entities.player = adminPlayer
+    world.adminPlayer = adminPlayer
+    world.emit('player', adminPlayer)
 
-  world.adminNetwork = world.network
-
-  const adminPlayer = new AdminLocalPlayer(world, { id: world.network.id })
-  world.entities.player = adminPlayer
-  world.adminPlayer = adminPlayer
-  world.emit('player', adminPlayer)
-
-  const baseInit = world.init.bind(world)
-  world.init = async options => {
-    await baseInit(options)
-    if (!world.freeCam) {
-      world.freeCam = new FreeCam(world)
+    const baseInit = world.init.bind(world)
+    world.init = async options => {
+      await baseInit(options)
+      if (!world.freeCam) {
+        world.freeCam = new FreeCam(world)
+      }
     }
-  }
+  },
+})
 
+export const adminPreset = definePreset({
+  name: '@gamedev/preset-admin',
+  plugins: [coreSystemsPlugin, adminRuntimePlugin],
+})
+
+export function createAdminWorld(options = {}) {
+  const world = new World()
+  world.install(adminPreset)
+  world.install(options.plugins || [])
   return world
 }

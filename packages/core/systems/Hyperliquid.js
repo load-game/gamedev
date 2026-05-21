@@ -113,11 +113,16 @@ export class Hyperliquid extends System {
   }
 
   init() {
-    this.world.inject({
-      world: {
-        hyperliquid: (...args) => this.getRuntimeAPI(this._resolveInjectedRuntimeArgs(args)),
+    const exposeScripts = this.world.exposeScripts || this.world.inject
+    exposeScripts?.call(
+      this.world,
+      {
+        world: {
+          hyperliquid: (...args) => this.getRuntimeAPI(this._resolveInjectedRuntimeArgs(args)),
+        },
       },
-    })
+      '@gamedev/plugin-hyperliquid'
+    )
   }
 
   _resolveInjectedRuntimeArgs(args = []) {

@@ -52,6 +52,7 @@ Run `gamedev help` for the full command list.
 - [World Projects](docs/World-projects.md)
 - [App-server](docs/App-server.md)
 - [Scripting API](docs/scripting/README.md)
+- [Plugin Architecture](docs/plugin-architecture.md)
 - [Docker Deployment](DOCKER.md)
 
 ## Developing This Repository

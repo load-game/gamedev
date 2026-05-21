@@ -180,6 +180,13 @@ export class Apps extends System {
     this.playerGetters = {}
     this.playerSetters = {}
     this.playerMethods = {}
+    this.scriptApiSources = {
+      world: new Map(),
+      app: new Map(),
+      player: new Map(),
+    }
+    this.recordScriptApiScope('world', 'core')
+    this.recordScriptApiScope('app', 'core')
   }
 
   initWorldHooks() {
@@ -555,55 +562,83 @@ export class Apps extends System {
     }
   }
 
-  inject({ world, app, player }) {
-    if (world) {
-      for (const key in world) {
-        const value = world[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.worldMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.worldGetters[key] = value.get
-        }
-        if (value.set) {
-          this.worldSetters[key] = value.set
-        }
+  recordScriptApiScope(scope, source) {
+    const registry = this.scriptApiSources?.[scope]
+    if (!registry) return
+    const targets = this.getScriptApiTargets(scope)
+    for (const key of Object.keys(targets.getters)) registry.set(key, source)
+    for (const key of Object.keys(targets.setters)) registry.set(key, source)
+    for (const key of Object.keys(targets.methods)) registry.set(key, source)
+  }
+
+  getScriptApiTargets(scope) {
+    if (scope === 'world') {
+      return {
+        getters: this.worldGetters,
+        setters: this.worldSetters,
+        methods: this.worldMethods,
       }
     }
-    if (app) {
-      for (const key in app) {
-        const value = app[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.appMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.appGetters[key] = value.get
-        }
-        if (value.set) {
-          this.appSetters[key] = value.set
-        }
+    if (scope === 'app') {
+      return {
+        getters: this.appGetters,
+        setters: this.appSetters,
+        methods: this.appMethods,
       }
     }
-    if (player) {
-      for (const key in player) {
-        const value = player[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.playerMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.playerGetters[key] = value.get
-        }
-        if (value.set) {
-          this.playerSetters[key] = value.set
-        }
+    if (scope === 'player') {
+      return {
+        getters: this.playerGetters,
+        setters: this.playerSetters,
+        methods: this.playerMethods,
       }
     }
+    throw new Error(`script_api_invalid_scope:${scope}`)
+  }
+
+  assertScriptApiSlot(scope, key, source) {
+    const registry = this.scriptApiSources[scope]
+    const previousSource = registry.get(key)
+    if (previousSource && previousSource !== source) {
+      throw new Error(`script_api_collision:${scope}.${key}:${previousSource}:${source}`)
+    }
+    registry.set(key, source)
+  }
+
+  exposeScriptApiScope(scope, api, source) {
+    if (!api) return
+    const targets = this.getScriptApiTargets(scope)
+    for (const key in api) {
+      const value = api[key]
+      const isFn = typeof value === 'function'
+      this.assertScriptApiSlot(scope, key, source)
+      if (isFn) {
+        targets.methods[key] = value
+        continue
+      }
+      if (!value || typeof value !== 'object') {
+        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+      }
+      if (value.get) {
+        targets.getters[key] = value.get
+      }
+      if (value.set) {
+        targets.setters[key] = value.set
+      }
+      if (!value.get && !value.set) {
+        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+      }
+    }
+  }
+
+  exposeScriptApi({ world, app, player }, source = 'unknown') {
+    this.exposeScriptApiScope('world', world, source)
+    this.exposeScriptApiScope('app', app, source)
+    this.exposeScriptApiScope('player', player, source)
+  }
+
+  inject(api) {
+    this.exposeScriptApi(api, 'world.inject')
   }
 }
 

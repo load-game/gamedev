@@ -1,4 +1,6 @@
 import { World } from '@gamedev/core/World.js'
+import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
+import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
 import { ServerLiveKit } from '@gamedev/core/systems/ServerLiveKit.js'
@@ -11,17 +13,31 @@ import { EVM } from '@gamedev/core/systems/EVMServer.js'
 import { Hyperliquid } from '@gamedev/core/systems/Hyperliquid.js'
 import { ServerNetwork } from './ServerNetwork.js'
 
-export function createServerWorld() {
+export const serverRuntimePlugin = definePlugin({
+  name: '@gamedev/server/runtime',
+  requires: ['core'],
+  systems: [
+    ['server', Server],
+    ['livekit', ServerLiveKit],
+    ['network', ServerNetwork],
+    ['loader', ServerLoader],
+    ['ai', ServerAI],
+    ['aiScripts', ServerAIScripts],
+    ['environment', ServerEnvironment],
+    ['monitor', ServerMonitor],
+    ['evm', EVM],
+    ['hyperliquid', Hyperliquid],
+  ],
+})
+
+export const serverPreset = definePreset({
+  name: '@gamedev/preset-server',
+  plugins: [coreSystemsPlugin, serverRuntimePlugin],
+})
+
+export function createServerWorld(options = {}) {
   const world = new World()
-  world.register('server', Server)
-  world.register('livekit', ServerLiveKit)
-  world.register('network', ServerNetwork)
-  world.register('loader', ServerLoader)
-  world.register('ai', ServerAI)
-  world.register('aiScripts', ServerAIScripts)
-  world.register('environment', ServerEnvironment)
-  world.register('monitor', ServerMonitor)
-  world.register('evm', EVM)
-  world.register('hyperliquid', Hyperliquid)
+  world.install(serverPreset)
+  world.install(options.plugins || [])
   return world
 }

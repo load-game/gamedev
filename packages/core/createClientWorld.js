@@ -1,4 +1,6 @@
 import { World } from './World.js'
+import { definePlugin, definePreset } from './plugins.js'
+import { coreSystemsPlugin } from './presets/core.js'
 
 import { Client } from './systems/Client.js'
 import { ClientLiveKit } from './systems/ClientLiveKit.js'
@@ -28,34 +30,48 @@ import { XR } from './systems/XR.js'
 import { EVM } from './systems/EVMClient.js'
 import { Hyperliquid } from './systems/Hyperliquid.js'
 
-export function createClientWorld() {
+export const clientRuntimePlugin = definePlugin({
+  name: '@gamedev/client/runtime',
+  requires: ['core'],
+  systems: [
+    ['client', Client],
+    ['livekit', ClientLiveKit],
+    ['pointer', ClientPointer],
+    ['prefs', ClientPrefs],
+    ['controls', ClientControls],
+    ['network', ClientNetwork],
+    ['admin', AdminClient],
+    ['loader', ClientLoader],
+    ['css', ClientCSS],
+    ['graphics', ClientGraphics],
+    ['environment', ClientEnvironment],
+    ['audio', ClientAudio],
+    ['stats', ClientStats],
+    ['builder', ClientBuilder],
+    ['actions', ClientActions],
+    ['target', ClientTarget],
+    ['ui', ClientUI],
+    ['ai', ClientAI],
+    ['drafts', ClientDrafts],
+    ['lods', LODs],
+    ['nametags', Nametags],
+    ['particles', Particles],
+    ['snaps', Snaps],
+    ['wind', Wind],
+    ['xr', XR],
+    ['evm', EVM],
+    ['hyperliquid', Hyperliquid],
+  ],
+})
+
+export const clientPreset = definePreset({
+  name: '@gamedev/preset-client',
+  plugins: [coreSystemsPlugin, clientRuntimePlugin],
+})
+
+export function createClientWorld(options = {}) {
   const world = new World()
-  world.register('client', Client)
-  world.register('livekit', ClientLiveKit)
-  world.register('pointer', ClientPointer)
-  world.register('prefs', ClientPrefs)
-  world.register('controls', ClientControls)
-  world.register('network', ClientNetwork)
-  world.register('admin', AdminClient)
-  world.register('loader', ClientLoader)
-  world.register('css', ClientCSS)
-  world.register('graphics', ClientGraphics)
-  world.register('environment', ClientEnvironment)
-  world.register('audio', ClientAudio)
-  world.register('stats', ClientStats)
-  world.register('builder', ClientBuilder)
-  world.register('actions', ClientActions)
-  world.register('target', ClientTarget)
-  world.register('ui', ClientUI)
-  world.register('ai', ClientAI)
-  world.register('drafts', ClientDrafts)
-  world.register('lods', LODs)
-  world.register('nametags', Nametags)
-  world.register('particles', Particles)
-  world.register('snaps', Snaps)
-  world.register('wind', Wind)
-  world.register('xr', XR)
-  world.register('evm', EVM)
-  world.register('hyperliquid', Hyperliquid)
+  world.install(clientPreset)
+  world.install(options.plugins || [])
   return world
 }

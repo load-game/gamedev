@@ -32,6 +32,8 @@
     "index.node-client.js",
     "index.d.ts",
     "index.node-client.d.ts",
+    "index.plugins.d.ts",
+    "index.presets-core.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -50,6 +52,18 @@
       "import": "./index.node-client.js",
       "require": "./index.node-client.js",
       "default": "./index.node-client.js"
+    },
+    "./plugins": {
+      "types": "./index.plugins.d.ts",
+      "import": "./packages/core/plugins.js",
+      "require": "./packages/core/plugins.js",
+      "default": "./packages/core/plugins.js"
+    },
+    "./presets/core": {
+      "types": "./index.presets-core.d.ts",
+      "import": "./packages/core/presets/core.js",
+      "require": "./packages/core/presets/core.js",
+      "default": "./packages/core/presets/core.js"
     }
   },
   "scripts": {
