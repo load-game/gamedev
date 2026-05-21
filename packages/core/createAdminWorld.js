@@ -1,6 +1,7 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -24,7 +25,6 @@ import { Particles } from './systems/Particles.js'
 import { Snaps } from './systems/Snaps.js'
 import { Wind } from './systems/Wind.js'
 import { AdminXR } from './systems/AdminXR.js'
-import { AdminLiveKit } from './systems/AdminLiveKit.js'
 
 import { FreeCam } from './entities/FreeCam.js'
 import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
@@ -34,7 +34,6 @@ export const adminRuntimePlugin = definePlugin({
   requires: ['core'],
   systems: [
     ['client', Client],
-    ['livekit', AdminLiveKit],
     ['pointer', ClientPointer],
     ['prefs', ClientPrefs],
     ['controls', ClientControls],
@@ -78,7 +77,7 @@ export const adminRuntimePlugin = definePlugin({
 
 export const adminPreset = definePreset({
   name: '@gamedev/preset-admin',
-  plugins: [coreSystemsPlugin, adminRuntimePlugin],
+  plugins: [coreSystemsPlugin, adminRuntimePlugin, livekitAdminPlugin],
 })
 
 export function createAdminWorld(options = {}) {

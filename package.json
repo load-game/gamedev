@@ -35,6 +35,9 @@
     "index.plugins.d.ts",
     "index.plugin-evm.d.ts",
     "index.plugin-hyperliquid.d.ts",
+    "index.plugin-livekit-admin.d.ts",
+    "index.plugin-livekit-client.d.ts",
+    "index.plugin-livekit-server.d.ts",
     "index.presets-core.d.ts",
     "README.md",
     "LICENSE"
@@ -72,6 +75,24 @@
       "import": "./packages/core/plugins/hyperliquid.js",
       "require": "./packages/core/plugins/hyperliquid.js",
       "default": "./packages/core/plugins/hyperliquid.js"
+    },
+    "./plugins/livekit/client": {
+      "types": "./index.plugin-livekit-client.d.ts",
+      "import": "./packages/core/plugins/livekit/client.js",
+      "require": "./packages/core/plugins/livekit/client.js",
+      "default": "./packages/core/plugins/livekit/client.js"
+    },
+    "./plugins/livekit/admin": {
+      "types": "./index.plugin-livekit-admin.d.ts",
+      "import": "./packages/core/plugins/livekit/admin.js",
+      "require": "./packages/core/plugins/livekit/admin.js",
+      "default": "./packages/core/plugins/livekit/admin.js"
+    },
+    "./plugins/livekit/server": {
+      "types": "./index.plugin-livekit-server.d.ts",
+      "import": "./packages/core/plugins/livekit/server.js",
+      "require": "./packages/core/plugins/livekit/server.js",
+      "default": "./packages/core/plugins/livekit/server.js"
     },
     "./presets/core": {
       "types": "./index.presets-core.d.ts",

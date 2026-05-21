@@ -3,9 +3,9 @@ import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
+import { livekitClientPlugin } from './plugins/livekit/client.js'
 
 import { Client } from './systems/Client.js'
-import { ClientLiveKit } from './systems/ClientLiveKit.js'
 import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
@@ -35,7 +35,6 @@ export const clientRuntimePlugin = definePlugin({
   requires: ['core'],
   systems: [
     ['client', Client],
-    ['livekit', ClientLiveKit],
     ['pointer', ClientPointer],
     ['prefs', ClientPrefs],
     ['controls', ClientControls],
@@ -64,7 +63,7 @@ export const clientRuntimePlugin = definePlugin({
 
 export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
-  plugins: [coreSystemsPlugin, clientRuntimePlugin, evmClientPlugin, hyperliquidPlugin],
+  plugins: [coreSystemsPlugin, clientRuntimePlugin, livekitClientPlugin, evmClientPlugin, hyperliquidPlugin],
 })
 
 export function createClientWorld(options = {}) {

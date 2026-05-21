@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 export class AdminLiveKit extends System {
   constructor(world) {
