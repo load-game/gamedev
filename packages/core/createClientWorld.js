@@ -6,6 +6,7 @@ import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderClientPlugin } from './plugins/builder/client.js'
 import { chatPlugin } from './plugins/chat.js'
+import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
@@ -26,7 +27,6 @@ import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
-import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { XR } from './systems/XR.js'
 
@@ -38,7 +38,6 @@ export const clientRuntimePlugin = definePlugin({
     ['pointer', ClientPointer],
     ['controls', ClientControls],
     ['network', ClientNetwork],
-    ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['xr', XR],
   ],
@@ -51,6 +50,7 @@ export const clientPreset = definePreset({
     chatPlugin,
     prefsClientPlugin,
     clientRuntimePlugin,
+    cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,
     statsClientPlugin,

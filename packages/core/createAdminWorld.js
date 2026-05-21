@@ -6,6 +6,7 @@ import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
+import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
@@ -23,7 +24,6 @@ import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
-import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { AdminXR } from './systems/AdminXR.js'
 
@@ -38,7 +38,6 @@ export const adminRuntimePlugin = definePlugin({
     ['pointer', ClientPointer],
     ['controls', ClientControls],
     ['network', AdminNetwork],
-    ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['xr', AdminXR],
   ],
@@ -68,6 +67,7 @@ export const adminPreset = definePreset({
     chatPlugin,
     prefsClientPlugin,
     adminRuntimePlugin,
+    cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,
     statsClientPlugin,

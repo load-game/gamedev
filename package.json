@@ -41,6 +41,7 @@
     "index.plugin-builder-builtins.d.ts",
     "index.plugin-builder-client.d.ts",
     "index.plugin-chat.d.ts",
+    "index.plugin-css-client.d.ts",
     "index.plugins.d.ts",
     "index.plugin-environment-client.d.ts",
     "index.plugin-environment-node-client.d.ts",
@@ -152,6 +153,12 @@
       "import": "./packages/core/plugins/chat.js",
       "require": "./packages/core/plugins/chat.js",
       "default": "./packages/core/plugins/chat.js"
+    },
+    "./plugins/css/client": {
+      "types": "./index.plugin-css-client.d.ts",
+      "import": "./packages/core/plugins/css/client.js",
+      "require": "./packages/core/plugins/css/client.js",
+      "default": "./packages/core/plugins/css/client.js"
     },
     "./plugins/environment/client": {
       "types": "./index.plugin-environment-client.d.ts",

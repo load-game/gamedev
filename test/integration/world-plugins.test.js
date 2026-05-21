@@ -10,6 +10,7 @@ import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
+import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
@@ -129,6 +130,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
@@ -154,6 +156,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
@@ -257,6 +260,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.environment, undefined)
+  assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
   assert.equal(coreWorld.actions, undefined)
@@ -299,6 +303,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-audio\/client:client/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, cssClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-css\/client:graphics/
   )
 
   const actionsWorld = new World({

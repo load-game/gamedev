@@ -1,7 +1,7 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const v1 = new THREE.Vector3()
 
