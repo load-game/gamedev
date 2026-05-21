@@ -66,6 +66,43 @@ function normalizeNodeEntries(value, pluginName) {
   throw new Error(`plugin_invalid_nodes:${pluginName}`)
 }
 
+function normalizeEntityEntry(entry, pluginName) {
+  if (Array.isArray(entry)) {
+    const [key, Entity] = entry
+    if (!key || typeof key !== 'string') {
+      throw new Error(`plugin_invalid_entity_key:${pluginName}`)
+    }
+    if (typeof Entity !== 'function') {
+      throw new Error(`plugin_invalid_entity:${pluginName}:${key}`)
+    }
+    return { key, Entity, create: null }
+  }
+
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`plugin_invalid_entity:${pluginName}`)
+  }
+
+  const key = entry.key
+  const Entity = entry.Entity || entry.entity || null
+  const create = entry.create || entry.factory || null
+  if (!key || typeof key !== 'string') {
+    throw new Error(`plugin_invalid_entity_key:${pluginName}`)
+  }
+  if (typeof Entity !== 'function' && typeof create !== 'function') {
+    throw new Error(`plugin_invalid_entity:${pluginName}:${key}`)
+  }
+  return { key, Entity, create }
+}
+
+function normalizeEntityEntries(value, pluginName) {
+  if (!value) return []
+  if (Array.isArray(value)) return value.map(entry => normalizeEntityEntry(entry, pluginName))
+  if (typeof value === 'object') {
+    return Object.entries(value).map(([key, Entity]) => normalizeEntityEntry([key, Entity], pluginName))
+  }
+  throw new Error(`plugin_invalid_entities:${pluginName}`)
+}
+
 export function definePlugin(definition) {
   if (!definition || typeof definition !== 'object') {
     throw new Error('plugin_invalid_definition')
@@ -77,6 +114,7 @@ export function definePlugin(definition) {
   const name = definition.name
   const systems = toArray(definition.systems).map(system => normalizeSystemEntry(system, name))
   const nodes = normalizeNodeEntries(definition.nodes, name)
+  const entities = normalizeEntityEntries(definition.entities, name)
 
   return Object.freeze({
     kind: 'plugin',
@@ -86,6 +124,7 @@ export function definePlugin(definition) {
     provides: Object.freeze(toArray(definition.provides).map(String)),
     systems: Object.freeze(systems),
     nodes: Object.freeze(nodes),
+    entities: Object.freeze(entities),
     scripts: definition.scripts || definition.scriptApi || null,
     setup: typeof definition.setup === 'function' ? definition.setup : null,
   })
@@ -118,6 +157,7 @@ function getProvidedCapabilities(plugin) {
     ...plugin.provides,
     ...plugin.systems.map(system => system.key),
     ...plugin.nodes.map(node => `node:${node.key}`),
+    ...plugin.entities.map(entity => `entity:${entity.key}`),
   ])
 }
 
@@ -145,6 +185,9 @@ function installPlugin(world, pluginDefinition) {
 
   for (const node of plugin.nodes) {
     world.registerNode(node.key, node.Node, { plugin: plugin.name })
+  }
+  for (const entity of plugin.entities) {
+    world.registerEntity(entity.key, entity, { plugin: plugin.name })
   }
   for (const system of plugin.systems) {
     world.register(system.key, system.System, { plugin: plugin.name })

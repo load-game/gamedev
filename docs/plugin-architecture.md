@@ -10,6 +10,8 @@ The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/pr
 
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions.
 
+Concrete entity constructors are also plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`.
+
 ## Plugins
 
 Plugins declare what they install and what they need:
@@ -38,6 +40,7 @@ Plugin fields:
 - `provides`: additional capabilities made available by this plugin.
 - `systems`: `[key, System]` entries installed on the world.
 - `nodes`: node constructors installed by name for `world.createNode()` and script `app.create()`.
+- `entities`: entity constructors or factories installed by type for `world.createEntity()` and the entities system.
 - `scripts`: app-runtime APIs exposed on `world`, `app`, or `player`.
 - `setup(world)`: optional build-time setup after systems are registered.
 
@@ -59,6 +62,8 @@ import { chatPlugin } from 'gamedev/plugins/chat'
 import { controlsClientPlugin } from 'gamedev/plugins/controls/client'
 import { cssClientPlugin } from 'gamedev/plugins/css/client'
 import { environmentClientPlugin } from 'gamedev/plugins/environment/client'
+import { appEntityPlugin } from 'gamedev/plugins/entities/app'
+import { playerEntitiesPlugin } from 'gamedev/plugins/entities/player'
 import { evmClientPlugin } from 'gamedev/plugins/evm'
 import { graphicsClientPlugin } from 'gamedev/plugins/graphics/client'
 import { hyperliquidPlugin } from 'gamedev/plugins/hyperliquid'
@@ -108,6 +113,8 @@ export const clientPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    appEntityPlugin,
+    playerEntitiesPlugin,
     environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,
@@ -122,7 +129,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party logs/diagnostics, built-in nodes, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The spatial plugin owns anchors, avatars, animation, physics, stage, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, node constructors, and script APIs do not exist.
+The default client and server presets include the first-party logs/diagnostics, built-in nodes, app/player entities, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The entity plugins own concrete app and player entity construction. The spatial plugin owns anchors, avatars, animation, physics, stage, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, app/player entities, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, app entities, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, entity constructors, node constructors, and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 

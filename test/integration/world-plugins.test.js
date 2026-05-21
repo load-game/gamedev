@@ -14,6 +14,8 @@ import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { controlsClientPlugin } from '@gamedev/core/plugins/controls/client.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
+import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
+import { playerEntitiesPlugin } from '@gamedev/core/plugins/entities/player.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { graphicsClientPlugin } from '@gamedev/core/plugins/graphics/client.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
@@ -44,6 +46,13 @@ import { System } from '@gamedev/core/systems/System.js'
 
 class TestSystem extends System {}
 class DependentSystem extends System {}
+class TestEntity {
+  constructor(world, data, local) {
+    this.world = world
+    this.data = data
+    this.local = local
+  }
+}
 
 test('World starts as a kernel and installs systems through plugins', () => {
   const emptyWorld = new World()
@@ -54,6 +63,9 @@ test('World starts as a kernel and installs systems through plugins', () => {
     requires: ['core'],
     provides: ['test-capability'],
     systems: [['test', TestSystem]],
+    entities: {
+      testEntity: TestEntity,
+    },
     scripts: {
       world: {
         testApi: (entity, value) => `${entity.data.id}:${value}`,
@@ -73,6 +85,8 @@ test('World starts as a kernel and installs systems through plugins', () => {
   assert.equal(world.test.plugin, 'test-plugin')
   assert.equal(world.pluginCapabilities.has('core'), true)
   assert.equal(world.pluginCapabilities.has('test-capability'), true)
+  assert.equal(world.pluginCapabilities.has('entity:testEntity'), true)
+  assert.ok(world.createEntity({ id: 'entity-1', type: 'testEntity' }, true) instanceof TestEntity)
   assert.equal(world.apps.worldMethods.testApi({ data: { id: 'app-1' } }, 'ok'), 'app-1:ok')
   assert.equal(world.apps.playerGetters.testValue({ data: { testValue: 42 } }), 42)
 })
@@ -139,6 +153,28 @@ test('plugins reject system and script API collisions', () => {
         plugins: [
           coreSystemsPlugin,
           definePlugin({
+            name: 'entity-provider',
+            entities: {
+              app: TestEntity,
+            },
+          }),
+          definePlugin({
+            name: 'duplicate-entity',
+            entities: {
+              app: TestEntity,
+            },
+          }),
+        ],
+      }),
+    /plugin_capability_collision:duplicate-entity:entity:app|world_entity_collision:app/
+  )
+
+  assert.throws(
+    () =>
+      new World({
+        plugins: [
+          coreSystemsPlugin,
+          definePlugin({
             name: 'bad-script-api',
             scripts: {
               world: {
@@ -180,6 +216,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-entities/app',
+      '@gamedev/plugin-entities/player',
       '@gamedev/plugin-environment/client',
       '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
@@ -215,6 +253,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-entities/app',
+      '@gamedev/plugin-entities/player',
       '@gamedev/plugin-environment/client',
       '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
@@ -237,8 +277,10 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-controls/client',
       '@gamedev/node-client/runtime',
       '@gamedev/plugin-network/client',
-      '@gamedev/plugin-environment/node-client',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-entities/app',
+      '@gamedev/plugin-entities/player',
+      '@gamedev/plugin-environment/node-client',
     ]
   )
 
@@ -255,6 +297,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/viewer/runtime',
       '@gamedev/plugin-browser/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-entities/app',
       '@gamedev/plugin-environment/client',
     ]
   )
@@ -273,6 +316,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-entities/app',
+      '@gamedev/plugin-entities/player',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
       '@gamedev/plugin-evm/server',
@@ -294,6 +339,8 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-entities/app',
+      '@gamedev/plugin-entities/player',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
       '@gamedev/plugin-evm/server',
@@ -304,6 +351,10 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.logs)
   assert.equal(serverWorld.pluginCapabilities.has('nodes'), true)
   assert.equal(serverWorld.nodeTypes.has('group'), true)
+  assert.equal(serverWorld.pluginCapabilities.has('entity:app'), true)
+  assert.equal(serverWorld.pluginCapabilities.has('entity:player'), true)
+  assert.equal(serverWorld.entityTypes.has('app'), true)
+  assert.equal(serverWorld.entityTypes.has('player'), true)
   assert.ok(serverWorld.physics)
   assert.ok(serverWorld.stage)
   assert.ok(serverWorld.network)
@@ -354,6 +405,9 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.pluginCapabilities.has('nodes'), false)
   assert.equal(coreWorld.nodeTypes.has('group'), false)
   assert.throws(() => coreWorld.createNode('group'), /world_node_missing:group/)
+  assert.equal(coreWorld.entityTypes.has('app'), false)
+  assert.equal(coreWorld.entityTypes.has('player'), false)
+  assert.throws(() => coreWorld.createEntity({ id: 'app-1', type: 'app' }), /world_entity_missing:app/)
   assert.equal(coreWorld.livekit, undefined)
   assert.equal(coreWorld.ai, undefined)
   assert.equal(coreWorld.aiScripts, undefined)
@@ -442,6 +496,26 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
 
+  const appEntityWorld = new World({
+    plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, appEntityPlugin],
+  })
+  assert.equal(appEntityWorld.pluginCapabilities.has('entity:app'), true)
+  assert.equal(appEntityWorld.entityTypes.has('app'), true)
+
+  const playerEntityWorld = new World({
+    plugins: [
+      coreSystemsPlugin,
+      nodesPlugin,
+      spatialPlugin,
+      chatPlugin,
+      serverRuntimeStub,
+      loaderServerPlugin,
+      playerEntitiesPlugin,
+    ],
+  })
+  assert.equal(playerEntityWorld.pluginCapabilities.has('entity:player'), true)
+  assert.equal(playerEntityWorld.entityTypes.has('player'), true)
+
   const clientRuntimeStub = definePlugin({
     name: 'test-client-runtime',
     systems: [
@@ -473,6 +547,17 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, browserClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-browser\/client:client/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, nodesPlugin, appEntityPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-entities\/app:loader/
+  )
+
+  assert.throws(
+    () =>
+      new World({ plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, loaderServerPlugin, playerEntitiesPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-entities\/player:network/
   )
 
   assert.throws(
@@ -648,9 +733,12 @@ test('feature APIs only appear when their plugins are selected', () => {
     plugins: [
       coreSystemsPlugin,
       nodesPlugin,
+      spatialPlugin,
       chatPlugin,
       serverRuntimeStub,
       loaderServerPlugin,
+      appEntityPlugin,
+      playerEntitiesPlugin,
       livekitServerPlugin,
       aiServerPlugin,
       evmServerPlugin,

@@ -21,6 +21,7 @@ export class World extends EventEmitter {
     this.pluginCapabilities = new Set()
     this.pendingScriptApi = []
     this.nodeTypes = new Map()
+    this.entityTypes = new Map()
 
     this.rig = new THREE.Object3D()
     // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
@@ -57,6 +58,29 @@ export class World extends EventEmitter {
       throw new Error(`world_node_collision:${key}`)
     }
     this.nodeTypes.set(key, { Node, plugin: options.plugin || null })
+  }
+
+  registerEntity(key, definition, options = {}) {
+    if (this.entityTypes.has(key)) {
+      throw new Error(`world_entity_collision:${key}`)
+    }
+    this.entityTypes.set(key, {
+      Entity: definition.Entity || null,
+      create: definition.create || null,
+      plugin: options.plugin || null,
+    })
+  }
+
+  createEntity(data, local) {
+    const type = data?.type
+    const entry = this.entityTypes.get(type)
+    if (!entry) {
+      throw new Error(`world_entity_missing:${type}`)
+    }
+    if (entry.create) {
+      return entry.create(this, data, local)
+    }
+    return new entry.Entity(this, data, local)
   }
 
   createNode(name, data) {

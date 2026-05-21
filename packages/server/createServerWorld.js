@@ -6,6 +6,8 @@ import { environmentServerPlugin } from '@gamedev/core/plugins/environment/serve
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
+import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
+import { playerEntitiesPlugin } from '@gamedev/core/plugins/entities/player.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { logsPlugin } from '@gamedev/core/plugins/logs.js'
@@ -37,6 +39,8 @@ export const serverPreset = definePreset({
     environmentServerPlugin,
     monitorServerPlugin,
     loaderServerPlugin,
+    appEntityPlugin,
+    playerEntitiesPlugin,
     livekitServerPlugin,
     aiServerPlugin,
     evmServerPlugin,

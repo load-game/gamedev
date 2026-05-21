@@ -1,14 +1,5 @@
-import { App } from '../entities/App.js'
-import { PlayerLocal } from '../entities/PlayerLocal.js'
-import { PlayerRemote } from '../entities/PlayerRemote.js'
-import { AdminPlayerRemote } from '../entities/AdminPlayerRemote.js'
+import { warn } from '../extras/warn.js'
 import { System } from './System.js'
-
-const Types = {
-  app: App,
-  playerLocal: PlayerLocal,
-  playerRemote: PlayerRemote,
-}
 
 /**
  * Entities System
@@ -40,17 +31,7 @@ export class Entities extends System {
   }
 
   add(data, local) {
-    let Entity
-    if (data.type === 'player') {
-      if (this.world.isAdminClient) {
-        Entity = AdminPlayerRemote
-      } else {
-        Entity = Types[data.owner === this.world.network.id ? 'playerLocal' : 'playerRemote']
-      }
-    } else {
-      Entity = Types[data.type]
-    }
-    const entity = new Entity(this.world, data, local)
+    const entity = this.world.createEntity(data, local)
     this.items.set(entity.data.id, entity)
     if (data.type === 'player') {
       this.players.set(entity.data.id, entity)
@@ -72,7 +53,7 @@ export class Entities extends System {
 
   remove(id) {
     const entity = this.items.get(id)
-    if (!entity) return console.warn(`tried to remove entity that did not exist: ${id}`)
+    if (!entity) return warn(`tried to remove entity that did not exist: ${id}`)
     if (entity.isPlayer) this.players.delete(entity.data.id)
     entity.destroy()
     this.items.delete(id)

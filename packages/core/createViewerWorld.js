@@ -4,6 +4,7 @@ import { coreSystemsPlugin } from './presets/core.js'
 import { browserClientPlugin } from './plugins/browser/client.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
+import { appEntityPlugin } from './plugins/entities/app.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { logsPlugin } from './plugins/logs.js'
@@ -34,6 +35,7 @@ export const viewerPreset = definePreset({
     viewerRuntimePlugin,
     browserClientPlugin,
     loaderClientPlugin,
+    appEntityPlugin,
     environmentClientPlugin,
   ],
 })

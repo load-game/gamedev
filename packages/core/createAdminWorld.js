@@ -10,6 +10,8 @@ import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
+import { appEntityPlugin } from './plugins/entities/app.js'
+import { playerEntitiesPlugin } from './plugins/entities/player.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
@@ -84,6 +86,8 @@ export const adminPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    appEntityPlugin,
+    playerEntitiesPlugin,
     environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,

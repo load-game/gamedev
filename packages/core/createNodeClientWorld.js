@@ -4,6 +4,8 @@ import { coreSystemsPlugin } from './presets/core.js'
 import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentNodeClientPlugin } from './plugins/environment/node-client.js'
+import { appEntityPlugin } from './plugins/entities/app.js'
+import { playerEntitiesPlugin } from './plugins/entities/player.js'
 import { loaderServerPlugin } from './plugins/loader/server.js'
 import { logsPlugin } from './plugins/logs.js'
 import { networkClientPlugin } from './plugins/network/client.js'
@@ -29,8 +31,10 @@ export const nodeClientPreset = definePreset({
     controlsClientPlugin,
     nodeClientRuntimePlugin,
     networkClientPlugin,
-    environmentNodeClientPlugin,
     loaderServerPlugin,
+    appEntityPlugin,
+    playerEntitiesPlugin,
+    environmentNodeClientPlugin,
   ],
 })
 

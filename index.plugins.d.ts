@@ -18,6 +18,20 @@ export type NodeEntry<TNode = any> =
       node?: NodeConstructor<TNode>
     }
 
+export type EntityConstructor<TEntity = any, TWorld = any> = new (world: TWorld, data: any, local?: boolean) => TEntity
+
+export type EntityFactory<TEntity = any, TWorld = any> = (world: TWorld, data: any, local?: boolean) => TEntity
+
+export type EntityEntry<TEntity = any, TWorld = any> =
+  | [key: string, Entity: EntityConstructor<TEntity, TWorld>]
+  | {
+      key: string
+      Entity?: EntityConstructor<TEntity, TWorld>
+      entity?: EntityConstructor<TEntity, TWorld>
+      create?: EntityFactory<TEntity, TWorld>
+      factory?: EntityFactory<TEntity, TWorld>
+    }
+
 export interface ScriptApiDescriptor<TOwner = any, TValue = any> {
   get?: (owner: TOwner) => TValue
   set?: (owner: TOwner, value: TValue) => void
@@ -39,6 +53,7 @@ export interface PluginDefinition<TWorld = any> {
   provides?: string | string[]
   systems?: SystemEntry<TWorld> | Array<SystemEntry<TWorld>>
   nodes?: Record<string, NodeConstructor> | NodeEntry | Array<NodeEntry>
+  entities?: Record<string, EntityConstructor<any, TWorld>> | EntityEntry<any, TWorld> | Array<EntityEntry<any, TWorld>>
   scripts?: ScriptApiContribution
   scriptApi?: ScriptApiContribution
   setup?: (world: TWorld) => void
@@ -52,6 +67,11 @@ export interface WorldPlugin<TWorld = any> {
   provides: readonly string[]
   systems: readonly { key: string; System: SystemConstructor<TWorld> }[]
   nodes: readonly { key: string; Node: NodeConstructor }[]
+  entities: readonly {
+    key: string
+    Entity: EntityConstructor<any, TWorld> | null
+    create: EntityFactory<any, TWorld> | null
+  }[]
   scripts: ScriptApiContribution | null
   setup: ((world: TWorld) => void) | null
 }

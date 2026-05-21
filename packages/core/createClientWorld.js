@@ -9,6 +9,8 @@ import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
+import { appEntityPlugin } from './plugins/entities/app.js'
+import { playerEntitiesPlugin } from './plugins/entities/player.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
@@ -67,6 +69,8 @@ export const clientPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    appEntityPlugin,
+    playerEntitiesPlugin,
     environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,
