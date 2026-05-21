@@ -13,7 +13,7 @@ import { createNode } from '../../extras/createNode.js'
 import { importApp } from '../../extras/appTools.js'
 import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'
 import { syncLobbyProfilePatch } from '../../profileSync.js'
-import { BUILTIN_APP_TEMPLATES } from '../../builtinApps.js'
+import { BUILTIN_APP_TEMPLATES } from './builtinApps.js'
 
 const FORWARD = new THREE.Vector3(0, 0, -1)
 const SNAP_DISTANCE = 1

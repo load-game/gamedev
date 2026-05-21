@@ -75,6 +75,8 @@ The existing client, server, admin, viewer, and node-client world factories are 
 
 The default client and server presets include the first-party loader, LiveKit, AI, EVM, and Hyperliquid plugins. Client also includes the admin bridge and builder/drafts plugins so build tools remain explicit capabilities. Admin includes the client loader, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
+Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
+
 ## Script APIs
 
 Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, or `player.evm` when the selected preset includes the plugin that contributes them.

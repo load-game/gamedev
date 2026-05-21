@@ -36,6 +36,7 @@
     "index.plugin-ai-client.d.ts",
     "index.plugin-ai-server.d.ts",
     "index.plugin-builder-admin.d.ts",
+    "index.plugin-builder-builtins.d.ts",
     "index.plugin-builder-client.d.ts",
     "index.plugins.d.ts",
     "index.plugin-evm.d.ts",
@@ -112,6 +113,12 @@
       "import": "./packages/core/plugins/builder/client.js",
       "require": "./packages/core/plugins/builder/client.js",
       "default": "./packages/core/plugins/builder/client.js"
+    },
+    "./plugins/builder/builtins": {
+      "types": "./index.plugin-builder-builtins.d.ts",
+      "import": "./packages/core/plugins/builder/builtinApps.js",
+      "require": "./packages/core/plugins/builder/builtinApps.js",
+      "default": "./packages/core/plugins/builder/builtinApps.js"
     },
     "./plugins/loader/client": {
       "types": "./index.plugin-loader-client.d.ts",
