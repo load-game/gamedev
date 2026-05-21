@@ -9,6 +9,7 @@ import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
+import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { networkServerPlugin } from './plugins/network/server.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
@@ -23,6 +24,7 @@ export const serverPreset = definePreset({
   name: '@gamedev/preset-server',
   plugins: [
     coreSystemsPlugin,
+    storagePlugin,
     chatPlugin,
     serverRuntimePlugin,
     networkServerPlugin,

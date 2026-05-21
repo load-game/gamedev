@@ -57,6 +57,7 @@ const DEFAULT_TSCONFIG = {
       'gamedev/plugins/chat',
       'gamedev/plugins/ui/client',
       'gamedev/plugins/loader/client',
+      'gamedev/plugins/storage',
       'gamedev/plugins/evm',
       'gamedev/plugins/hyperliquid',
     ],

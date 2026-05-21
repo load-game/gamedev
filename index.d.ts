@@ -903,26 +903,6 @@ interface RaycastHit {
   playerId: string | null
 }
 
-interface WorldStorageEntry<T = unknown> {
-  key: string
-  exists: boolean
-  value: T | undefined | null
-  createdAt: string | null
-  updatedAt: string | null
-}
-
-interface WorldStorageCommitOperation<T = unknown> {
-  key: string
-  value: T | null
-  expectedUpdatedAt?: string | null
-}
-
-interface WorldStorageCommitResult {
-  ok: boolean
-  conflicts: WorldStorageEntry[]
-  entries: WorldStorageEntry[]
-}
-
 export interface WorldAPI {
   // Identity / env
   readonly networkId: string
@@ -964,15 +944,6 @@ export interface WorldAPI {
   getTime(): number
   getTimestamp(format?: string): string
 
-  // Storage (optional)
-  get?<T = unknown>(key: string): T | undefined
-  set?<T = unknown>(key: string, value: T): void
-  getFresh?<T = unknown>(key: string): Promise<T | undefined | null>
-  getFreshEntry?<T = unknown>(key: string): Promise<WorldStorageEntry<T>>
-  getFreshEntriesByPrefix?<T = unknown>(prefix?: string): Promise<WorldStorageEntry<T>[]>
-  listStorageKeys?(prefix?: string): Promise<string[]>
-  setFresh?<T = unknown>(key: string, value: T | null): Promise<T | null>
-  commitStorage?(operations: WorldStorageCommitOperation[]): Promise<WorldStorageCommitResult>
 }
 
 // -----------------------------

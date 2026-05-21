@@ -28,6 +28,7 @@ import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js
 import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { snapsClientPlugin } from '@gamedev/core/plugins/snaps/client.js'
+import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
@@ -226,6 +227,7 @@ test('runtime factories are preset compositions', () => {
     serverPreset.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-network/server',
@@ -243,6 +245,7 @@ test('runtime factories are preset compositions', () => {
     serverWorld.plugins.map(plugin => plugin.name),
     [
       '@gamedev/core/systems',
+      '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-network/server',
@@ -275,6 +278,8 @@ test('runtime factories are preset compositions', () => {
   assert.equal(serverWorld.aiScripts.plugin, '@gamedev/plugin-ai/server')
   assert.equal(serverWorld.evm.plugin, '@gamedev/plugin-evm/server')
   assert.equal(serverWorld.hyperliquid.plugin, '@gamedev/plugin-hyperliquid')
+  assert.equal(typeof serverWorld.apps.worldMethods.get, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.commitStorage, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.load, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.chat, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.evm, 'function')
@@ -313,6 +318,8 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.builder, undefined)
   assert.equal(coreWorld.drafts, undefined)
   assert.equal(coreWorld.apps.worldMethods.load, undefined)
+  assert.equal(coreWorld.apps.worldMethods.get, undefined)
+  assert.equal(coreWorld.apps.worldMethods.commitStorage, undefined)
   assert.equal(coreWorld.apps.worldMethods.chat, undefined)
   assert.equal(coreWorld.apps.worldMethods.setReticle, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
@@ -371,6 +378,22 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(controlsWorld.controls)
   assert.equal(controlsWorld.controls.plugin, '@gamedev/plugin-controls/client')
+
+  const storageWorld = new World({
+    plugins: [coreSystemsPlugin, storagePlugin],
+  })
+  storageWorld.storage = {
+    values: new Map([['key', 'value']]),
+    get(key) {
+      return this.values.get(key)
+    },
+    set(key, value) {
+      this.values.set(key, value)
+    },
+  }
+  assert.equal(storageWorld.apps.worldMethods.get({ world: storageWorld }, 'key'), 'value')
+  storageWorld.apps.worldMethods.set({ world: storageWorld }, 'next', 42)
+  assert.equal(storageWorld.storage.values.get('next'), 42)
 
   const networkWorld = new World({
     plugins: [coreSystemsPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],

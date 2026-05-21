@@ -316,55 +316,6 @@ export class Apps extends System {
           return hit.proxy
         })
       },
-      get(entity, key) {
-        return world.storage?.get(key)
-      },
-      async getFresh(entity, key) {
-        if (typeof world.storage?.getFresh !== 'function') {
-          return world.storage?.get(key)
-        }
-        return world.storage.getFresh(key)
-      },
-      async getFreshEntry(entity, key) {
-        if (typeof world.storage?.getFreshEntry !== 'function') {
-          return {
-            key: String(key),
-            exists: world.storage?.get(key) !== undefined,
-            value: world.storage?.get(key),
-            createdAt: null,
-            updatedAt: null,
-          }
-        }
-        return world.storage.getFreshEntry(key)
-      },
-      async getFreshEntriesByPrefix(entity, prefix = '') {
-        if (typeof world.storage?.getFreshEntriesByPrefix !== 'function') {
-          return []
-        }
-        return world.storage.getFreshEntriesByPrefix(prefix)
-      },
-      async listStorageKeys(entity, prefix = '') {
-        if (typeof world.storage?.listKeys !== 'function') {
-          return []
-        }
-        return world.storage.listKeys(prefix)
-      },
-      set(entity, key, value) {
-        world.storage?.set(key, value)
-      },
-      async setFresh(entity, key, value) {
-        if (typeof world.storage?.setFresh !== 'function') {
-          world.storage?.set(key, value)
-          return value
-        }
-        return world.storage.setFresh(key, value)
-      },
-      async commitStorage(entity, operations) {
-        if (typeof world.storage?.commit !== 'function') {
-          throw new Error('storage_commit_unavailable')
-        }
-        return world.storage.commit(operations)
-      },
       open(entity, url, newWindow = false) {
         if (!url) {
           console.error('[world.open] URL is required')

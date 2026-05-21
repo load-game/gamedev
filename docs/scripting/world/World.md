@@ -108,6 +108,8 @@ Returns an array of all players.
 
 ### `.get(key)`: Any
 
+Requires the storage plugin (`gamedev/plugins/storage`). The default server preset includes it.
+
 Gets the current cached value from world storage by key. Only available on the server.
 
 This reads the runtime instance cache. It is fast, but it does not force a fresh read from the shared database.

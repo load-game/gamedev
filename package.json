@@ -65,6 +65,7 @@
     "index.plugin-pointer-client.d.ts",
     "index.plugin-prefs-client.d.ts",
     "index.plugin-snaps-client.d.ts",
+    "index.plugin-storage.d.ts",
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
@@ -288,6 +289,12 @@
       "import": "./packages/core/plugins/snaps/client.js",
       "require": "./packages/core/plugins/snaps/client.js",
       "default": "./packages/core/plugins/snaps/client.js"
+    },
+    "./plugins/storage": {
+      "types": "./index.plugin-storage.d.ts",
+      "import": "./packages/core/plugins/storage.js",
+      "require": "./packages/core/plugins/storage.js",
+      "default": "./packages/core/plugins/storage.js"
     },
     "./plugins/stats/client": {
       "types": "./index.plugin-stats-client.d.ts",

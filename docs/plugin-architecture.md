@@ -111,13 +111,13 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. Server also includes the monitor plugin for runtime stats. Client also includes prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
+The default client and server presets include the first-party chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
 ## Script APIs
 
-Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, or `player.evm` when the selected preset includes the plugin that contributes them.
+Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, `player.evm`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
 
