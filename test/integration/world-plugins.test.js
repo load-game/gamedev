@@ -10,6 +10,7 @@ import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
+import { controlsClientPlugin } from '@gamedev/core/plugins/controls/client.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
@@ -134,6 +135,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
+      '@gamedev/plugin-controls/client',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/admin',
@@ -163,6 +165,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
+      '@gamedev/plugin-controls/client',
       '@gamedev/client/runtime',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/client',
@@ -193,6 +196,7 @@ test('runtime factories are preset compositions', () => {
     [
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
+      '@gamedev/plugin-controls/client',
       '@gamedev/node-client/runtime',
       '@gamedev/plugin-environment/node-client',
       '@gamedev/plugin-loader/server',
@@ -205,6 +209,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
+      '@gamedev/plugin-controls/client',
       '@gamedev/viewer/runtime',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-environment/client',
@@ -277,6 +282,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.environment, undefined)
   assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.graphics, undefined)
+  assert.equal(coreWorld.controls, undefined)
   assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.pointer, undefined)
   assert.equal(coreWorld.xr, undefined)
@@ -338,6 +344,12 @@ test('feature APIs only appear when their plugins are selected', () => {
     () => new World({ plugins: [coreSystemsPlugin, pointerClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-pointer\/client:controls/
   )
+
+  const controlsWorld = new World({
+    plugins: [coreSystemsPlugin, controlsClientPlugin],
+  })
+  assert.ok(controlsWorld.controls)
+  assert.equal(controlsWorld.controls.plugin, '@gamedev/plugin-controls/client')
 
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, xrClientPlugin] }),

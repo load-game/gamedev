@@ -6,6 +6,7 @@ import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderClientPlugin } from './plugins/builder/client.js'
 import { chatPlugin } from './plugins/chat.js'
+import { controlsClientPlugin } from './plugins/controls/client.js'
 import { cssClientPlugin } from './plugins/css/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { evmClientPlugin } from './plugins/evm.js'
@@ -27,15 +28,13 @@ import { windClientPlugin } from './plugins/wind/client.js'
 import { xrClientPlugin } from './plugins/xr/client.js'
 
 import { Client } from './systems/Client.js'
-import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
-  requires: ['core', 'chat', 'graphics'],
+  requires: ['core', 'chat', 'graphics', 'controls'],
   systems: [
     ['client', Client],
-    ['controls', ClientControls],
     ['network', ClientNetwork],
   ],
 })
@@ -47,6 +46,7 @@ export const clientPreset = definePreset({
     chatPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,
+    controlsClientPlugin,
     clientRuntimePlugin,
     pointerClientPlugin,
     xrClientPlugin,

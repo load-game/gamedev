@@ -1,8 +1,8 @@
-import { isTouch } from '../isTouch.js'
-import { bindRotations } from '../extras/bindRotations.js'
-import { buttons, codeToProp } from '../extras/buttons.js'
-import * as THREE from '../extras/three.js'
-import { System } from './System.js'
+import { isTouch } from '../../isTouch.js'
+import { bindRotations } from '../../extras/bindRotations.js'
+import { buttons, codeToProp } from '../../extras/buttons.js'
+import * as THREE from '../../extras/three.js'
+import { System } from '../../systems/System.js'
 
 const LMB = 1 // bitmask
 const RMB = 2 // bitmask
@@ -16,9 +16,7 @@ const XR_TREMOR_SMOOTHING_FACTOR = 0.6
 const m1 = new THREE.Matrix4()
 const m2 = new THREE.Matrix4()
 const v1 = new THREE.Vector3()
-const v2 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
-const q2 = new THREE.Quaternion()
 
 const captured = new Set()
 
@@ -124,7 +122,6 @@ export class ClientControls extends System {
     if (this.xrSession) {
       const referenceSpace = this.world.graphics.renderer.xr.getReferenceSpace()
       const frame = this.world.graphics.renderer.xr.getFrame()
-      const player = this.world.entities.player
       this.xrSession.inputSources?.forEach(src => {
         // left
         if (src.gamepad && src.handedness === HandednessLeft) {
@@ -361,7 +358,7 @@ export class ClientControls extends System {
       }
     }
     // clear touch deltas
-    for (const [id, info] of this.touches) {
+    for (const info of this.touches.values()) {
       info.delta.set(0, 0, 0)
     }
   }
@@ -719,8 +716,7 @@ export class ClientControls extends System {
     try {
       await this.viewport.requestPointerLock()
       return true
-    } catch (err) {
-      console.log('pointerlock denied, too quick?')
+    } catch {
       return false
     }
   }
@@ -732,7 +728,7 @@ export class ClientControls extends System {
     this.onPointerLockEnd()
   }
 
-  onPointerLockChange = e => {
+  onPointerLockChange = () => {
     const didPointerLock = !!document.pointerLockElement
     if (didPointerLock) {
       this.onPointerLockStart()
@@ -825,7 +821,7 @@ export class ClientControls extends System {
   }
 }
 
-function createButton(controls, control, prop) {
+function createButton(controls, _control, prop) {
   const down = controls.buttonsDown.has(prop)
   const pressed = down
   const released = false
@@ -841,7 +837,7 @@ function createButton(controls, control, prop) {
   }
 }
 
-function createVector(controls, control, prop) {
+function createVector() {
   return {
     $vector: true,
     value: new THREE.Vector3(),
@@ -849,7 +845,7 @@ function createVector(controls, control, prop) {
   }
 }
 
-function createPose(controls, control, prop) {
+function createPose() {
   return {
     $pose: true,
     position: new THREE.Vector3(),
@@ -859,7 +855,7 @@ function createPose(controls, control, prop) {
   }
 }
 
-function createValue(controls, control, prop) {
+function createValue() {
   return {
     $value: true,
     value: null,
@@ -867,7 +863,7 @@ function createValue(controls, control, prop) {
   }
 }
 
-function createPointer(controls, control, prop) {
+function createPointer(controls) {
   const coords = new THREE.Vector3() // [0,0] to [1,1]
   const position = new THREE.Vector3() // [0,0] to [viewportWidth,viewportHeight]
   const delta = new THREE.Vector3() // position delta (pixels)
@@ -893,7 +889,7 @@ function createPointer(controls, control, prop) {
   }
 }
 
-function createScreen(controls, control) {
+function createScreen(controls) {
   return {
     $screen: true,
     get width() {
@@ -905,7 +901,7 @@ function createScreen(controls, control) {
   }
 }
 
-function createCamera(controls, control) {
+function createCamera(controls) {
   const world = controls.world
   const position = new THREE.Vector3().copy(world.rig.position)
   const quaternion = new THREE.Quaternion().copy(world.rig.quaternion)

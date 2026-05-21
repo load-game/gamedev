@@ -1,23 +1,20 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 
 import { Client } from './systems/Client.js'
-import { ClientControls } from './systems/ClientControls.js'
 
 export { System } from './systems/System.js'
 
 export const viewerRuntimePlugin = definePlugin({
   name: '@gamedev/viewer/runtime',
-  requires: ['core', 'graphics'],
-  systems: [
-    ['client', Client],
-    ['controls', ClientControls],
-  ],
+  requires: ['core', 'graphics', 'controls'],
+  systems: [['client', Client]],
 })
 
 export const viewerPreset = definePreset({
@@ -26,6 +23,7 @@ export const viewerPreset = definePreset({
     coreSystemsPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,
+    controlsClientPlugin,
     viewerRuntimePlugin,
     loaderClientPlugin,
     environmentClientPlugin,
