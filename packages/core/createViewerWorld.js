@@ -1,6 +1,7 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { browserClientPlugin } from './plugins/browser/client.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentClientPlugin } from './plugins/environment/client.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
@@ -27,6 +28,7 @@ export const viewerPreset = definePreset({
     graphicsClientPlugin,
     controlsClientPlugin,
     viewerRuntimePlugin,
+    browserClientPlugin,
     loaderClientPlugin,
     environmentClientPlugin,
   ],

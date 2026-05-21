@@ -9,6 +9,7 @@ import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
+import { browserClientPlugin } from '@gamedev/core/plugins/browser/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { controlsClientPlugin } from '@gamedev/core/plugins/controls/client.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
@@ -143,6 +144,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-browser/client',
       '@gamedev/plugin-network/admin',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/admin',
@@ -175,6 +177,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-browser/client',
       '@gamedev/plugin-network/client',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/client',
@@ -223,6 +226,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
       '@gamedev/viewer/runtime',
+      '@gamedev/plugin-browser/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-environment/client',
     ]
@@ -303,6 +307,8 @@ test('runtime factories are preset compositions', () => {
   assert.equal(typeof serverWorld.apps.worldMethods.chat, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.evm, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.hyperliquid, 'function')
+  assert.equal(serverWorld.apps.worldMethods.open, undefined)
+  assert.equal(serverWorld.apps.worldMethods.copy, undefined)
 })
 
 test('feature APIs only appear when their plugins are selected', () => {
@@ -352,6 +358,10 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.commitStorage, undefined)
   assert.equal(coreWorld.apps.worldMethods.chat, undefined)
   assert.equal(coreWorld.apps.worldMethods.setReticle, undefined)
+  assert.equal(coreWorld.apps.worldMethods.open, undefined)
+  assert.equal(coreWorld.apps.worldMethods.copy, undefined)
+  assert.equal(coreWorld.apps.worldMethods.getQueryParam, undefined)
+  assert.equal(coreWorld.apps.worldMethods.setQueryParam, undefined)
   assert.equal(coreWorld.apps.worldMethods.createLayerMask, undefined)
   assert.equal(coreWorld.apps.worldMethods.raycast, undefined)
   assert.equal(coreWorld.apps.worldMethods.overlapSphere, undefined)
@@ -395,9 +405,22 @@ test('feature APIs only appear when their plugins are selected', () => {
     systems: [['client', TestSystem]],
   })
 
+  const browserWorld = new World({
+    plugins: [coreSystemsPlugin, clientOnlyRuntimeStub, browserClientPlugin],
+  })
+  assert.equal(typeof browserWorld.apps.worldMethods.open, 'function')
+  assert.equal(typeof browserWorld.apps.worldMethods.copy, 'function')
+  assert.equal(typeof browserWorld.apps.worldMethods.getQueryParam, 'function')
+  assert.equal(typeof browserWorld.apps.worldMethods.setQueryParam, 'function')
+
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-audio\/client:client/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, browserClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-browser\/client:client/
   )
 
   assert.throws(

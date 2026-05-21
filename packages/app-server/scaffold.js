@@ -55,6 +55,7 @@ const DEFAULT_TSCONFIG = {
     skipLibCheck: true,
     types: [
       'gamedev',
+      'gamedev/plugins/browser/client',
       'gamedev/plugins/chat',
       'gamedev/plugins/network/client',
       'gamedev/plugins/network/server',

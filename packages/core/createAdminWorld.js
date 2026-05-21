@@ -5,6 +5,7 @@ import { actionsClientPlugin } from './plugins/actions/client.js'
 import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderAdminPlugin } from './plugins/builder/admin.js'
+import { browserClientPlugin } from './plugins/browser/client.js'
 import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { cssClientPlugin } from './plugins/css/client.js'
@@ -64,6 +65,7 @@ export const adminPreset = definePreset({
     graphicsClientPlugin,
     controlsClientPlugin,
     adminRuntimePlugin,
+    browserClientPlugin,
     networkAdminPlugin,
     pointerClientPlugin,
     xrAdminPlugin,

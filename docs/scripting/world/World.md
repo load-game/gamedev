@@ -182,18 +182,22 @@ This is the primitive to use when many instances may update the same shared reco
 ### `.getQueryParam(key)`
 
 Gets a query parameter value from the browsers url
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.setQueryParam(key, value)`
 
 Sets a query parameter in the browsers url
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.open(url: string, newTab: ?Boolean)`
 
 Opens a link, defaults to new tab.
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.copy(value, options?)`
 
 Copies content to the system clipboard on the client.
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 - Text: `await world.copy('0xabc...')`
 - Image: `await world.copy(props.image?.url, { kind: 'image' })`

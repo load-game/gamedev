@@ -37,6 +37,7 @@ test('scaffold writes scene scaffold and world manifest', async () => {
   const tsconfigPath = path.join(rootDir, 'tsconfig.json')
   const tsconfig = await readJson(tsconfigPath)
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev'))
+  assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/browser/client'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/network/client'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/network/server'))
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/spatial'))

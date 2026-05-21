@@ -904,15 +904,6 @@ export interface WorldAPI {
   getPlayer(playerId?: string): Player | null
   getPlayers(): Player[]
 
-  // URL helpers
-  getQueryParam(key: string): string | null
-  setQueryParam(key: string, value?: string | null): void
-  open(url: string, newTab?: boolean): void
-  copy(
-    value: string | { url: string },
-    options?: { kind?: 'text' | 'image'; type?: 'text' | 'image' }
-  ): Promise<boolean>
-
   getTimestamp(format?: string): string
 }
 

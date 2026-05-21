@@ -13,6 +13,7 @@ import { evmClientPlugin } from './plugins/evm.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
+import { browserClientPlugin } from './plugins/browser/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
@@ -47,6 +48,7 @@ export const clientPreset = definePreset({
     graphicsClientPlugin,
     controlsClientPlugin,
     clientRuntimePlugin,
+    browserClientPlugin,
     networkClientPlugin,
     pointerClientPlugin,
     xrClientPlugin,
