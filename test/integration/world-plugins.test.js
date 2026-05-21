@@ -14,6 +14,7 @@ import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
+import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
@@ -128,6 +129,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-target/client',
+      '@gamedev/plugin-lods/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -147,6 +149,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-target/client',
+      '@gamedev/plugin-lods/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -234,6 +237,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.audio, undefined)
   assert.equal(coreWorld.stats, undefined)
   assert.equal(coreWorld.target, undefined)
+  assert.equal(coreWorld.lods, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -284,6 +288,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(targetWorld.target)
   assert.equal(targetWorld.target.plugin, '@gamedev/plugin-target/client')
+
+  const lodsWorld = new World({
+    plugins: [coreSystemsPlugin, lodsClientPlugin],
+  })
+  assert.ok(lodsWorld.lods)
+  assert.equal(lodsWorld.lods.plugin, '@gamedev/plugin-lods/client')
 
   const uiWorld = new World({
     plugins: [

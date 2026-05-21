@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const BATCH_SIZE = 1000
 
@@ -26,7 +26,7 @@ export class LODs extends System {
     this.nodes.splice(idx, 1)
   }
 
-  update(delta) {
+  update() {
     // check if lods need to switch (batched over multiple frames)
     const size = Math.min(this.nodes.length, BATCH_SIZE)
     for (let i = 0; i < size; i++) {

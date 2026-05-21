@@ -56,6 +56,7 @@ import { evmClientPlugin } from 'gamedev/plugins/evm'
 import { hyperliquidPlugin } from 'gamedev/plugins/hyperliquid'
 import { loaderClientPlugin } from 'gamedev/plugins/loader/client'
 import { livekitClientPlugin } from 'gamedev/plugins/livekit/client'
+import { lodsClientPlugin } from 'gamedev/plugins/lods/client'
 import { prefsClientPlugin } from 'gamedev/plugins/prefs/client'
 import { statsClientPlugin } from 'gamedev/plugins/stats/client'
 import { targetClientPlugin } from 'gamedev/plugins/target/client'
@@ -73,6 +74,7 @@ export const clientPreset = definePreset({
     audioClientPlugin,
     statsClientPlugin,
     targetClientPlugin,
+    lodsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
@@ -87,7 +89,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party chat, loader, LiveKit, AI, EVM, and Hyperliquid plugins. Client also includes prefs, actions, audio, stats, target, UI, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, actions, audio, stats, target, UI, the client loader, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs and the client loader. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
+The default client and server presets include the first-party chat, loader, LiveKit, AI, EVM, and Hyperliquid plugins. Client also includes prefs, actions, audio, stats, target, LODs, UI, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes chat, prefs, actions, audio, stats, target, LODs, UI, the client loader, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes prefs and the client loader. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 

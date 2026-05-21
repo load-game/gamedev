@@ -49,6 +49,7 @@
     "index.plugin-livekit-admin.d.ts",
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
+    "index.plugin-lods-client.d.ts",
     "index.plugin-prefs-client.d.ts",
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
@@ -174,6 +175,12 @@
       "import": "./packages/core/plugins/livekit/server.js",
       "require": "./packages/core/plugins/livekit/server.js",
       "default": "./packages/core/plugins/livekit/server.js"
+    },
+    "./plugins/lods/client": {
+      "types": "./index.plugin-lods-client.d.ts",
+      "import": "./packages/core/plugins/lods/client.js",
+      "require": "./packages/core/plugins/lods/client.js",
+      "default": "./packages/core/plugins/lods/client.js"
     },
     "./plugins/prefs/client": {
       "types": "./index.plugin-prefs-client.d.ts",

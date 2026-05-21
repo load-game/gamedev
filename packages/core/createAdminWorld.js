@@ -8,6 +8,7 @@ import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
+import { lodsClientPlugin } from './plugins/lods/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
@@ -20,7 +21,6 @@ import { AdminNetwork } from './systems/AdminNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
-import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
 import { Snaps } from './systems/Snaps.js'
@@ -41,7 +41,6 @@ export const adminRuntimePlugin = definePlugin({
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
-    ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
     ['snaps', Snaps],
@@ -78,6 +77,7 @@ export const adminPreset = definePreset({
     audioClientPlugin,
     statsClientPlugin,
     targetClientPlugin,
+    lodsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,

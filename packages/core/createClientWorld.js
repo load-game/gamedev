@@ -11,6 +11,7 @@ import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
+import { lodsClientPlugin } from './plugins/lods/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
@@ -23,7 +24,6 @@ import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
-import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
 import { Snaps } from './systems/Snaps.js'
@@ -41,7 +41,6 @@ export const clientRuntimePlugin = definePlugin({
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
-    ['lods', LODs],
     ['nametags', Nametags],
     ['particles', Particles],
     ['snaps', Snaps],
@@ -61,6 +60,7 @@ export const clientPreset = definePreset({
     audioClientPlugin,
     statsClientPlugin,
     targetClientPlugin,
+    lodsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
