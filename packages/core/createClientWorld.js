@@ -6,6 +6,7 @@ import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderClientPlugin } from './plugins/builder/client.js'
 import { chatPlugin } from './plugins/chat.js'
+import { environmentClientPlugin } from './plugins/environment/client.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
@@ -27,7 +28,6 @@ import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
-import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { XR } from './systems/XR.js'
 
 export const clientRuntimePlugin = definePlugin({
@@ -40,7 +40,6 @@ export const clientRuntimePlugin = definePlugin({
     ['network', ClientNetwork],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
-    ['environment', ClientEnvironment],
     ['xr', XR],
   ],
 })
@@ -62,6 +61,7 @@ export const clientPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,
     builderClientPlugin,

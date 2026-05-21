@@ -6,6 +6,7 @@ import { adminClientPlugin } from './plugins/admin/client.js'
 import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
+import { environmentClientPlugin } from './plugins/environment/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
@@ -24,7 +25,6 @@ import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
-import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { AdminXR } from './systems/AdminXR.js'
 
 import { FreeCam } from './entities/FreeCam.js'
@@ -40,7 +40,6 @@ export const adminRuntimePlugin = definePlugin({
     ['network', AdminNetwork],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
-    ['environment', ClientEnvironment],
     ['xr', AdminXR],
   ],
   setup(world) {
@@ -79,6 +78,7 @@ export const adminPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,
     builderAdminPlugin,

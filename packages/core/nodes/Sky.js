@@ -1,6 +1,5 @@
 import { isNumber, isString, isPlainObject } from 'lodash-es'
 import { Node } from './Node.js'
-import * as THREE from '../extras/three.js'
 
 const MAX_SHADER_LENGTH = 8192
 
@@ -49,13 +48,13 @@ export class Sky extends Node {
   }
 
   mount() {
-    this.handle = this.ctx.world.environment.addSky?.(this)
+    this.handle = this.ctx.world.environment?.addSky?.(this)
   }
 
-  commit(didMove) {
+  commit(_didMove) {
     if (this.needsRebuild) {
       this.handle?.destroy()
-      this.handle = this.ctx.world.environment.addSky?.(this)
+      this.handle = this.ctx.world.environment?.addSky?.(this)
       this.needsRebuild = false
     }
   }

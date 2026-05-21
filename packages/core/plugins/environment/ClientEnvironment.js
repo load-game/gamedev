@@ -1,8 +1,8 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
-import { CSM } from '../libs/csm/CSM.js'
+import { CSM } from '../../libs/csm/CSM.js'
 import { isNumber, isString } from 'lodash-es'
 
 const csmLevels = {
@@ -276,7 +276,7 @@ export class ClientEnvironment extends System {
           renderer.debug.onShaderError = prevOnError
           testMesh.geometry.dispose()
           if (compileError) {
-            console.warn('[sky] shader compile error:', compileError)
+            this.world.logs?.add('client', 'warn', ['[sky] shader compile error:', compileError])
             material.dispose()
             this.applyBackgroundSky(bgTexture)
           } else {
@@ -289,7 +289,7 @@ export class ClientEnvironment extends System {
           }
         }
       } catch (err) {
-        console.warn('[sky] shader error:', err)
+        this.world.logs?.add('client', 'warn', ['[sky] shader error:', err])
         this.applyBackgroundSky(bgTexture)
       }
     } else {
@@ -347,7 +347,7 @@ export class ClientEnvironment extends System {
     }
   }
 
-  lateUpdate(delta) {
+  lateUpdate() {
     this.sky.position.x = this.world.rig.position.x
     this.sky.position.z = this.world.rig.position.z
     this.sky.matrixWorld.setPosition(this.sky.position)

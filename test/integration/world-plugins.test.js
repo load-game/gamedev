@@ -10,6 +10,7 @@ import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
+import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
@@ -138,6 +139,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-environment/client',
       '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/admin',
@@ -162,6 +164,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-environment/client',
       '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/client',
@@ -174,7 +177,13 @@ test('runtime factories are preset compositions', () => {
 
   assert.deepEqual(
     nodeClientPreset.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/plugin-chat', '@gamedev/node-client/runtime', '@gamedev/plugin-loader/server']
+    [
+      '@gamedev/core/systems',
+      '@gamedev/plugin-chat',
+      '@gamedev/node-client/runtime',
+      '@gamedev/plugin-environment/node-client',
+      '@gamedev/plugin-loader/server',
+    ]
   )
 
   assert.deepEqual(
@@ -184,6 +193,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-prefs/client',
       '@gamedev/viewer/runtime',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-environment/client',
     ]
   )
 
@@ -193,6 +203,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
+      '@gamedev/plugin-environment/server',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
@@ -207,6 +218,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
+      '@gamedev/plugin-environment/server',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
@@ -215,6 +227,7 @@ test('runtime factories are preset compositions', () => {
     ]
   )
   assert.ok(serverWorld.loader)
+  assert.ok(serverWorld.environment)
   assert.ok(serverWorld.chat)
   assert.ok(serverWorld.livekit)
   assert.ok(serverWorld.ai)
@@ -222,6 +235,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.environment.plugin, '@gamedev/plugin-environment/server')
   assert.equal(serverWorld.chat.plugin, '@gamedev/plugin-chat')
   assert.equal(serverWorld.livekit.plugin, '@gamedev/plugin-livekit/server')
   assert.equal(serverWorld.ai.plugin, '@gamedev/plugin-ai/server')
@@ -242,6 +256,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.ai, undefined)
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
+  assert.equal(coreWorld.environment, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
   assert.equal(coreWorld.actions, undefined)
@@ -325,6 +340,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, clientRuntimeStub, particlesClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-particles\/client:loader/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, clientRuntimeStub, environmentClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-environment\/client:loader/
   )
 
   const uiWorld = new World({

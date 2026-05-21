@@ -2,12 +2,12 @@ import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { chatPlugin } from './plugins/chat.js'
+import { environmentNodeClientPlugin } from './plugins/environment/node-client.js'
 import { loaderServerPlugin } from './plugins/loader/server.js'
 
 import { NodeClient } from './systems/NodeClient.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
-import { NodeEnvironment } from './systems/NodeEnvironment.js'
 
 export const nodeClientRuntimePlugin = definePlugin({
   name: '@gamedev/node-client/runtime',
@@ -16,13 +16,12 @@ export const nodeClientRuntimePlugin = definePlugin({
     ['client', NodeClient],
     ['controls', ClientControls],
     ['network', ClientNetwork],
-    ['environment', NodeEnvironment],
   ],
 })
 
 export const nodeClientPreset = definePreset({
   name: '@gamedev/preset-node-client',
-  plugins: [coreSystemsPlugin, chatPlugin, nodeClientRuntimePlugin, loaderServerPlugin],
+  plugins: [coreSystemsPlugin, chatPlugin, nodeClientRuntimePlugin, environmentNodeClientPlugin, loaderServerPlugin],
 })
 
 export function createNodeClientWorld(options = {}) {
