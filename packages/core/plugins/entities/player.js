@@ -12,7 +12,7 @@ function createPlayerEntity(world, data, local) {
 
 export const playerEntitiesPlugin = definePlugin({
   name: '@gamedev/plugin-entities/player',
-  requires: ['core', 'entities', 'nodes', 'loader', 'network', 'spatial'],
+  requires: ['core', 'entities', 'nodes', 'loader', 'loader:avatar', 'network', 'spatial'],
   provides: ['player-entities'],
   entities: [
     {

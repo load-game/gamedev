@@ -20,6 +20,7 @@ export class ServerLoader extends System {
     super(world)
     this.promises = new Map()
     this.results = new Map()
+    this.handlers = new Map()
     this.rgbeLoader = new RGBELoader()
     this.gltfLoader = new GLTFLoader()
     this.preloadItems = []
@@ -35,6 +36,16 @@ export class ServerLoader extends System {
 
   start() {
     // ...
+  }
+
+  register(type, load, options = {}) {
+    if (this.handlers.has(type)) {
+      throw new Error(`loader_type_collision:${type}`)
+    }
+    this.handlers.set(type, {
+      load,
+      plugin: options.plugin || null,
+    })
   }
 
   has(type, url) {
@@ -88,90 +99,14 @@ export class ServerLoader extends System {
     if (this.promises.has(key)) {
       return this.promises.get(key)
     }
-    url = this.world.resolveURL(url, true)
-
-    let promise
-    if (type === 'hdr') {
-      // promise = this.rgbeLoader.loadAsync(url).then(texture => {
-      //   return texture
-      // })
+    const handler = this.handlers.get(type)
+    if (!handler) {
+      throw new Error(`loader_type_missing:${type}`)
     }
-    if (type === 'image') {
-      // ...
-    }
-    if (type === 'texture') {
-      // ...
-    }
-    if (type === 'model') {
-      promise = this.fetchArrayBuffer(url).then(arrayBuffer => {
-        return new Promise((resolve, reject) => {
-          this.gltfLoader.parse(
-            arrayBuffer,
-            '',
-            glb => {
-              const node = glbToNodes(glb, this.world)
-              const model = {
-                toNodes() {
-                  return node.clone(true)
-                },
-              }
-              this.results.set(key, model)
-              resolve(model)
-            },
-            reject
-          )
-        })
-      })
-    }
-    if (type === 'emote') {
-      promise = this.fetchArrayBuffer(url).then(arrayBuffer => {
-        return new Promise((resolve, reject) => {
-          this.gltfLoader.parse(
-            arrayBuffer,
-            '',
-            glb => {
-              const factory = createEmoteFactory(glb, url)
-              const emote = {
-                toClip(options) {
-                  return factory.toClip(options)
-                },
-              }
-              this.results.set(key, emote)
-              resolve(emote)
-            },
-            reject
-          )
-        })
-      })
-    }
-    if (type === 'avatar') {
-      // NOTE: we can't load vrms on the server yet but we don't need 'em anyway.
-      let node
-      const glb = {
-        toNodes: () => {
-          if (!node) {
-            node = this.world.createNode('group')
-            const node2 = this.world.createNode('avatar', { id: 'avatar', factory: null })
-            node.add(node2)
-          }
-          return node.clone(true)
-        },
-      }
-      this.results.set(key, glb)
-      promise = Promise.resolve(glb)
-    }
-    if (type === 'script') {
-      promise = this.fetchText(url).then(code => {
-        return new Promise(resolve => {
-          const script = this.world.scripts.evaluate(code)
-          this.results.set(key, script)
-          resolve(script)
-        })
-      })
-    }
-    if (type === 'audio') {
-      promise = Promise.reject(null)
-    }
+    const promise = Promise.resolve(handler.load(this, url, { type, key })).then(result => {
+      this.results.set(key, result)
+      return result
+    })
     this.promises.set(key, promise)
     return promise
   }
@@ -179,6 +114,69 @@ export class ServerLoader extends System {
   destroy() {
     this.promises.clear()
     this.results.clear()
+    this.handlers.clear()
     this.preloadItems = []
   }
 }
+
+async function parseServerGltf(loader, url) {
+  const resolvedUrl = loader.world.resolveURL(url, true)
+  const arrayBuffer = await loader.fetchArrayBuffer(resolvedUrl)
+  return new Promise((resolve, reject) => {
+    loader.gltfLoader.parse(arrayBuffer, '', resolve, reject)
+  })
+}
+
+async function loadServerModel(loader, url) {
+  const glb = await parseServerGltf(loader, url)
+  const node = glbToNodes(glb, loader.world)
+  return {
+    toNodes() {
+      return node.clone(true)
+    },
+  }
+}
+
+async function loadServerEmote(loader, url) {
+  const resolvedUrl = loader.world.resolveURL(url, true)
+  const glb = await parseServerGltf(loader, url)
+  const factory = createEmoteFactory(glb, resolvedUrl)
+  return {
+    toClip(options) {
+      return factory.toClip(options)
+    },
+  }
+}
+
+function loadServerAvatar(loader) {
+  // The server does not need to parse VRM data; it only needs a compatible node tree.
+  let node
+  return {
+    toNodes: () => {
+      if (!node) {
+        node = loader.world.createNode('group')
+        const node2 = loader.world.createNode('avatar', { id: 'avatar', factory: null })
+        node.add(node2)
+      }
+      return node.clone(true)
+    },
+  }
+}
+
+async function loadServerScript(loader, url) {
+  const resolvedUrl = loader.world.resolveURL(url, true)
+  const code = await loader.fetchText(resolvedUrl)
+  return loader.world.scripts.evaluate(code)
+}
+
+function loadServerAudio() {
+  return Promise.reject(null)
+}
+
+export const serverLoaderHandlers = Object.freeze({
+  model: loadServerModel,
+  emote: loadServerEmote,
+  avatar: loadServerAvatar,
+  script: loadServerScript,
+  audio: loadServerAudio,
+})

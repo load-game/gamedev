@@ -105,6 +105,42 @@ function normalizeEntityEntries(value, pluginName) {
   throw new Error(`plugin_invalid_entities:${pluginName}`)
 }
 
+function normalizeLoaderEntry(entry, pluginName) {
+  if (Array.isArray(entry)) {
+    const [type, load] = entry
+    if (!type || typeof type !== 'string') {
+      throw new Error(`plugin_invalid_loader_type:${pluginName}`)
+    }
+    if (typeof load !== 'function') {
+      throw new Error(`plugin_invalid_loader:${pluginName}:${type}`)
+    }
+    return { type, load }
+  }
+
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`plugin_invalid_loader:${pluginName}`)
+  }
+
+  const type = entry.type || entry.key
+  const load = entry.load || entry.loader || entry.handle
+  if (!type || typeof type !== 'string') {
+    throw new Error(`plugin_invalid_loader_type:${pluginName}`)
+  }
+  if (typeof load !== 'function') {
+    throw new Error(`plugin_invalid_loader:${pluginName}:${type}`)
+  }
+  return { type, load }
+}
+
+function normalizeLoaderEntries(value, pluginName) {
+  if (!value) return []
+  if (Array.isArray(value)) return value.map(entry => normalizeLoaderEntry(entry, pluginName))
+  if (typeof value === 'object') {
+    return Object.entries(value).map(([type, load]) => normalizeLoaderEntry([type, load], pluginName))
+  }
+  throw new Error(`plugin_invalid_loaders:${pluginName}`)
+}
+
 function normalizeScriptApiEntry(entry, pluginName, scope, key) {
   if (typeof entry === 'function') {
     return entry
@@ -183,6 +219,7 @@ export function definePlugin(definition) {
   const systems = toArray(definition.systems).map(system => normalizeSystemEntry(system, name))
   const nodes = normalizeNodeEntries(definition.nodes, name)
   const entities = normalizeEntityEntries(definition.entities, name)
+  const loaders = normalizeLoaderEntries(definition.loaders, name)
   const scripts = normalizeScriptApiContribution(definition.scripts || definition.scriptApi, name)
 
   return Object.freeze({
@@ -194,6 +231,7 @@ export function definePlugin(definition) {
     systems: Object.freeze(systems),
     nodes: Object.freeze(nodes),
     entities: Object.freeze(entities),
+    loaders: Object.freeze(loaders),
     scripts,
     setup: typeof definition.setup === 'function' ? definition.setup : null,
   })
@@ -227,6 +265,7 @@ function getProvidedCapabilities(plugin) {
     ...plugin.systems.map(system => system.key),
     ...plugin.nodes.map(node => `node:${node.key}`),
     ...plugin.entities.map(entity => `entity:${entity.key}`),
+    ...plugin.loaders.map(loader => `loader:${loader.type}`),
     ...getScriptCapabilities(plugin.scripts),
   ])
 }
@@ -266,6 +305,10 @@ function installPlugin(world, pluginDefinition) {
   if (plugin.scripts && world.apps?.assertScriptApiAvailable) {
     world.apps.assertScriptApiAvailable(plugin.scripts, source)
   }
+  const installsLoaderSystem = plugin.systems.some(system => system.key === 'loader')
+  if (plugin.loaders.length && !installsLoaderSystem && !world.loader?.register) {
+    throw new Error(`plugin_missing_loader_registry:${plugin.name}:${plugin.loaders[0].type}`)
+  }
 
   for (const node of plugin.nodes) {
     world.registerNode(node.key, node.Node, { plugin: plugin.name })
@@ -275,6 +318,12 @@ function installPlugin(world, pluginDefinition) {
   }
   for (const system of plugin.systems) {
     world.register(system.key, system.System, { plugin: plugin.name })
+  }
+  for (const loader of plugin.loaders) {
+    if (!world.loader?.register) {
+      throw new Error(`plugin_missing_loader_registry:${plugin.name}:${loader.type}`)
+    }
+    world.loader.register(loader.type, loader.load, { plugin: plugin.name })
   }
   for (const capability of capabilities) {
     world.pluginCapabilities.add(capability)

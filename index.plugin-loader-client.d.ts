@@ -1,6 +1,6 @@
 import 'gamedev'
 import type { BaseNode } from 'gamedev'
-import type { WorldPlugin } from './index.plugins.d.ts'
+import type { LoaderHandler, WorldPlugin } from './index.plugins.d.ts'
 
 export type LoaderScriptType = 'avatar' | 'model' | 'splat'
 
@@ -10,6 +10,7 @@ export declare class ClientLoader {
   get<T = any>(type: string, url: string): T | undefined
   preload(type: string, url: string): void
   execPreload(): void
+  register(type: string, load: LoaderHandler<this>, options?: { plugin?: string | null }): void
   setFile(url: string, file: File): void
   hasFile(url: string): boolean
   getFile(url: string, name?: string): File | null
@@ -17,6 +18,8 @@ export declare class ClientLoader {
   load<T = any>(type: string, url: string): Promise<T>
   insert<T = any>(type: string, url: string, file: File): Promise<T>
 }
+
+export declare const clientLoaderHandlers: Readonly<Record<string, LoaderHandler<ClientLoader>>>
 
 export declare const loaderScriptApi: {
   world: {

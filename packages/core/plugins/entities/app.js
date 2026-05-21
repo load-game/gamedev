@@ -5,7 +5,18 @@ export { App }
 
 export const appEntityPlugin = definePlugin({
   name: '@gamedev/plugin-entities/app',
-  requires: ['core', 'apps', 'blueprints', 'entities', 'scripts', 'nodes', 'loader'],
+  requires: [
+    'core',
+    'apps',
+    'blueprints',
+    'entities',
+    'scripts',
+    'nodes',
+    'loader',
+    'loader:model',
+    'loader:avatar',
+    'loader:script',
+  ],
   provides: ['app-entity'],
   entities: {
     app: App,

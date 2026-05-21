@@ -32,6 +32,18 @@ export type EntityEntry<TEntity = any, TWorld = any> =
       factory?: EntityFactory<TEntity, TWorld>
     }
 
+export type LoaderHandler<TLoader = any> = (loader: TLoader, url: string, context?: any) => any
+
+export type LoaderEntry<TLoader = any> =
+  | [type: string, load: LoaderHandler<TLoader>]
+  | {
+      type?: string
+      key?: string
+      load?: LoaderHandler<TLoader>
+      loader?: LoaderHandler<TLoader>
+      handle?: LoaderHandler<TLoader>
+    }
+
 export interface ScriptApiDescriptor<TOwner = any, TValue = any> {
   get?: (owner: TOwner) => TValue
   set?: (owner: TOwner, value: TValue) => void
@@ -54,6 +66,7 @@ export interface PluginDefinition<TWorld = any> {
   systems?: SystemEntry<TWorld> | Array<SystemEntry<TWorld>>
   nodes?: Record<string, NodeConstructor> | NodeEntry | Array<NodeEntry>
   entities?: Record<string, EntityConstructor<any, TWorld>> | EntityEntry<any, TWorld> | Array<EntityEntry<any, TWorld>>
+  loaders?: Record<string, LoaderHandler> | LoaderEntry | Array<LoaderEntry>
   scripts?: ScriptApiContribution
   scriptApi?: ScriptApiContribution
   setup?: (world: TWorld) => void
@@ -72,6 +85,7 @@ export interface WorldPlugin<TWorld = any> {
     Entity: EntityConstructor<any, TWorld> | null
     create: EntityFactory<any, TWorld> | null
   }[]
+  loaders: readonly { type: string; load: LoaderHandler }[]
   scripts: ScriptApiContribution | null
   setup: ((world: TWorld) => void) | null
 }

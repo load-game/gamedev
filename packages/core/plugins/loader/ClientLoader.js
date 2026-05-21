@@ -27,6 +27,7 @@ export class ClientLoader extends System {
     this.files = new Map()
     this.promises = new Map()
     this.results = new Map()
+    this.handlers = new Map()
     this.rgbeLoader = new RGBELoader()
     this.texLoader = new TextureLoader()
     this.gltfLoader = new GLTFLoader()
@@ -81,6 +82,16 @@ export class ClientLoader extends System {
       setupMaterial: this.world.setupMaterial,
       loader: this.world.loader,
     }
+  }
+
+  register(type, load, options = {}) {
+    if (this.handlers.has(type)) {
+      throw new Error(`loader_type_collision:${type}`)
+    }
+    this.handlers.set(type, {
+      load,
+      plugin: options.plugin || null,
+    })
   }
 
   has(type, url) {
@@ -160,285 +171,178 @@ export class ClientLoader extends System {
     if (this.promises.has(key)) {
       return this.promises.get(key)
     }
-    if (type === 'video') {
-      const promise = new Promise(resolve => {
-        url = this.world.resolveURL(url)
-        const factory = createVideoFactory(this.world, url)
-        resolve(factory)
-      })
-      this.promises.set(key, promise)
-      return promise
+    const handler = this.handlers.get(type)
+    if (!handler) {
+      throw new Error(`loader_type_missing:${type}`)
     }
-    const promise = this.loadFile(url).then(async file => {
-      if (type === 'hdr') {
-        const buffer = await file.arrayBuffer()
-        const result = this.rgbeLoader.parse(buffer)
-        // we just mimicing what rgbeLoader.load() does behind the scenes
-        const texture = new THREE.DataTexture(result.data, result.width, result.height)
-        texture.colorSpace = THREE.LinearSRGBColorSpace
-        texture.minFilter = THREE.LinearFilter
-        texture.magFilter = THREE.LinearFilter
-        texture.generateMipmaps = false
-        texture.flipY = true
-        texture.type = result.type
-        texture.needsUpdate = true
-        this.results.set(key, texture)
-        return texture
-      }
-      if (type === 'image') {
-        return new Promise(resolve => {
-          const img = new Image()
-          img.onload = () => {
-            this.results.set(key, img)
-            resolve(img)
-            // URL.revokeObjectURL(img.src)
-          }
-          img.src = URL.createObjectURL(file)
-        })
-      }
-      if (type === 'texture') {
-        return new Promise(resolve => {
-          const img = new Image()
-          img.onload = () => {
-            const texture = this.texLoader.load(img.src)
-            texture.colorSpace = THREE.SRGBColorSpace
-            this.results.set(key, texture)
-            resolve(texture)
-            URL.revokeObjectURL(img.src)
-          }
-          img.src = URL.createObjectURL(file)
-        })
-      }
-      if (type === 'model') {
-        const buffer = await file.arrayBuffer()
-        const glb = await this.gltfLoader.parseAsync(buffer)
-        const node = glbToNodes(glb, this.world)
-        const model = {
-          toNodes() {
-            return node.clone(true)
-          },
-          getStats() {
-            const stats = node.getStats(true)
-            // append file size
-            stats.fileBytes = file.size
-            return stats
-          },
-        }
-        this.results.set(key, model)
-        return model
-      }
-      if (type === 'emote') {
-        const buffer = await file.arrayBuffer()
-        const glb = await this.gltfLoader.parseAsync(buffer)
-        const factory = createEmoteFactory(glb, url)
-        const emote = {
-          toClip(options) {
-            return factory.toClip(options)
-          },
-        }
-        this.results.set(key, emote)
-        return emote
-      }
-      if (type === 'avatar') {
-        const buffer = await file.arrayBuffer()
-        const glb = await this.gltfLoader.parseAsync(buffer)
-        const factory = createVRMFactory(glb, this.world.setupMaterial)
-        const hooks = this.vrmHooks
-        const node = this.world.createNode('group', { id: '$root' })
-        const node2 = this.world.createNode('avatar', { id: 'avatar', factory, hooks })
-        node.add(node2)
-        const avatar = {
-          factory,
-          hooks,
-          toNodes(customHooks) {
-            const clone = node.clone(true)
-            if (customHooks) {
-              clone.get('avatar').hooks = customHooks
-            }
-            return clone
-          },
-          getStats() {
-            const stats = node.getStats(true)
-            // append file size
-            stats.fileBytes = file.size
-            return stats
-          },
-        }
-        this.results.set(key, avatar)
-        return avatar
-      }
-      if (type === 'script') {
-        const code = await file.text()
-        const script = this.world.scripts.evaluate(code)
-        this.results.set(key, script)
-        return script
-      }
-      if (type === 'audio') {
-        const buffer = await file.arrayBuffer()
-        const audioBuffer = await this.world.audio.ctx.decodeAudioData(buffer)
-        this.results.set(key, audioBuffer)
-        return audioBuffer
-      }
-      if (type === 'splat') {
-        const fileBytes = await file.arrayBuffer()
-        const splatMesh = await this.createSplatMesh(fileBytes)
-        // Wrap in a node structure like models
-        const node = this.world.createNode('group', { id: '$root' })
-        const splatNode = this.world.createNode('splat', { id: 'splat', mesh: splatMesh })
-        node.add(splatNode)
-        const splat = {
-          toNodes() {
-            return node.clone(true)
-          },
-          getStats() {
-            return {
-              fileBytes: file.size,
-            }
-          },
-        }
-        this.results.set(key, splat)
-        return splat
-      }
+    const promise = Promise.resolve(handler.load(this, url, { type, key })).then(result => {
+      this.results.set(key, result)
+      return result
     })
     this.promises.set(key, promise)
     return promise
   }
 
   insert(type, url, file) {
-    const key = `${type}/${url}`
-    const localUrl = URL.createObjectURL(file)
     this.files.set(url, file)
-    let promise
-    if (type === 'hdr') {
-      promise = this.rgbeLoader.loadAsync(localUrl).then(texture => {
-        this.results.set(key, texture)
-        return texture
-      })
-    }
-    if (type === 'image') {
-      promise = new Promise(resolve => {
-        const img = new Image()
-        img.onload = () => {
-          this.results.set(key, img)
-          resolve(img)
-        }
-        img.src = localUrl
-      })
-    }
-    if (type === 'video') {
-      promise = new Promise(resolve => {
-        const factory = createVideoFactory(this.world, localUrl)
-        resolve(factory)
-      })
-    }
-    if (type === 'texture') {
-      promise = this.texLoader.loadAsync(localUrl).then(texture => {
-        this.results.set(key, texture)
-        return texture
-      })
-    }
-    if (type === 'model') {
-      promise = this.gltfLoader.loadAsync(localUrl).then(glb => {
-        const node = glbToNodes(glb, this.world)
-        const model = {
-          toNodes() {
-            return node.clone(true)
-          },
-          getStats() {
-            const stats = node.getStats(true)
-            // append file size
-            stats.fileBytes = file.size
-            return stats
-          },
-        }
-        this.results.set(key, model)
-        return model
-      })
-    }
-    if (type === 'emote') {
-      promise = this.gltfLoader.loadAsync(localUrl).then(glb => {
-        const factory = createEmoteFactory(glb, url)
-        const emote = {
-          toClip(options) {
-            return factory.toClip(options)
-          },
-        }
-        this.results.set(key, emote)
-        return emote
-      })
-    }
-    if (type === 'avatar') {
-      promise = this.gltfLoader.loadAsync(localUrl).then(glb => {
-        const factory = createVRMFactory(glb, this.world.setupMaterial)
-        const hooks = this.vrmHooks
-        const node = this.world.createNode('group', { id: '$root' })
-        const node2 = this.world.createNode('avatar', { id: 'avatar', factory, hooks })
-        node.add(node2)
-        const avatar = {
-          factory,
-          hooks,
-          toNodes(customHooks) {
-            const clone = node.clone(true)
-            if (customHooks) {
-              clone.get('avatar').hooks = customHooks
-            }
-            return clone
-          },
-          getStats() {
-            const stats = node.getStats(true)
-            // append file size
-            stats.fileBytes = file.size
-            return stats
-          },
-        }
-        this.results.set(key, avatar)
-        return avatar
-      })
-    }
-    if (type === 'script') {
-      promise = file.text().then(code => {
-        const script = this.world.scripts.evaluate(code)
-        this.results.set(key, script)
-        return script
-      })
-    }
-    if (type === 'audio') {
-      promise = file.arrayBuffer().then(async arrayBuffer => {
-        const audioBuffer = await this.world.audio.ctx.decodeAudioData(arrayBuffer)
-        this.results.set(key, audioBuffer)
-        return audioBuffer
-      })
-    }
-    if (type === 'splat') {
-      promise = file.arrayBuffer().then(async fileBytes => {
-        const splatMesh = await this.createSplatMesh(fileBytes)
-        const node = this.world.createNode('group', { id: '$root' })
-        const splatNode = this.world.createNode('splat', { id: 'splat', mesh: splatMesh })
-        node.add(splatNode)
-        const splat = {
-          toNodes() {
-            return node.clone(true)
-          },
-          getStats() {
-            return {
-              fileBytes: file.size,
-            }
-          },
-        }
-        this.results.set(key, splat)
-        return splat
-      })
-    }
-    this.promises.set(key, promise)
+    return this.load(type, url)
   }
 
   destroy() {
     this.files.clear()
     this.promises.clear()
     this.results.clear()
+    this.handlers.clear()
     this.preloadItems = []
   }
 }
+
+async function loadClientHdr(loader, url) {
+  const file = await loader.loadFile(url)
+  const buffer = await file.arrayBuffer()
+  const result = loader.rgbeLoader.parse(buffer)
+  // Mimic the texture setup that RGBELoader.load() performs internally.
+  const texture = new THREE.DataTexture(result.data, result.width, result.height)
+  texture.colorSpace = THREE.LinearSRGBColorSpace
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.generateMipmaps = false
+  texture.flipY = true
+  texture.type = result.type
+  texture.needsUpdate = true
+  return texture
+}
+
+async function loadClientImage(loader, url) {
+  const file = await loader.loadFile(url)
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      resolve(img)
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+async function loadClientTexture(loader, url) {
+  const file = await loader.loadFile(url)
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const texture = loader.texLoader.load(img.src)
+      texture.colorSpace = THREE.SRGBColorSpace
+      resolve(texture)
+      URL.revokeObjectURL(img.src)
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+async function loadClientModel(loader, url) {
+  const file = await loader.loadFile(url)
+  const buffer = await file.arrayBuffer()
+  const glb = await loader.gltfLoader.parseAsync(buffer)
+  const node = glbToNodes(glb, loader.world)
+  return {
+    toNodes() {
+      return node.clone(true)
+    },
+    getStats() {
+      const stats = node.getStats(true)
+      stats.fileBytes = file.size
+      return stats
+    },
+  }
+}
+
+async function loadClientEmote(loader, url) {
+  const file = await loader.loadFile(url)
+  const buffer = await file.arrayBuffer()
+  const glb = await loader.gltfLoader.parseAsync(buffer)
+  const factory = createEmoteFactory(glb, url)
+  return {
+    toClip(options) {
+      return factory.toClip(options)
+    },
+  }
+}
+
+async function loadClientAvatar(loader, url) {
+  const file = await loader.loadFile(url)
+  const buffer = await file.arrayBuffer()
+  const glb = await loader.gltfLoader.parseAsync(buffer)
+  const factory = createVRMFactory(glb, loader.world.setupMaterial)
+  const hooks = loader.vrmHooks
+  const node = loader.world.createNode('group', { id: '$root' })
+  const node2 = loader.world.createNode('avatar', { id: 'avatar', factory, hooks })
+  node.add(node2)
+  return {
+    factory,
+    hooks,
+    toNodes(customHooks) {
+      const clone = node.clone(true)
+      if (customHooks) {
+        clone.get('avatar').hooks = customHooks
+      }
+      return clone
+    },
+    getStats() {
+      const stats = node.getStats(true)
+      stats.fileBytes = file.size
+      return stats
+    },
+  }
+}
+
+async function loadClientScript(loader, url) {
+  const file = await loader.loadFile(url)
+  const code = await file.text()
+  return loader.world.scripts.evaluate(code)
+}
+
+async function loadClientAudio(loader, url) {
+  const file = await loader.loadFile(url)
+  const buffer = await file.arrayBuffer()
+  return loader.world.audio.ctx.decodeAudioData(buffer)
+}
+
+async function loadClientSplat(loader, url) {
+  const file = await loader.loadFile(url)
+  const fileBytes = await file.arrayBuffer()
+  const splatMesh = await loader.createSplatMesh(fileBytes)
+  const node = loader.world.createNode('group', { id: '$root' })
+  const splatNode = loader.world.createNode('splat', { id: 'splat', mesh: splatMesh })
+  node.add(splatNode)
+  return {
+    toNodes() {
+      return node.clone(true)
+    },
+    getStats() {
+      return {
+        fileBytes: file.size,
+      }
+    },
+  }
+}
+
+function loadClientVideo(loader, url) {
+  const file = loader.getFile(url)
+  const videoUrl = file ? URL.createObjectURL(file) : loader.world.resolveURL(url)
+  return createVideoFactory(loader.world, videoUrl)
+}
+
+export const clientLoaderHandlers = Object.freeze({
+  hdr: loadClientHdr,
+  image: loadClientImage,
+  texture: loadClientTexture,
+  video: loadClientVideo,
+  model: loadClientModel,
+  emote: loadClientEmote,
+  avatar: loadClientAvatar,
+  script: loadClientScript,
+  audio: loadClientAudio,
+  splat: loadClientSplat,
+})
 
 function createVideoFactory(world, url) {
   const isHLS = url?.endsWith('.m3u8')

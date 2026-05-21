@@ -19,6 +19,7 @@ import { playerEntitiesPlugin } from '@gamedev/core/plugins/entities/player.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { graphicsClientPlugin } from '@gamedev/core/plugins/graphics/client.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
+import { loaderClientPlugin } from '@gamedev/core/plugins/loader/client.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
@@ -46,6 +47,27 @@ import { System } from '@gamedev/core/systems/System.js'
 
 class TestSystem extends System {}
 class DependentSystem extends System {}
+class TestLoader extends System {
+  constructor(world) {
+    super(world)
+    this.handlers = new Map()
+  }
+
+  register(type, load, options = {}) {
+    if (this.handlers.has(type)) {
+      throw new Error(`loader_type_collision:${type}`)
+    }
+    this.handlers.set(type, { load, plugin: options.plugin || null })
+  }
+
+  load(type, url) {
+    const handler = this.handlers.get(type)
+    if (!handler) {
+      throw new Error(`loader_type_missing:${type}`)
+    }
+    return handler.load(this, url, { type, key: `${type}/${url}` })
+  }
+}
 class TestEntity {
   constructor(world, data, local) {
     this.world = world
@@ -132,6 +154,60 @@ test('presets install ordered plugins and validate requirements', () => {
   assert.ok(world.dependent instanceof DependentSystem)
 
   assert.throws(() => new World({ plugins: depPlugin }), /plugin_missing_requirement:dependent-plugin:test-capability/)
+})
+
+test('loader handlers are plugin contributions', async () => {
+  const loaderRuntimePlugin = definePlugin({
+    name: 'test-loader-runtime',
+    provides: ['loader'],
+    systems: [['loader', TestLoader]],
+  })
+  const loaderAssetPlugin = definePlugin({
+    name: 'test-loader-assets',
+    requires: ['loader'],
+    loaders: {
+      custom: (loader, url, context) => `${context.type}:${url}`,
+    },
+  })
+
+  const world = new World({ plugins: [coreSystemsPlugin, loaderRuntimePlugin, loaderAssetPlugin] })
+  assert.equal(world.pluginCapabilities.has('loader:custom'), true)
+  assert.equal(world.loader.handlers.get('custom').plugin, 'test-loader-assets')
+  assert.equal(await world.loader.load('custom', 'asset://thing.custom'), 'custom:asset://thing.custom')
+
+  assert.throws(
+    () =>
+      new World({
+        plugins: [
+          coreSystemsPlugin,
+          loaderRuntimePlugin,
+          loaderAssetPlugin,
+          definePlugin({
+            name: 'duplicate-loader-assets',
+            loaders: {
+              custom: () => null,
+            },
+          }),
+        ],
+      }),
+    /plugin_capability_collision:duplicate-loader-assets:loader:custom/
+  )
+
+  assert.throws(
+    () =>
+      new World({
+        plugins: [
+          coreSystemsPlugin,
+          definePlugin({
+            name: 'loader-assets-without-loader',
+            loaders: {
+              custom: () => null,
+            },
+          }),
+        ],
+      }),
+    /plugin_missing_loader_registry:loader-assets-without-loader:custom/
+  )
 })
 
 test('plugins reject system and script API collisions', () => {
@@ -293,6 +369,17 @@ test('plugins validate script API descriptors at definition time', () => {
         },
       }),
     /plugin_invalid_script_descriptor:bad-script-getter:world\.test/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-loader-entry',
+        loaders: {
+          custom: 1,
+        },
+      }),
+    /plugin_invalid_loader:bad-loader-entry:custom/
   )
 })
 
@@ -461,6 +548,9 @@ test('runtime factories are preset compositions', () => {
   assert.equal(serverWorld.nodeTypes.has('group'), true)
   assert.equal(serverWorld.pluginCapabilities.has('entity:app'), true)
   assert.equal(serverWorld.pluginCapabilities.has('entity:player'), true)
+  assert.equal(serverWorld.pluginCapabilities.has('loader:model'), true)
+  assert.equal(serverWorld.pluginCapabilities.has('loader:avatar'), true)
+  assert.equal(serverWorld.pluginCapabilities.has('loader:script'), true)
   assert.equal(serverWorld.entityTypes.has('app'), true)
   assert.equal(serverWorld.entityTypes.has('player'), true)
   assert.ok(serverWorld.physics)
@@ -475,6 +565,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.loader.handlers.get('model').plugin, '@gamedev/plugin-loader/server')
   assert.equal(serverWorld.logs.plugin, '@gamedev/plugin-logs')
   assert.equal(serverWorld.physics.plugin, '@gamedev/plugin-spatial')
   assert.equal(serverWorld.stage.plugin, '@gamedev/plugin-spatial')
@@ -646,6 +737,15 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof browserWorld.apps.worldMethods.copy, 'function')
   assert.equal(typeof browserWorld.apps.worldMethods.getQueryParam, 'function')
   assert.equal(typeof browserWorld.apps.worldMethods.setQueryParam, 'function')
+
+  const clientLoaderWorld = new World({
+    plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, clientOnlyRuntimeStub, loaderClientPlugin],
+  })
+  assert.ok(clientLoaderWorld.loader)
+  assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:model'), true)
+  assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:video'), true)
+  assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:splat'), true)
+  assert.equal(clientLoaderWorld.loader.handlers.get('splat').plugin, '@gamedev/plugin-loader/client')
 
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),

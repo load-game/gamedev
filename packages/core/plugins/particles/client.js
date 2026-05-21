@@ -5,7 +5,7 @@ export { Particles }
 
 export const particlesClientPlugin = definePlugin({
   name: '@gamedev/plugin-particles/client',
-  requires: ['core', 'client', 'loader', 'stage'],
+  requires: ['core', 'client', 'loader', 'loader:texture', 'stage'],
   provides: ['@gamedev/plugin-particles', 'particles'],
   systems: [['particles', Particles]],
 })
