@@ -904,11 +904,6 @@ interface RaycastHit {
 }
 
 export interface WorldAPI {
-  // Identity / env
-  readonly networkId: string
-  readonly isServer: boolean
-  readonly isClient: boolean
-
   // Scene management
   add(node: BaseNode): void
   remove(node: BaseNode): void
@@ -940,10 +935,7 @@ export interface WorldAPI {
     options?: { kind?: 'text' | 'image'; type?: 'text' | 'image' }
   ): Promise<boolean>
 
-  // Time
-  getTime(): number
   getTimestamp(format?: string): string
-
 }
 
 // -----------------------------
@@ -1074,7 +1066,7 @@ type ControlAPI = {
 // -----------------------------
 type AppEventName = 'update' | 'fixedUpdate' | 'lateUpdate' | (string & {})
 
-interface AppAPI extends BaseNode {
+export interface AppAPI extends BaseNode {
   // Properties
   readonly instanceId: string
   readonly version: string
@@ -1087,8 +1079,6 @@ interface AppAPI extends BaseNode {
   on(name: AppEventName, callback: (arg?: any) => void): void
   off(name: AppEventName, callback: (arg?: any) => void): void
 
-  // Networking
-  send(name: string, data?: any, skipNetworkId?: string | boolean): void
   emit(name: string, data?: any): void
 
   // Nodes

@@ -117,7 +117,7 @@ Builder-owned built-in app templates are exported from `gamedev/plugins/builder/
 
 ## Script APIs
 
-Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, `player.evm`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
+Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, `player.evm`, network helpers like `world.isServer`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
 

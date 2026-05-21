@@ -41,6 +41,8 @@ IMPORTANT: Be sure to unsubscribe from update events when they are not needed. T
 
 ### `.send(name, data, skipNetworkId)`
 
+Requires a network plugin (`gamedev/plugins/network/client`, `gamedev/plugins/network/server`, or `gamedev/plugins/network/admin`).
+
 Sends an event across the network.
 If the caller is on the client, the event is sent to the server. The third argument `skipNetworkId` is a no-op here.
 If the caller is on the server, the event is sent to all clients, with the `skipNetworkId` argument allowing you to skip sending to one specific client.

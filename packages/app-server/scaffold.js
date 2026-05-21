@@ -55,6 +55,8 @@ const DEFAULT_TSCONFIG = {
     types: [
       'gamedev',
       'gamedev/plugins/chat',
+      'gamedev/plugins/network/client',
+      'gamedev/plugins/network/server',
       'gamedev/plugins/ui/client',
       'gamedev/plugins/loader/client',
       'gamedev/plugins/storage',
@@ -87,7 +89,7 @@ function normalizePackageName(name, fallback) {
 function buildPackageJson({ packageName, sdkName, sdkVersion }) {
   const resolvedVersion = sdkVersion || resolveSdkVersion()
   const devDependencies = {
-    [sdkName]: 'latest',
+    [sdkName]: resolvedVersion,
     typescript: '^5.9.2',
     'vite-plus': '^0.1.22',
   }

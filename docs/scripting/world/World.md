@@ -4,13 +4,19 @@ The global `world` variable is always available within the app scripting runtime
 
 ### `.networkId`: String
 
+Requires a network plugin (`gamedev/plugins/network/client`, `gamedev/plugins/network/server`, or `gamedev/plugins/network/admin`).
+
 A unique ID for the current server or client.
 
 ### `.isServer`: Boolean
 
+Requires a network plugin.
+
 Whether the script is currently executing on the server.
 
 ### `.isClient`: Boolean
+
+Requires a network plugin.
 
 Whether the script is currently executing on the client.
 

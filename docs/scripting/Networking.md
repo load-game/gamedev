@@ -6,6 +6,8 @@ Apps in Hyperfy communicate using `app.send`, `app.on`, `app.emit`, and `world.o
 
 Apps execute their scripts in every environment, eg on the server and on every client.
 
+Networked APIs such as `app.send`, `world.networkId`, `world.isServer`, `world.isClient`, and `world.getTime` are contributed by the selected network plugin.
+
 The `world.isServer` and `world.isClient` allows scripts to determine what environment they are running in.
 
 * `app.send`: Sends an event to other instances of the same app. When called on a server is sent to all clients, and when called on a client is sent to the server.

@@ -192,17 +192,7 @@ export class Apps extends System {
   initWorldHooks() {
     const self = this
     const world = this.world
-    this.worldGetters = {
-      networkId(entity) {
-        return world.network.id
-      },
-      isServer(entity) {
-        return world.network.isServer
-      },
-      isClient(entity) {
-        return world.network.isClient
-      },
-    }
+    this.worldGetters = {}
     this.worldSetters = {
       // ...
     }
@@ -253,9 +243,6 @@ export class Apps extends System {
         }
         warn('world.emit() is deprecated, use app.emit() instead')
         world.events.emit(name, data)
-      },
-      getTime(entity) {
-        return world.network.getTime()
       },
       getTimestamp(entity, format) {
         if (!format) return moment().toISOString()
@@ -417,26 +404,6 @@ export class Apps extends System {
       },
       off(entity, name, callback) {
         entity.off(name, callback)
-      },
-      send(entity, name, data, ignoreSocketId) {
-        if (internalEvents.includes(name)) {
-          return console.error(`apps cannot send internal events (${name})`)
-        }
-        // NOTE: on the client ignoreSocketId is a no-op because it can only send events to the server
-        const event = [entity.data.id, entity.blueprint.version, name, data]
-        world.network.send('entityEvent', event, ignoreSocketId)
-      },
-      sendTo(entity, playerId, name, data) {
-        if (internalEvents.includes(name)) {
-          return console.error(`apps cannot send internal events (${name})`)
-        }
-        if (!world.network.isServer) {
-          throw new Error('sendTo can only be called on the server')
-        }
-        const player = world.entities.get(playerId)
-        if (!player) return
-        const event = [entity.data.id, entity.blueprint.version, name, data]
-        world.network.sendTo(playerId, 'entityEvent', event)
       },
       emit(entity, name, data) {
         if (internalEvents.includes(name)) {
