@@ -5,7 +5,7 @@ export { AdminBuilder }
 
 export const builderAdminPlugin = definePlugin({
   name: '@gamedev/plugin-builder/admin',
-  requires: ['core', 'client', 'network', 'controls', 'ui', 'loader', 'admin', 'snaps', 'stage'],
+  requires: ['core', 'client', 'network', 'controls', 'ui', 'loader', 'admin', 'nodes', 'snaps', 'stage'],
   provides: ['@gamedev/plugin-builder', 'builder'],
   systems: [['builder', AdminBuilder]],
 })

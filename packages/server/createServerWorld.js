@@ -10,6 +10,7 @@ import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { logsPlugin } from '@gamedev/core/plugins/logs.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
+import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { networkServerPlugin } from './plugins/network/server.js'
@@ -27,6 +28,7 @@ export const serverPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     logsPlugin,
+    nodesPlugin,
     spatialPlugin,
     storagePlugin,
     chatPlugin,

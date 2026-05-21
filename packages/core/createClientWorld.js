@@ -20,6 +20,7 @@ import { lodsClientPlugin } from './plugins/lods/client.js'
 import { logsPlugin } from './plugins/logs.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
 import { networkClientPlugin } from './plugins/network/client.js'
+import { nodesPlugin } from './plugins/nodes.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
 import { pointerClientPlugin } from './plugins/pointer/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
@@ -44,6 +45,7 @@ export const clientPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     logsPlugin,
+    nodesPlugin,
     spatialPlugin,
     chatPlugin,
     prefsClientPlugin,

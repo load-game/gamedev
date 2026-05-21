@@ -7,6 +7,7 @@ import { environmentClientPlugin } from './plugins/environment/client.js'
 import { graphicsClientPlugin } from './plugins/graphics/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { logsPlugin } from './plugins/logs.js'
+import { nodesPlugin } from './plugins/nodes.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { spatialPlugin } from './plugins/spatial.js'
 
@@ -25,6 +26,7 @@ export const viewerPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     logsPlugin,
+    nodesPlugin,
     spatialPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,

@@ -9,7 +9,6 @@ import { hashFile } from '../../utils-client.js'
 import { uuid } from '../../utils.js'
 import { ControlPriorities } from '../../extras/ControlPriorities.js'
 import { DEG2RAD, RAD2DEG } from '../../extras/general.js'
-import { createNode } from '../../extras/createNode.js'
 import { importApp } from '../../extras/appTools.js'
 import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'
 import { syncLobbyProfilePatch } from '../../profileSync.js'
@@ -1084,8 +1083,8 @@ export class ClientBuilder extends System {
   }
 
   createXRMenu() {
-    const $root = createNode('group')
-    const $ui = createNode('ui', {
+    const $root = this.world.createNode('group')
+    const $ui = this.world.createNode('ui', {
       width: 200,
       height: 200,
       size: 0.001,
@@ -1095,8 +1094,8 @@ export class ClientBuilder extends System {
       position: [0, 0.01, 0.02],
     })
     $root.add($ui)
-    function createBtn({ label }) {
-      const $btn = createNode('uiview', {
+    const createBtn = ({ label }) => {
+      const $btn = this.world.createNode('uiview', {
         backgroundColor: 'black',
         borderRadius: 10,
         width: 60,
@@ -1105,7 +1104,7 @@ export class ClientBuilder extends System {
         alignItems: 'center',
         justifyContent: 'center',
       })
-      const $text = createNode('uitext', {
+      const $text = this.world.createNode('uitext', {
         value: label,
         color: 'white',
         fontSize: 11,

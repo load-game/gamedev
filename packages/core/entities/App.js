@@ -1,14 +1,8 @@
-import * as THREE from '../extras/three.js'
-import { isArray, isFunction, isNumber, isString, merge } from 'lodash-es'
-import moment from 'moment'
+import { isArray, merge } from 'lodash-es'
 
 import { Entity } from './Entity.js'
-import { createNode } from '../extras/createNode.js'
 import { LerpVector3 } from '../extras/LerpVector3.js'
 import { LerpQuaternion } from '../extras/LerpQuaternion.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
-import { getRef } from '../nodes/Node.js'
-import { Layers } from '../extras/Layers.js'
 import { createPlayerProxy } from '../extras/createPlayerProxy.js'
 import { serializeError } from '../extras/serializeError.js'
 import { getBlueprintAppName } from '../blueprintUtils.js'
@@ -64,7 +58,7 @@ export class App extends Entity {
     this.listeners = {}
     this.eventQueue = []
     this.snaps = []
-    this.root = createNode('group')
+    this.root = world.createNode('group')
     this.fields = []
     this.effectiveProps = undefined
     this.target = null
@@ -80,7 +74,7 @@ export class App extends Entity {
   }
 
   createNode(name, data) {
-    const node = createNode(name, data)
+    const node = this.world.createNode(name, data)
     return node
   }
 
@@ -119,7 +113,7 @@ export class App extends Entity {
     let script
     // if someone else is uploading glb, show a loading indicator
     if (this.data.uploader && this.data.uploader !== this.world.network.id) {
-      root = createNode('mesh')
+      root = this.world.createNode('mesh')
       root.type = 'box'
       root.width = 1
       root.height = 1
@@ -133,7 +127,7 @@ export class App extends Entity {
         if (!glb) glb = await this.world.loader.load(type, blueprint.model)
         root = glb.toNodes()
       } catch (err) {
-        console.error(err)
+        this.world.logs?.add('app', 'error', [err])
         crashed = true
         // no model, will use crash block below
       }
@@ -147,7 +141,7 @@ export class App extends Entity {
           if (!script) script = await this.world.loader.load('script', blueprint.script)
         }
       } catch (err) {
-        console.error(err)
+        this.world.logs?.add('app', 'error', [err])
         crashed = true
       }
     }
@@ -193,8 +187,7 @@ export class App extends Entity {
         this.scriptError = null
       } catch (err) {
         this.scriptError = serializeError(err)
-        console.error('script crashed')
-        console.error(err)
+        this.world.logs?.add('script', 'error', ['script crashed', err])
         return this.crash()
       }
     }
@@ -263,8 +256,7 @@ export class App extends Entity {
         this.emit('fixedUpdate', delta)
       } catch (err) {
         this.scriptError = serializeError(err)
-        console.error('script fixedUpdate crashed', this)
-        console.error(err)
+        this.world.logs?.add('script', 'error', ['script fixedUpdate crashed', err])
         this.crash()
         return
       }
@@ -297,8 +289,7 @@ export class App extends Entity {
         }
       } catch (err) {
         this.scriptError = serializeError(err)
-        console.error('script update() crashed', this)
-        console.error(err)
+        this.world.logs?.add('script', 'error', ['script update() crashed', err])
         this.crash()
         return
       }
@@ -311,8 +302,7 @@ export class App extends Entity {
         this.emit('lateUpdate', delta)
       } catch (err) {
         this.scriptError = serializeError(err)
-        console.error('script lateUpdate() crashed', this)
-        console.error(err)
+        this.world.logs?.add('script', 'error', ['script lateUpdate() crashed', err])
         this.crash()
         return
       }
@@ -485,7 +475,7 @@ export class App extends Entity {
       }
       return secureResp
     } catch (err) {
-      console.error(err)
+      this.world.logs?.add('app', 'error', [err])
       // this.crash()
     }
   }

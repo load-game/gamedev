@@ -4,7 +4,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
 import { System } from '../../systems/System.js'
-import { createNode } from '../../extras/createNode.js'
 import { createVRMFactory } from '../../extras/createVRMFactory.js'
 import { glbToNodes } from '../../extras/glbToNodes.js'
 import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
@@ -245,8 +244,8 @@ export class ClientLoader extends System {
         const glb = await this.gltfLoader.parseAsync(buffer)
         const factory = createVRMFactory(glb, this.world.setupMaterial)
         const hooks = this.vrmHooks
-        const node = createNode('group', { id: '$root' })
-        const node2 = createNode('avatar', { id: 'avatar', factory, hooks })
+        const node = this.world.createNode('group', { id: '$root' })
+        const node2 = this.world.createNode('avatar', { id: 'avatar', factory, hooks })
         node.add(node2)
         const avatar = {
           factory,
@@ -284,8 +283,8 @@ export class ClientLoader extends System {
         const fileBytes = await file.arrayBuffer()
         const splatMesh = await this.createSplatMesh(fileBytes)
         // Wrap in a node structure like models
-        const node = createNode('group', { id: '$root' })
-        const splatNode = createNode('splat', { id: 'splat', mesh: splatMesh })
+        const node = this.world.createNode('group', { id: '$root' })
+        const splatNode = this.world.createNode('splat', { id: 'splat', mesh: splatMesh })
         node.add(splatNode)
         const splat = {
           toNodes() {
@@ -372,8 +371,8 @@ export class ClientLoader extends System {
       promise = this.gltfLoader.loadAsync(localUrl).then(glb => {
         const factory = createVRMFactory(glb, this.world.setupMaterial)
         const hooks = this.vrmHooks
-        const node = createNode('group', { id: '$root' })
-        const node2 = createNode('avatar', { id: 'avatar', factory, hooks })
+        const node = this.world.createNode('group', { id: '$root' })
+        const node2 = this.world.createNode('avatar', { id: 'avatar', factory, hooks })
         node.add(node2)
         const avatar = {
           factory,
@@ -413,8 +412,8 @@ export class ClientLoader extends System {
     if (type === 'splat') {
       promise = file.arrayBuffer().then(async fileBytes => {
         const splatMesh = await this.createSplatMesh(fileBytes)
-        const node = createNode('group', { id: '$root' })
-        const splatNode = createNode('splat', { id: 'splat', mesh: splatMesh })
+        const node = this.world.createNode('group', { id: '$root' })
+        const splatNode = this.world.createNode('splat', { id: 'splat', mesh: splatMesh })
         node.add(splatNode)
         const splat = {
           toNodes() {

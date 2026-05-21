@@ -6,7 +6,6 @@ import { GLTFLoader } from '../../libs/gltfloader/GLTFLoader.js'
 
 import { System } from '../../systems/System.js'
 import { glbToNodes } from '../../extras/glbToNodes.js'
-import { createNode } from '../../extras/createNode.js'
 import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
 
 /**
@@ -151,8 +150,8 @@ export class ServerLoader extends System {
       const glb = {
         toNodes: () => {
           if (!node) {
-            node = createNode('group')
-            const node2 = createNode('avatar', { id: 'avatar', factory: null })
+            node = this.world.createNode('group')
+            const node2 = this.world.createNode('avatar', { id: 'avatar', factory: null })
             node.add(node2)
           }
           return node.clone(true)

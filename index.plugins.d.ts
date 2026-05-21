@@ -8,6 +8,16 @@ export type SystemEntry<TWorld = any, TSystem = any> =
       system?: SystemConstructor<TWorld, TSystem>
     }
 
+export type NodeConstructor<TNode = any> = new (data?: any) => TNode
+
+export type NodeEntry<TNode = any> =
+  | [key: string, Node: NodeConstructor<TNode>]
+  | {
+      key: string
+      Node?: NodeConstructor<TNode>
+      node?: NodeConstructor<TNode>
+    }
+
 export interface ScriptApiDescriptor<TOwner = any, TValue = any> {
   get?: (owner: TOwner) => TValue
   set?: (owner: TOwner, value: TValue) => void
@@ -28,6 +38,7 @@ export interface PluginDefinition<TWorld = any> {
   optional?: string | string[]
   provides?: string | string[]
   systems?: SystemEntry<TWorld> | Array<SystemEntry<TWorld>>
+  nodes?: Record<string, NodeConstructor> | NodeEntry | Array<NodeEntry>
   scripts?: ScriptApiContribution
   scriptApi?: ScriptApiContribution
   setup?: (world: TWorld) => void
@@ -40,6 +51,7 @@ export interface WorldPlugin<TWorld = any> {
   optional: readonly string[]
   provides: readonly string[]
   systems: readonly { key: string; System: SystemConstructor<TWorld> }[]
+  nodes: readonly { key: string; Node: NodeConstructor }[]
   scripts: ScriptApiContribution | null
   setup: ((world: TWorld) => void) | null
 }

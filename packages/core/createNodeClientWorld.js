@@ -7,6 +7,7 @@ import { environmentNodeClientPlugin } from './plugins/environment/node-client.j
 import { loaderServerPlugin } from './plugins/loader/server.js'
 import { logsPlugin } from './plugins/logs.js'
 import { networkClientPlugin } from './plugins/network/client.js'
+import { nodesPlugin } from './plugins/nodes.js'
 import { spatialPlugin } from './plugins/spatial.js'
 
 import { NodeClient } from './systems/NodeClient.js'
@@ -22,6 +23,7 @@ export const nodeClientPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     logsPlugin,
+    nodesPlugin,
     spatialPlugin,
     chatPlugin,
     controlsClientPlugin,

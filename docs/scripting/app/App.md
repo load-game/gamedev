@@ -64,6 +64,7 @@ NOTE: Blender GLTF exporter renames objects in some cases, eg by removing spaces
 ### `.create(nodeName)`: Node
 
 Creates and returns a node of the specified name.
+Requires the nodes plugin (`gamedev/plugins/nodes`) to register the built-in node constructors.
 
 ### `.asset(relativePath)`: String
 

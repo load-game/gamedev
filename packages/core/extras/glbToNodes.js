@@ -1,4 +1,3 @@
-import { createNode } from './createNode.js'
 import * as THREE from './three.js'
 import CustomShaderMaterial from '../libs/three-custom-shader-material/index.js'
 
@@ -6,7 +5,7 @@ const groupTypes = ['Scene', 'Group', 'Object3D']
 
 export function glbToNodes(glb, world) {
   function registerNode(name, data) {
-    const node = createNode(name, data)
+    const node = world.createNode(name, data)
     return node
   }
   function parse(object3ds, parentNode) {

@@ -1,6 +1,7 @@
 import * as THREE from './extras/three.js'
 import EventEmitter from 'eventemitter3'
 import { installWorldExtension } from './plugins.js'
+import { warn } from './extras/warn.js'
 
 export class World extends EventEmitter {
   constructor(options = {}) {
@@ -19,6 +20,7 @@ export class World extends EventEmitter {
     this.plugins = []
     this.pluginCapabilities = new Set()
     this.pendingScriptApi = []
+    this.nodeTypes = new Map()
 
     this.rig = new THREE.Object3D()
     // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
@@ -48,6 +50,21 @@ export class World extends EventEmitter {
       this.flushPendingScriptApi()
     }
     return system
+  }
+
+  registerNode(key, Node, options = {}) {
+    if (this.nodeTypes.has(key)) {
+      throw new Error(`world_node_collision:${key}`)
+    }
+    this.nodeTypes.set(key, { Node, plugin: options.plugin || null })
+  }
+
+  createNode(name, data) {
+    const entry = this.nodeTypes.get(name)
+    if (!entry) {
+      throw new Error(`world_node_missing:${name}`)
+    }
+    return new entry.Node(data)
   }
 
   exposeScripts(api, source = 'world') {
@@ -227,7 +244,7 @@ export class World extends EventEmitter {
       } else if (this.assetsUrl) {
         return url.replace('asset:/', this.assetsUrl)
       } else {
-        console.error('resolveURL: no assetsUrl or assetsDir defined')
+        warn('resolveURL: no assetsUrl or assetsDir defined')
         return url
       }
     }

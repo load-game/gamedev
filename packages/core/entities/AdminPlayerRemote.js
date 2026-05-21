@@ -1,5 +1,4 @@
 import { Entity } from './Entity.js'
-import { createNode } from '../extras/createNode.js'
 import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion.js'
 import { hasRank, Ranks } from '../extras/ranks.js'
@@ -21,16 +20,20 @@ export class AdminPlayerRemote extends Entity {
   }
 
   async init() {
-    this.base = createNode('group')
+    this.base = this.world.createNode('group')
     this.base.position.fromArray(this.data.position || [0, 0, 0])
     this.base.quaternion.fromArray(this.data.quaternion || [0, 0, 0, 1])
     this.enteredAt = this.data.enteredAt
 
-    this.aura = createNode('group')
-    this.nametag = createNode('nametag', { label: this.data.name || '', health: this.data.health, active: false })
+    this.aura = this.world.createNode('group')
+    this.nametag = this.world.createNode('nametag', {
+      label: this.data.name || '',
+      health: this.data.health,
+      active: false,
+    })
     this.aura.add(this.nametag)
 
-    this.bubble = createNode('ui', {
+    this.bubble = this.world.createNode('ui', {
       width: 300,
       height: 512,
       pivot: 'bottom-center',
@@ -40,12 +43,12 @@ export class AdminPlayerRemote extends Entity {
       alignItems: 'center',
       active: false,
     })
-    this.bubbleBox = createNode('uiview', {
+    this.bubbleBox = this.world.createNode('uiview', {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderRadius: 10,
       padding: 10,
     })
-    this.bubbleText = createNode('uitext', {
+    this.bubbleText = this.world.createNode('uitext', {
       color: 'white',
       fontWeight: 100,
       lineHeight: 1.4,

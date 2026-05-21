@@ -4,10 +4,8 @@ import * as THREE from '../extras/three.js'
 import { XRControllerModelFactory } from 'three/addons'
 import { Layers } from '../extras/Layers.js'
 import { DEG2RAD, RAD2DEG } from '../extras/general.js'
-import { createNode } from '../extras/createNode.js'
 import { bindRotations } from '../extras/bindRotations.js'
 import { simpleCamLerp } from '../extras/simpleCamLerp.js'
-import { Emotes } from '../extras/playerEmotes.js'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { isBoolean, isNumber } from 'lodash-es'
 import { hasRank, Ranks } from '../extras/ranks.js'
@@ -131,19 +129,19 @@ export class PlayerLocal extends Entity {
 
     this.lastSendAt = 0
 
-    this.base = createNode('group')
+    this.base = this.world.createNode('group')
     this.base.position.fromArray(this.data.position)
     this.base.quaternion.fromArray(this.data.quaternion)
 
     this.hmdDelta = new THREE.Vector3()
     this.hmdLast = new THREE.Vector3()
 
-    this.aura = createNode('group')
+    this.aura = this.world.createNode('group')
 
-    this.nametag = createNode('nametag', { label: '', health: this.data.health, active: false })
+    this.nametag = this.world.createNode('nametag', { label: '', health: this.data.health, active: false })
     this.aura.add(this.nametag)
 
-    this.bubble = createNode('ui', {
+    this.bubble = this.world.createNode('ui', {
       id: 'bubble',
       // space: 'screen',
       width: 300,
@@ -157,12 +155,12 @@ export class PlayerLocal extends Entity {
       alignItems: 'center',
       active: false,
     })
-    this.bubbleBox = createNode('uiview', {
+    this.bubbleBox = this.world.createNode('uiview', {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderRadius: 10,
       padding: 10,
     })
-    this.bubbleText = createNode('uitext', {
+    this.bubbleText = this.world.createNode('uitext', {
       color: 'white',
       fontWeight: 100,
       lineHeight: 1.4,
@@ -226,7 +224,7 @@ export class PlayerLocal extends Entity {
         this.camHeight = this.avatar.height * 0.9
       })
       .catch(err => {
-        console.error(err)
+        this.world.logs?.add('client', 'error', [err])
       })
   }
 
@@ -284,17 +282,14 @@ export class PlayerLocal extends Entity {
     // go straight through it. It has to be almost perfectly head on, a slight angle and everything works fine.
     // I spent days trying to figure out why, it's not CCD, it's not contact offsets, its just straight up bugged.
     // For now the best solution is to just add a sphere right in the center of our capsule to keep that problem at bay.
-    let shape2
-    {
-      // const geometry = new PHYSX.PxSphereGeometry(radius)
-      // shape2 = this.world.physics.physics.createShape(geometry, this.material, true, flags)
-      // shape2.setQueryFilterData(filterData)
-      // shape2.setSimulationFilterData(filterData)
-      // const pose = new PHYSX.PxTransform(PHYSX.PxIDENTITYEnum.PxIdentity)
-      // v1.set(0, halfHeight + radius, 0).toPxTransform(pose)
-      // shape2.setLocalPose(pose)
-      // this.capsule.attachShape(shape2)
-    }
+    // const geometry = new PHYSX.PxSphereGeometry(radius)
+    // const shape2 = this.world.physics.physics.createShape(geometry, this.material, true, flags)
+    // shape2.setQueryFilterData(filterData)
+    // shape2.setSimulationFilterData(filterData)
+    // const pose = new PHYSX.PxTransform(PHYSX.PxIDENTITYEnum.PxIdentity)
+    // v1.set(0, halfHeight + radius, 0).toPxTransform(pose)
+    // shape2.setLocalPose(pose)
+    // this.capsule.attachShape(shape2)
     this.capsuleHandle = this.world.physics.addActor(this.capsule, {
       tag: null,
       playerId: this.data.id,
@@ -466,8 +461,6 @@ export class PlayerLocal extends Entity {
       this._ragdoll.fixedUpdate(delta)
       return
     }
-    const xr = this.isXR
-    const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
     const snare = this.data.effect?.snare || 0
 
@@ -752,8 +745,7 @@ export class PlayerLocal extends Entity {
       // ground/air jump
       const shouldJump =
         this.grounded && !this.jumping && this.jumpDown && !this.data.effect?.snare && !this.data.effect?.freeze
-      const shouldAirJump =
-        false && !this.grounded && !this.airJumped && this.jumpPressed && !this.world.builder?.enabled // temp: disabled
+      const shouldAirJump = false // temp: disabled
       if (shouldJump || shouldAirJump) {
         // calc velocity needed to reach jump height
         let jumpVelocity = Math.sqrt(2 * this.effectiveGravity * this.jumpHeight)
@@ -1402,7 +1394,6 @@ export class PlayerLocal extends Entity {
       this.data.health = data.health
       this.nametag.health = data.health
       this.world.events.emit('health', { playerId: this.data.id, health: data.health })
-      console.log('modify', data.health)
       // changed = true
     }
     if (data.hasOwnProperty('avatar')) {

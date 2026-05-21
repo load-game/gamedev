@@ -6,7 +6,7 @@ export { ServerLoader, loaderScriptApi }
 
 export const loaderServerPlugin = definePlugin({
   name: '@gamedev/plugin-loader/server',
-  requires: ['core'],
+  requires: ['core', 'nodes'],
   provides: ['@gamedev/plugin-loader', 'loader'],
   systems: [['loader', ServerLoader]],
   scripts: loaderScriptApi,

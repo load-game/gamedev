@@ -1,8 +1,5 @@
 import * as THREE from '../extras/three.js'
 import { Entity } from './Entity.js'
-import { createNode } from '../extras/createNode.js'
-import { LerpQuaternion } from '../extras/LerpQuaternion.js'
-import { LerpVector3 } from '../extras/LerpVector3.js'
 import { hasRank, Ranks } from '../extras/ranks.js'
 import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion.js'
@@ -34,14 +31,14 @@ export class PlayerRemote extends Entity {
   }
 
   async init() {
-    this.base = createNode('group')
+    this.base = this.world.createNode('group')
     this.base.position.fromArray(this.data.position)
     this.base.quaternion.fromArray(this.data.quaternion)
 
-    this.body = createNode('rigidbody', { type: 'kinematic' })
+    this.body = this.world.createNode('rigidbody', { type: 'kinematic' })
     this.body.active = this.data.effect?.anchorId ? false : true
     this.base.add(this.body)
-    this.collider = createNode('collider', {
+    this.collider = this.world.createNode('collider', {
       type: 'geometry',
       convex: true,
       geometry: capsuleGeometry,
@@ -49,18 +46,18 @@ export class PlayerRemote extends Entity {
     })
     this.body.add(this.collider)
 
-    // this.caps = createNode('mesh', {
+    // this.caps = this.world.createNode('mesh', {
     //   type: 'geometry',
     //   geometry: capsuleGeometry,
     //   material: new THREE.MeshStandardMaterial({ color: 'white' }),
     // })
     // this.base.add(this.caps)
 
-    this.aura = createNode('group')
-    this.nametag = createNode('nametag', { label: this.data.name, health: this.data.health, active: false })
+    this.aura = this.world.createNode('group')
+    this.nametag = this.world.createNode('nametag', { label: this.data.name, health: this.data.health, active: false })
     this.aura.add(this.nametag)
 
-    this.bubble = createNode('ui', {
+    this.bubble = this.world.createNode('ui', {
       width: 300,
       height: 512,
       pivot: 'bottom-center',
@@ -70,12 +67,12 @@ export class PlayerRemote extends Entity {
       alignItems: 'center',
       active: false,
     })
-    this.bubbleBox = createNode('uiview', {
+    this.bubbleBox = this.world.createNode('uiview', {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderRadius: 10,
       padding: 10,
     })
-    this.bubbleText = createNode('uitext', {
+    this.bubbleText = this.world.createNode('uitext', {
       color: 'white',
       fontWeight: 100,
       lineHeight: 1.4,
@@ -171,7 +168,7 @@ export class PlayerRemote extends Entity {
     this.avatar?.instance?.setLocomotion(this.mode, this.axis, this.gaze)
   }
 
-  lateUpdate(delta) {
+  lateUpdate() {
     if (this._ragdoll) return
     const anchor = this.getAnchorMatrix()
     if (anchor) {

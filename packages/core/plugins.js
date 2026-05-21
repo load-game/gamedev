@@ -30,6 +30,42 @@ function normalizeSystemEntry(entry, pluginName) {
   return { key, System }
 }
 
+function normalizeNodeEntry(entry, pluginName) {
+  if (Array.isArray(entry)) {
+    const [key, Node] = entry
+    if (!key || typeof key !== 'string') {
+      throw new Error(`plugin_invalid_node_key:${pluginName}`)
+    }
+    if (typeof Node !== 'function') {
+      throw new Error(`plugin_invalid_node:${pluginName}:${key}`)
+    }
+    return { key, Node }
+  }
+
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`plugin_invalid_node:${pluginName}`)
+  }
+
+  const key = entry.key
+  const Node = entry.Node || entry.node
+  if (!key || typeof key !== 'string') {
+    throw new Error(`plugin_invalid_node_key:${pluginName}`)
+  }
+  if (typeof Node !== 'function') {
+    throw new Error(`plugin_invalid_node:${pluginName}:${key}`)
+  }
+  return { key, Node }
+}
+
+function normalizeNodeEntries(value, pluginName) {
+  if (!value) return []
+  if (Array.isArray(value)) return value.map(entry => normalizeNodeEntry(entry, pluginName))
+  if (typeof value === 'object') {
+    return Object.entries(value).map(([key, Node]) => normalizeNodeEntry([key, Node], pluginName))
+  }
+  throw new Error(`plugin_invalid_nodes:${pluginName}`)
+}
+
 export function definePlugin(definition) {
   if (!definition || typeof definition !== 'object') {
     throw new Error('plugin_invalid_definition')
@@ -40,6 +76,7 @@ export function definePlugin(definition) {
 
   const name = definition.name
   const systems = toArray(definition.systems).map(system => normalizeSystemEntry(system, name))
+  const nodes = normalizeNodeEntries(definition.nodes, name)
 
   return Object.freeze({
     kind: 'plugin',
@@ -48,6 +85,7 @@ export function definePlugin(definition) {
     optional: Object.freeze(toArray(definition.optional).map(String)),
     provides: Object.freeze(toArray(definition.provides).map(String)),
     systems: Object.freeze(systems),
+    nodes: Object.freeze(nodes),
     scripts: definition.scripts || definition.scriptApi || null,
     setup: typeof definition.setup === 'function' ? definition.setup : null,
   })
@@ -75,7 +113,12 @@ function assertPluginState(world) {
 }
 
 function getProvidedCapabilities(plugin) {
-  return new Set([plugin.name, ...plugin.provides, ...plugin.systems.map(system => system.key)])
+  return new Set([
+    plugin.name,
+    ...plugin.provides,
+    ...plugin.systems.map(system => system.key),
+    ...plugin.nodes.map(node => `node:${node.key}`),
+  ])
 }
 
 function installPlugin(world, pluginDefinition) {
@@ -100,6 +143,9 @@ function installPlugin(world, pluginDefinition) {
     }
   }
 
+  for (const node of plugin.nodes) {
+    world.registerNode(node.key, node.Node, { plugin: plugin.name })
+  }
   for (const system of plugin.systems) {
     world.register(system.key, system.System, { plugin: plugin.name })
   }
