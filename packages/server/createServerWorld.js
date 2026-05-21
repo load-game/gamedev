@@ -8,9 +8,9 @@ import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
+import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
-import { ServerMonitor } from '@gamedev/core/systems/ServerMonitor.js'
 import { ServerNetwork } from './ServerNetwork.js'
 
 export const serverRuntimePlugin = definePlugin({
@@ -19,7 +19,6 @@ export const serverRuntimePlugin = definePlugin({
   systems: [
     ['server', Server],
     ['network', ServerNetwork],
-    ['monitor', ServerMonitor],
   ],
 })
 
@@ -30,6 +29,7 @@ export const serverPreset = definePreset({
     chatPlugin,
     serverRuntimePlugin,
     environmentServerPlugin,
+    monitorServerPlugin,
     loaderServerPlugin,
     livekitServerPlugin,
     aiServerPlugin,

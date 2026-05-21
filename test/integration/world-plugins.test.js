@@ -17,6 +17,7 @@ import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
+import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
@@ -207,6 +208,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-environment/server',
+      '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
@@ -222,6 +224,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
       '@gamedev/plugin-environment/server',
+      '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
       '@gamedev/plugin-livekit/server',
       '@gamedev/plugin-ai/server',
@@ -231,6 +234,7 @@ test('runtime factories are preset compositions', () => {
   )
   assert.ok(serverWorld.loader)
   assert.ok(serverWorld.environment)
+  assert.ok(serverWorld.monitor)
   assert.ok(serverWorld.chat)
   assert.ok(serverWorld.livekit)
   assert.ok(serverWorld.ai)
@@ -239,6 +243,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
   assert.equal(serverWorld.environment.plugin, '@gamedev/plugin-environment/server')
+  assert.equal(serverWorld.monitor.plugin, '@gamedev/plugin-monitor/server')
   assert.equal(serverWorld.chat.plugin, '@gamedev/plugin-chat')
   assert.equal(serverWorld.livekit.plugin, '@gamedev/plugin-livekit/server')
   assert.equal(serverWorld.ai.plugin, '@gamedev/plugin-ai/server')
@@ -260,6 +265,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.environment, undefined)
+  assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
@@ -308,6 +314,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, cssClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-css\/client:graphics/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, monitorServerPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-monitor\/server:server/
   )
 
   const actionsWorld = new World({

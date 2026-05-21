@@ -650,6 +650,10 @@ export class ServerNetwork extends System {
             createdAt: moment().toISOString(),
           })
         }
+        if (!this.world.monitor?.getStats) {
+          send('Server stats are unavailable.')
+          return
+        }
         const stats = await this.world.monitor.getStats()
         send(`CPU: ${stats.currentCPU.toFixed(3)}%`)
         send(

@@ -54,6 +54,7 @@
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
     "index.plugin-lods-client.d.ts",
+    "index.plugin-monitor-server.d.ts",
     "index.plugin-nametags-client.d.ts",
     "index.plugin-particles-client.d.ts",
     "index.plugin-prefs-client.d.ts",
@@ -207,6 +208,12 @@
       "import": "./packages/core/plugins/livekit/server.js",
       "require": "./packages/core/plugins/livekit/server.js",
       "default": "./packages/core/plugins/livekit/server.js"
+    },
+    "./plugins/monitor/server": {
+      "types": "./index.plugin-monitor-server.d.ts",
+      "import": "./packages/core/plugins/monitor/server.js",
+      "require": "./packages/core/plugins/monitor/server.js",
+      "default": "./packages/core/plugins/monitor/server.js"
     },
     "./plugins/lods/client": {
       "types": "./index.plugin-lods-client.d.ts",

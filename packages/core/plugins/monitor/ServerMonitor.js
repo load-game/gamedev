@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 import os from 'os'
 
 export class ServerMonitor extends System {
