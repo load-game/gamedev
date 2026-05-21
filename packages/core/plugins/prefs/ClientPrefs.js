@@ -1,8 +1,8 @@
 import { isBoolean, isNumber } from 'lodash-es'
 
-import { System } from './System.js'
-import { storage } from '../storage.js'
-import { isTouch } from '../isTouch.js'
+import { System } from '../../systems/System.js'
+import { storage } from '../../storage.js'
+import { isTouch } from '../../isTouch.js'
 
 /**
  * Client Prefs System
@@ -11,8 +11,6 @@ import { isTouch } from '../isTouch.js'
 export class ClientPrefs extends System {
   constructor(world) {
     super(world)
-
-    const isQuest = /OculusBrowser/.test(navigator.userAgent)
 
     const data = storage.get('prefs', {})
 
@@ -49,7 +47,7 @@ export class ClientPrefs extends System {
   }
 
   init() {
-    this.world.chat.bindCommand('stats', () => {
+    this.world.chat?.bindCommand?.('stats', () => {
       this.setStats(!this.stats)
     })
   }

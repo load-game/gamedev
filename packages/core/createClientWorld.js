@@ -9,11 +9,11 @@ import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
+import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
-import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
@@ -32,11 +32,10 @@ import { XR } from './systems/XR.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
-  requires: ['core', 'chat'],
+  requires: ['core', 'chat', 'prefs'],
   systems: [
     ['client', Client],
     ['pointer', ClientPointer],
-    ['prefs', ClientPrefs],
     ['controls', ClientControls],
     ['network', ClientNetwork],
     ['css', ClientCSS],
@@ -60,6 +59,7 @@ export const clientPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     chatPlugin,
+    prefsClientPlugin,
     clientRuntimePlugin,
     uiClientPlugin,
     loaderClientPlugin,

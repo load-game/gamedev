@@ -6,11 +6,11 @@ import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
+import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
-import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
@@ -32,11 +32,10 @@ import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
 
 export const adminRuntimePlugin = definePlugin({
   name: '@gamedev/admin/runtime',
-  requires: ['core', 'chat'],
+  requires: ['core', 'chat', 'prefs'],
   systems: [
     ['client', Client],
     ['pointer', ClientPointer],
-    ['prefs', ClientPrefs],
     ['controls', ClientControls],
     ['network', AdminNetwork],
     ['css', ClientCSS],
@@ -77,6 +76,7 @@ export const adminPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     chatPlugin,
+    prefsClientPlugin,
     adminRuntimePlugin,
     uiClientPlugin,
     loaderClientPlugin,

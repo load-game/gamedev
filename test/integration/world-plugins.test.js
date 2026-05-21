@@ -13,6 +13,7 @@ import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
+import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
@@ -117,6 +118,7 @@ test('runtime factories are preset compositions', () => {
     [
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
+      '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
@@ -131,6 +133,7 @@ test('runtime factories are preset compositions', () => {
     [
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
+      '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
@@ -150,7 +153,12 @@ test('runtime factories are preset compositions', () => {
 
   assert.deepEqual(
     viewerPreset.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/viewer/runtime', '@gamedev/plugin-loader/client']
+    [
+      '@gamedev/core/systems',
+      '@gamedev/plugin-prefs/client',
+      '@gamedev/viewer/runtime',
+      '@gamedev/plugin-loader/client',
+    ]
   )
 
   assert.deepEqual(
@@ -209,6 +217,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.chat, undefined)
+  assert.equal(coreWorld.prefs, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -236,11 +245,17 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
 
   const uiWorld = new World({
-    plugins: [coreSystemsPlugin, clientRuntimeStub, uiClientPlugin],
+    plugins: [coreSystemsPlugin, chatPlugin, prefsClientPlugin, clientRuntimeStub, uiClientPlugin],
   })
   assert.ok(uiWorld.ui)
   assert.equal(uiWorld.ui.plugin, '@gamedev/plugin-ui/client')
   assert.equal(typeof uiWorld.apps.worldMethods.setReticle, 'function')
+
+  const prefsWorld = new World({
+    plugins: [coreSystemsPlugin, prefsClientPlugin],
+  })
+  assert.ok(prefsWorld.prefs)
+  assert.equal(prefsWorld.prefs.plugin, '@gamedev/plugin-prefs/client')
 
   const featureWorld = new World({
     plugins: [
