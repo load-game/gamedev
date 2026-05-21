@@ -14,6 +14,7 @@ import { snapsClientPlugin } from './plugins/snaps/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
+import { windClientPlugin } from './plugins/wind/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -24,7 +25,6 @@ import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
-import { Wind } from './systems/Wind.js'
 import { AdminXR } from './systems/AdminXR.js'
 
 import { FreeCam } from './entities/FreeCam.js'
@@ -43,7 +43,6 @@ export const adminRuntimePlugin = definePlugin({
     ['environment', ClientEnvironment],
     ['nametags', Nametags],
     ['particles', Particles],
-    ['wind', Wind],
     ['xr', AdminXR],
   ],
   setup(world) {
@@ -78,6 +77,7 @@ export const adminPreset = definePreset({
     targetClientPlugin,
     lodsClientPlugin,
     snapsClientPlugin,
+    windClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,

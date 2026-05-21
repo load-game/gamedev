@@ -22,6 +22,7 @@ import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
+import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
 import { System } from '@gamedev/core/systems/System.js'
 
@@ -132,6 +133,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-target/client',
       '@gamedev/plugin-lods/client',
       '@gamedev/plugin-snaps/client',
+      '@gamedev/plugin-wind/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -153,6 +155,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-target/client',
       '@gamedev/plugin-lods/client',
       '@gamedev/plugin-snaps/client',
+      '@gamedev/plugin-wind/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -242,6 +245,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.target, undefined)
   assert.equal(coreWorld.lods, undefined)
   assert.equal(coreWorld.snaps, undefined)
+  assert.equal(coreWorld.wind, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -304,6 +308,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(snapsWorld.snaps)
   assert.equal(snapsWorld.snaps.plugin, '@gamedev/plugin-snaps/client')
+
+  const windWorld = new World({
+    plugins: [coreSystemsPlugin, windClientPlugin],
+  })
+  assert.ok(windWorld.wind)
+  assert.equal(windWorld.wind.plugin, '@gamedev/plugin-wind/client')
 
   const uiWorld = new World({
     plugins: [

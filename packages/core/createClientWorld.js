@@ -17,6 +17,7 @@ import { snapsClientPlugin } from './plugins/snaps/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
 import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
+import { windClientPlugin } from './plugins/wind/client.js'
 
 import { Client } from './systems/Client.js'
 import { ClientPointer } from './systems/ClientPointer.js'
@@ -27,7 +28,6 @@ import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
 import { Nametags } from './systems/Nametags.js'
 import { Particles } from './systems/Particles.js'
-import { Wind } from './systems/Wind.js'
 import { XR } from './systems/XR.js'
 
 export const clientRuntimePlugin = definePlugin({
@@ -43,7 +43,6 @@ export const clientRuntimePlugin = definePlugin({
     ['environment', ClientEnvironment],
     ['nametags', Nametags],
     ['particles', Particles],
-    ['wind', Wind],
     ['xr', XR],
   ],
 })
@@ -61,6 +60,7 @@ export const clientPreset = definePreset({
     targetClientPlugin,
     lodsClientPlugin,
     snapsClientPlugin,
+    windClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
     adminClientPlugin,
