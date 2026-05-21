@@ -5,17 +5,14 @@ import { chatPlugin } from './plugins/chat.js'
 import { controlsClientPlugin } from './plugins/controls/client.js'
 import { environmentNodeClientPlugin } from './plugins/environment/node-client.js'
 import { loaderServerPlugin } from './plugins/loader/server.js'
+import { networkClientPlugin } from './plugins/network/client.js'
 
 import { NodeClient } from './systems/NodeClient.js'
-import { ClientNetwork } from './systems/ClientNetwork.js'
 
 export const nodeClientRuntimePlugin = definePlugin({
   name: '@gamedev/node-client/runtime',
-  requires: ['core', 'chat', 'controls'],
-  systems: [
-    ['client', NodeClient],
-    ['network', ClientNetwork],
-  ],
+  requires: ['core'],
+  systems: [['client', NodeClient]],
 })
 
 export const nodeClientPreset = definePreset({
@@ -25,6 +22,7 @@ export const nodeClientPreset = definePreset({
     chatPlugin,
     controlsClientPlugin,
     nodeClientRuntimePlugin,
+    networkClientPlugin,
     environmentNodeClientPlugin,
     loaderServerPlugin,
   ],

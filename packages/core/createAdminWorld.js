@@ -14,6 +14,7 @@ import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
+import { networkAdminPlugin } from './plugins/network/admin.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
 import { pointerClientPlugin } from './plugins/pointer/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
@@ -23,25 +24,21 @@ import { targetClientPlugin } from './plugins/target/client.js'
 import { uiClientPlugin } from './plugins/ui/client.js'
 import { windClientPlugin } from './plugins/wind/client.js'
 import { xrAdminPlugin } from './plugins/xr/admin.js'
+import { uuid } from './utils.js'
 
 import { Client } from './systems/Client.js'
-import { AdminNetwork } from './systems/AdminNetwork.js'
 
 import { FreeCam } from './entities/FreeCam.js'
 import { AdminLocalPlayer } from './entities/AdminLocalPlayer.js'
 
 export const adminRuntimePlugin = definePlugin({
   name: '@gamedev/admin/runtime',
-  requires: ['core', 'chat', 'graphics', 'controls'],
-  systems: [
-    ['client', Client],
-    ['network', AdminNetwork],
-  ],
+  requires: ['core', 'graphics', 'controls'],
+  systems: [['client', Client]],
   setup(world) {
     world.isAdminClient = true
-    world.adminNetwork = world.network
 
-    const adminPlayer = new AdminLocalPlayer(world, { id: world.network.id })
+    const adminPlayer = new AdminLocalPlayer(world, { id: world.network?.id || uuid() })
     world.entities.player = adminPlayer
     world.adminPlayer = adminPlayer
     world.emit('player', adminPlayer)
@@ -65,6 +62,7 @@ export const adminPreset = definePreset({
     graphicsClientPlugin,
     controlsClientPlugin,
     adminRuntimePlugin,
+    networkAdminPlugin,
     pointerClientPlugin,
     xrAdminPlugin,
     cssClientPlugin,

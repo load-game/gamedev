@@ -17,6 +17,7 @@ import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
+import { networkClientPlugin } from './plugins/network/client.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
 import { pointerClientPlugin } from './plugins/pointer/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
@@ -28,15 +29,11 @@ import { windClientPlugin } from './plugins/wind/client.js'
 import { xrClientPlugin } from './plugins/xr/client.js'
 
 import { Client } from './systems/Client.js'
-import { ClientNetwork } from './systems/ClientNetwork.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
-  requires: ['core', 'chat', 'graphics', 'controls'],
-  systems: [
-    ['client', Client],
-    ['network', ClientNetwork],
-  ],
+  requires: ['core', 'graphics'],
+  systems: [['client', Client]],
 })
 
 export const clientPreset = definePreset({
@@ -48,6 +45,7 @@ export const clientPreset = definePreset({
     graphicsClientPlugin,
     controlsClientPlugin,
     clientRuntimePlugin,
+    networkClientPlugin,
     pointerClientPlugin,
     xrClientPlugin,
     cssClientPlugin,

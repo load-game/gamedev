@@ -20,6 +20,8 @@ import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
+import { networkAdminPlugin } from '@gamedev/core/plugins/network/admin.js'
+import { networkClientPlugin } from '@gamedev/core/plugins/network/client.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
 import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
@@ -137,6 +139,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-network/admin',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/admin',
       '@gamedev/plugin-css/client',
@@ -167,6 +170,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-graphics/client',
       '@gamedev/plugin-controls/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-network/client',
       '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-xr/client',
       '@gamedev/plugin-css/client',
@@ -198,6 +202,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-controls/client',
       '@gamedev/node-client/runtime',
+      '@gamedev/plugin-network/client',
       '@gamedev/plugin-environment/node-client',
       '@gamedev/plugin-loader/server',
     ]
@@ -283,6 +288,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.graphics, undefined)
   assert.equal(coreWorld.controls, undefined)
+  assert.equal(coreWorld.network, undefined)
   assert.equal(coreWorld.css, undefined)
   assert.equal(coreWorld.pointer, undefined)
   assert.equal(coreWorld.xr, undefined)
@@ -325,6 +331,11 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
 
+  const clientOnlyRuntimeStub = definePlugin({
+    name: 'test-client-only-runtime',
+    systems: [['client', TestSystem]],
+  })
+
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-audio\/client:client/
@@ -345,11 +356,29 @@ test('feature APIs only appear when their plugins are selected', () => {
     /plugin_missing_requirement:@gamedev\/plugin-pointer\/client:controls/
   )
 
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, chatPlugin, networkClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-network\/client:client/
+  )
+
   const controlsWorld = new World({
     plugins: [coreSystemsPlugin, controlsClientPlugin],
   })
   assert.ok(controlsWorld.controls)
   assert.equal(controlsWorld.controls.plugin, '@gamedev/plugin-controls/client')
+
+  const networkWorld = new World({
+    plugins: [coreSystemsPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
+  })
+  assert.ok(networkWorld.network)
+  assert.equal(networkWorld.network.plugin, '@gamedev/plugin-network/client')
+
+  const adminNetworkWorld = new World({
+    plugins: [coreSystemsPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
+  })
+  assert.ok(adminNetworkWorld.network)
+  assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
+  assert.equal(adminNetworkWorld.adminNetwork, adminNetworkWorld.network)
 
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, xrClientPlugin] }),

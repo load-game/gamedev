@@ -1,7 +1,7 @@
-import { readPacket, writePacket } from '../packets.js'
-import { storage } from '../storage.js'
-import { uuid } from '../utils.js'
-import { System } from './System.js'
+import { readPacket, writePacket } from '../../packets.js'
+import { storage } from '../../storage.js'
+import { uuid } from '../../utils.js'
+import { System } from '../../systems/System.js'
 
 function normalizeAdminUrl(url) {
   if (!url) return null
@@ -148,7 +148,7 @@ export class AdminNetwork extends System {
       try {
         this[method]?.(data)
       } catch (err) {
-        console.error(err)
+        this.world.logs?.add('client', 'error', [err])
       }
     }
   }
@@ -220,7 +220,10 @@ export class AdminNetwork extends System {
     const payload = data?.entity || data
     if (!payload) return
     const entity = this.world.entities.get(payload.id)
-    if (!entity) return console.error('onEntityModified: no entity found', payload)
+    if (!entity) {
+      this.world.logs?.add('client', 'warn', ['onEntityModified: no entity found', payload])
+      return
+    }
     entity.modify(payload)
   }
 

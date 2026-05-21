@@ -58,6 +58,8 @@
     "index.plugin-lods-client.d.ts",
     "index.plugin-monitor-server.d.ts",
     "index.plugin-nametags-client.d.ts",
+    "index.plugin-network-admin.d.ts",
+    "index.plugin-network-client.d.ts",
     "index.plugin-particles-client.d.ts",
     "index.plugin-pointer-client.d.ts",
     "index.plugin-prefs-client.d.ts",
@@ -243,6 +245,18 @@
       "import": "./packages/core/plugins/nametags/client.js",
       "require": "./packages/core/plugins/nametags/client.js",
       "default": "./packages/core/plugins/nametags/client.js"
+    },
+    "./plugins/network/admin": {
+      "types": "./index.plugin-network-admin.d.ts",
+      "import": "./packages/core/plugins/network/admin.js",
+      "require": "./packages/core/plugins/network/admin.js",
+      "default": "./packages/core/plugins/network/admin.js"
+    },
+    "./plugins/network/client": {
+      "types": "./index.plugin-network-client.d.ts",
+      "import": "./packages/core/plugins/network/client.js",
+      "require": "./packages/core/plugins/network/client.js",
+      "default": "./packages/core/plugins/network/client.js"
     },
     "./plugins/particles/client": {
       "types": "./index.plugin-particles-client.d.ts",

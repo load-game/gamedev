@@ -1,10 +1,10 @@
 import moment from 'moment'
-import { emoteUrls } from '../extras/playerEmotes.js'
-import { readPacket, writePacket } from '../packets.js'
-import { storage } from '../storage.js'
-import { uuid, sanitizeWsUrl } from '../utils.js'
-import { hashFile, navigateToServer } from '../utils-client.js'
-import { System } from './System.js'
+import { emoteUrls } from '../../extras/playerEmotes.js'
+import { readPacket, writePacket } from '../../packets.js'
+import { storage } from '../../storage.js'
+import { uuid, sanitizeWsUrl } from '../../utils.js'
+import { hashFile, navigateToServer } from '../../utils-client.js'
+import { System } from '../../systems/System.js'
 
 function hasModuleScript(blueprint) {
   if (!blueprint) return false
@@ -116,7 +116,7 @@ export class ClientNetwork extends System {
   }
 
   onError = e => {
-    console.error('WebSocket error:', e)
+    this.world.logs?.add('client', 'error', ['WebSocket error:', e])
   }
 
   preFixedUpdate() {
@@ -161,7 +161,7 @@ export class ClientNetwork extends System {
         const [method, data] = this.queue.shift()
         this[method]?.(data)
       } catch (err) {
-        console.error(err)
+        this.world.logs?.add('client', 'error', [err])
       }
     }
   }
@@ -188,42 +188,42 @@ export class ClientNetwork extends System {
     //   this.world.loader.preload('model', this.world.environment.base.model)
     // }
     if (data.settings.avatar) {
-      this.world.loader.preload('avatar', data.settings.avatar.url)
+      this.world.loader?.preload?.('avatar', data.settings.avatar.url)
     }
     // preload some blueprints
     for (const item of data.blueprints) {
       if (item.preload && !item.disabled) {
         if (item.model) {
           const type = item.model.endsWith('.vrm') ? 'avatar' : 'model'
-          this.world.loader.preload(type, item.model)
+          this.world.loader?.preload?.(type, item.model)
         }
         if (item.script) {
           if (hasModuleScript(item)) {
-            this.world.loader.loadFile?.(item.script).catch(err => {
-              console.warn('module entry preload failed', err)
+            this.world.loader?.loadFile?.(item.script).catch(err => {
+              this.world.logs?.add('client', 'warn', ['module entry preload failed', err])
             })
           } else {
-            this.world.loader.preload('script', item.script)
+            this.world.loader?.preload?.('script', item.script)
           }
         }
         for (const value of Object.values(item.props || {})) {
           if (value === undefined || value === null || !value?.url || !value?.type) continue
-          this.world.loader.preload(value.type, value.url)
+          this.world.loader?.preload?.(value.type, value.url)
         }
       }
     }
     // preload emotes
     for (const url of emoteUrls) {
-      this.world.loader.preload('emote', url)
+      this.world.loader?.preload?.('emote', url)
     }
     // preload local player avatar
     for (const item of data.entities) {
       if (item.type === 'player' && item.owner === this.id) {
         const url = item.sessionAvatar || item.avatar
-        this.world.loader.preload('avatar', url)
+        this.world.loader?.preload?.('avatar', url)
       }
     }
-    this.world.loader.execPreload()
+    this.world.loader?.execPreload?.()
 
     this.world.settings.deserialize(data.settings)
     this.world.settings.setHasAdminCode(data.hasAdminCode)
@@ -268,7 +268,10 @@ export class ClientNetwork extends System {
 
   onEntityModified = data => {
     const entity = this.world.entities.get(data.id)
-    if (!entity) return console.error('onEntityModified: no entity found', data)
+    if (!entity) {
+      this.world.logs?.add('client', 'warn', ['onEntityModified: no entity found', data])
+      return
+    }
     entity.modify(data)
   }
 
@@ -303,15 +306,15 @@ export class ClientNetwork extends System {
   }
 
   onLivekitToken = data => {
-    this.world.livekit.setToken(data.token)
+    this.world.livekit?.setToken?.(data.token)
   }
 
   onLiveKitLevel = data => {
-    this.world.livekit.setLevel(data.playerId, data.level)
+    this.world.livekit?.setLevel?.(data.playerId, data.level)
   }
 
   onMute = data => {
-    this.world.livekit.setMuted(data.playerId, data.muted)
+    this.world.livekit?.setMuted?.(data.playerId, data.muted)
   }
 
   onServerLog = data => {
