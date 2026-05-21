@@ -51,6 +51,7 @@
     "index.plugin-livekit-server.d.ts",
     "index.plugin-lods-client.d.ts",
     "index.plugin-prefs-client.d.ts",
+    "index.plugin-snaps-client.d.ts",
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
@@ -187,6 +188,12 @@
       "import": "./packages/core/plugins/prefs/client.js",
       "require": "./packages/core/plugins/prefs/client.js",
       "default": "./packages/core/plugins/prefs/client.js"
+    },
+    "./plugins/snaps/client": {
+      "types": "./index.plugin-snaps-client.d.ts",
+      "import": "./packages/core/plugins/snaps/client.js",
+      "require": "./packages/core/plugins/snaps/client.js",
+      "default": "./packages/core/plugins/snaps/client.js"
     },
     "./plugins/stats/client": {
       "types": "./index.plugin-stats-client.d.ts",

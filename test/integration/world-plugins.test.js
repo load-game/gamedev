@@ -17,6 +17,7 @@ import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
+import { snapsClientPlugin } from '@gamedev/core/plugins/snaps/client.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
@@ -130,6 +131,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-target/client',
       '@gamedev/plugin-lods/client',
+      '@gamedev/plugin-snaps/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -150,6 +152,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-target/client',
       '@gamedev/plugin-lods/client',
+      '@gamedev/plugin-snaps/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -238,6 +241,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.stats, undefined)
   assert.equal(coreWorld.target, undefined)
   assert.equal(coreWorld.lods, undefined)
+  assert.equal(coreWorld.snaps, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -294,6 +298,12 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(lodsWorld.lods)
   assert.equal(lodsWorld.lods.plugin, '@gamedev/plugin-lods/client')
+
+  const snapsWorld = new World({
+    plugins: [coreSystemsPlugin, snapsClientPlugin],
+  })
+  assert.ok(snapsWorld.snaps)
+  assert.equal(snapsWorld.snaps.plugin, '@gamedev/plugin-snaps/client')
 
   const uiWorld = new World({
     plugins: [

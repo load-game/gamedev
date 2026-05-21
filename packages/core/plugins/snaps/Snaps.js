@@ -1,5 +1,6 @@
-import { System } from './System.js'
-import { SnapOctree } from '../extras/SnapOctree.js'
+import * as THREE from '../../extras/three.js'
+import { SnapOctree } from '../../extras/SnapOctree.js'
+import { System } from '../../systems/System.js'
 
 /**
  * Snaps System
