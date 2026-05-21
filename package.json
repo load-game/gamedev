@@ -51,6 +51,7 @@
     "index.plugin-livekit-server.d.ts",
     "index.plugin-lods-client.d.ts",
     "index.plugin-nametags-client.d.ts",
+    "index.plugin-particles-client.d.ts",
     "index.plugin-prefs-client.d.ts",
     "index.plugin-snaps-client.d.ts",
     "index.plugin-stats-client.d.ts",
@@ -190,6 +191,12 @@
       "import": "./packages/core/plugins/nametags/client.js",
       "require": "./packages/core/plugins/nametags/client.js",
       "default": "./packages/core/plugins/nametags/client.js"
+    },
+    "./plugins/particles/client": {
+      "types": "./index.plugin-particles-client.d.ts",
+      "import": "./packages/core/plugins/particles/client.js",
+      "require": "./packages/core/plugins/particles/client.js",
+      "default": "./packages/core/plugins/particles/client.js"
     },
     "./plugins/prefs/client": {
       "types": "./index.plugin-prefs-client.d.ts",

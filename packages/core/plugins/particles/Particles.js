@@ -1,8 +1,8 @@
-import { System } from './System.js'
-import * as THREE from '../extras/three.js'
-import CustomShaderMaterial from '../libs/three-custom-shader-material/index.js'
-import { DEG2RAD } from '../extras/general.js'
-import { uuid } from '../utils.js'
+import { System } from '../../systems/System.js'
+import * as THREE from '../../extras/three.js'
+import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
+import { DEG2RAD } from '../../extras/general.js'
+import { uuid } from '../../utils.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
@@ -21,7 +21,7 @@ function getWorker() {
   if (!worker) {
     try {
       worker = new Worker(window.PARTICLES_PATH, { type: 'module' })
-    } catch (err) {
+    } catch {
       worker = new Worker(window.PARTICLES_PATH)
     }
   }
@@ -69,11 +69,12 @@ export class Particles extends System {
   }
 
   onError = err => {
-    console.error('[ParticleSystem]', err)
+    this.world.logs?.add('client', 'error', ['[ParticleSystem]', err])
   }
 
   onXRSession = session => {
-    this.uOrientationFull.value = session ? this.world.xr.camera.quaternion : this.world.rig.quaternion
+    this.uOrientationFull.value =
+      session && this.world.xr?.camera ? this.world.xr.camera.quaternion : this.world.rig.quaternion
   }
 }
 

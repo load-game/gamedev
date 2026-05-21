@@ -16,6 +16,7 @@ import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
+import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { snapsClientPlugin } from '@gamedev/core/plugins/snaps/client.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
@@ -137,6 +138,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/admin',
       '@gamedev/plugin-livekit/admin',
@@ -160,6 +162,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
       '@gamedev/plugin-builder/client',
       '@gamedev/plugin-livekit/client',
@@ -249,6 +252,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.snaps, undefined)
   assert.equal(coreWorld.wind, undefined)
   assert.equal(coreWorld.nametags, undefined)
+  assert.equal(coreWorld.particles, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -317,6 +321,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(windWorld.wind)
   assert.equal(windWorld.wind.plugin, '@gamedev/plugin-wind/client')
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, clientRuntimeStub, particlesClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-particles\/client:loader/
+  )
 
   const uiWorld = new World({
     plugins: [
