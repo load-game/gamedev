@@ -5,6 +5,8 @@ import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
+import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
+import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
 import { System } from '@gamedev/core/systems/System.js'
@@ -105,7 +107,7 @@ test('plugins reject system and script API collisions', () => {
 test('runtime factories are preset compositions', () => {
   assert.deepEqual(
     clientPreset.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/client/runtime']
+    ['@gamedev/core/systems', '@gamedev/client/runtime', '@gamedev/plugin-evm/client', '@gamedev/plugin-hyperliquid']
   )
 
   assert.deepEqual(
@@ -115,13 +117,35 @@ test('runtime factories are preset compositions', () => {
 
   assert.deepEqual(
     serverPreset.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/server/runtime']
+    ['@gamedev/core/systems', '@gamedev/server/runtime', '@gamedev/plugin-evm/server', '@gamedev/plugin-hyperliquid']
   )
   const serverWorld = createServerWorld()
   assert.deepEqual(
     serverWorld.plugins.map(plugin => plugin.name),
-    ['@gamedev/core/systems', '@gamedev/server/runtime']
+    ['@gamedev/core/systems', '@gamedev/server/runtime', '@gamedev/plugin-evm/server', '@gamedev/plugin-hyperliquid']
   )
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
+  assert.equal(serverWorld.evm.plugin, '@gamedev/plugin-evm/server')
+  assert.equal(serverWorld.hyperliquid.plugin, '@gamedev/plugin-hyperliquid')
+  assert.equal(typeof serverWorld.apps.worldMethods.evm, 'function')
+  assert.equal(typeof serverWorld.apps.worldMethods.hyperliquid, 'function')
+})
+
+test('feature APIs only appear when their plugins are selected', () => {
+  const coreWorld = new World({ plugins: [coreSystemsPlugin] })
+  assert.equal(coreWorld.evm, undefined)
+  assert.equal(coreWorld.hyperliquid, undefined)
+  assert.equal(coreWorld.apps.worldMethods.evm, undefined)
+  assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
+
+  const featureWorld = new World({
+    plugins: [coreSystemsPlugin, evmServerPlugin, hyperliquidPlugin],
+  })
+  assert.ok(featureWorld.evm)
+  assert.ok(featureWorld.hyperliquid)
+  assert.equal(typeof featureWorld.apps.worldMethods.evm, 'function')
+  assert.equal(typeof featureWorld.apps.playerGetters.evm, 'function')
+  assert.equal(typeof featureWorld.apps.playerGetters.evmChainId, 'function')
+  assert.equal(typeof featureWorld.apps.worldMethods.hyperliquid, 'function')
 })

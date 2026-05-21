@@ -2,7 +2,7 @@ import { createPublicClient, erc20Abi, formatEther, formatUnits, getAddress, htt
 import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 import * as utils from 'viem/utils'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
 const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon]
@@ -40,22 +40,6 @@ const TOKENS_BY_CHAIN_ID = {
   },
 }
 
-function getPlayerCustom(player) {
-  const custom = player?.data?.custom
-  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return null
-  return custom
-}
-
-function getPlayerEvmAddress(player) {
-  const value = getPlayerCustom(player)?.evm
-  return typeof value === 'string' && value ? value : null
-}
-
-function getPlayerEvmChainId(player) {
-  const value = getPlayerCustom(player)?.evmChainId
-  return Number.isInteger(value) && value > 0 ? value : null
-}
-
 function normalizeChainId(value) {
   if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
     return value
@@ -73,11 +57,6 @@ function normalizeChainId(value) {
   return null
 }
 
-function extractInjectedChainId(args) {
-  if (!Array.isArray(args) || !args.length) return null
-  return normalizeChainId(args[0]) || normalizeChainId(args[1]) || null
-}
-
 export class EVM extends System {
   constructor(world) {
     super(world)
@@ -88,27 +67,6 @@ export class EVM extends System {
     this.abis = {
       erc20: erc20Abi,
     }
-  }
-
-  init() {
-    const exposeScripts = this.world.exposeScripts || this.world.inject
-    exposeScripts?.call(
-      this.world,
-      {
-        world: {
-          evm: (...args) => this.getRuntimeAPI(extractInjectedChainId(args)),
-        },
-        player: {
-          evm: {
-            get: player => getPlayerEvmAddress(player),
-          },
-          evmChainId: {
-            get: player => getPlayerEvmChainId(player),
-          },
-        },
-      },
-      '@gamedev/plugin-evm'
-    )
   }
 
   getRuntimeAPI(chainId = null) {

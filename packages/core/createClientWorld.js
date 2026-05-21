@@ -1,6 +1,8 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { evmClientPlugin } from './plugins/evm.js'
+import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 
 import { Client } from './systems/Client.js'
 import { ClientLiveKit } from './systems/ClientLiveKit.js'
@@ -27,8 +29,6 @@ import { Particles } from './systems/Particles.js'
 import { Snaps } from './systems/Snaps.js'
 import { Wind } from './systems/Wind.js'
 import { XR } from './systems/XR.js'
-import { EVM } from './systems/EVMClient.js'
-import { Hyperliquid } from './systems/Hyperliquid.js'
 
 export const clientRuntimePlugin = definePlugin({
   name: '@gamedev/client/runtime',
@@ -59,14 +59,12 @@ export const clientRuntimePlugin = definePlugin({
     ['snaps', Snaps],
     ['wind', Wind],
     ['xr', XR],
-    ['evm', EVM],
-    ['hyperliquid', Hyperliquid],
   ],
 })
 
 export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
-  plugins: [coreSystemsPlugin, clientRuntimePlugin],
+  plugins: [coreSystemsPlugin, clientRuntimePlugin, evmClientPlugin, hyperliquidPlugin],
 })
 
 export function createClientWorld(options = {}) {

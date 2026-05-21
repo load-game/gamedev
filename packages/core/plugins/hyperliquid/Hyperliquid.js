@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 import { HttpTransport, InfoClient, ExchangeClient, WebSocketTransport, SubscriptionClient } from '@nktkas/hyperliquid'
 import { PrivateKeySigner } from '@nktkas/hyperliquid/signing'
 import { getAddress } from 'viem'
@@ -112,35 +112,6 @@ export class Hyperliquid extends System {
     this.streamListenerId = 0
   }
 
-  init() {
-    const exposeScripts = this.world.exposeScripts || this.world.inject
-    exposeScripts?.call(
-      this.world,
-      {
-        world: {
-          hyperliquid: (...args) => this.getRuntimeAPI(this._resolveInjectedRuntimeArgs(args)),
-        },
-      },
-      '@gamedev/plugin-hyperliquid'
-    )
-  }
-
-  _resolveInjectedRuntimeArgs(args = []) {
-    if (!args.length) {
-      return { owner: null, address: null }
-    }
-
-    const [firstArg, secondArg = null] = args
-    if (firstArg === null || firstArg === undefined || typeof firstArg === 'string' || typeof firstArg === 'number') {
-      return { owner: null, address: firstArg ?? null }
-    }
-
-    return {
-      owner: firstArg,
-      address: secondArg,
-    }
-  }
-
   _resolveRuntimeOptions(ownerOrOptions = null, maybeAddress = undefined) {
     if (ownerOrOptions && typeof ownerOrOptions === 'object' && !Array.isArray(ownerOrOptions)) {
       const hasOwner = Object.prototype.hasOwnProperty.call(ownerOrOptions, 'owner')
@@ -193,7 +164,7 @@ export class Hyperliquid extends System {
     return this._normalizeAddress(address, 'address')
   }
 
-  _getRuntimeCache(owner, address) {
+  _getRuntimeCache(owner) {
     const ownerKey = owner ?? DEFAULT_RUNTIME_API_OWNER
     let runtimeCache = this.runtimeAPIs.get(ownerKey)
     if (!runtimeCache) {
@@ -224,7 +195,7 @@ export class Hyperliquid extends System {
   getRuntimeAPI(ownerOrOptions = null, maybeAddress = undefined) {
     const { owner, address } = this._resolveRuntimeOptions(ownerOrOptions, maybeAddress)
     const boundAddress = this._normalizeRuntimeAddress(address)
-    const runtimeCache = this._getRuntimeCache(owner, boundAddress)
+    const runtimeCache = this._getRuntimeCache(owner)
     const addressKey = boundAddress ?? DEFAULT_RUNTIME_API_ADDRESS
     if (runtimeCache.has(addressKey)) {
       return runtimeCache.get(addressKey)

@@ -1,6 +1,8 @@
 import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
+import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
+import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
 import { ServerLiveKit } from '@gamedev/core/systems/ServerLiveKit.js'
@@ -9,8 +11,6 @@ import { ServerEnvironment } from '@gamedev/core/systems/ServerEnvironment.js'
 import { ServerMonitor } from '@gamedev/core/systems/ServerMonitor.js'
 import { ServerAIScripts } from '@gamedev/core/systems/ServerAIScripts.js'
 import { ServerAI } from '@gamedev/core/systems/ServerAI.js'
-import { EVM } from '@gamedev/core/systems/EVMServer.js'
-import { Hyperliquid } from '@gamedev/core/systems/Hyperliquid.js'
 import { ServerNetwork } from './ServerNetwork.js'
 
 export const serverRuntimePlugin = definePlugin({
@@ -25,14 +25,12 @@ export const serverRuntimePlugin = definePlugin({
     ['aiScripts', ServerAIScripts],
     ['environment', ServerEnvironment],
     ['monitor', ServerMonitor],
-    ['evm', EVM],
-    ['hyperliquid', Hyperliquid],
   ],
 })
 
 export const serverPreset = definePreset({
   name: '@gamedev/preset-server',
-  plugins: [coreSystemsPlugin, serverRuntimePlugin],
+  plugins: [coreSystemsPlugin, serverRuntimePlugin, evmServerPlugin, hyperliquidPlugin],
 })
 
 export function createServerWorld(options = {}) {

@@ -1,7 +1,7 @@
 import { createPublicClient, formatEther, formatUnits, getAddress, http, parseUnits } from 'viem'
 import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
 const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon]
@@ -101,11 +101,6 @@ function normalizeChainId(value) {
   return null
 }
 
-function extractInjectedChainId(args) {
-  if (!Array.isArray(args) || !args.length) return null
-  return normalizeChainId(args[0]) || normalizeChainId(args[1]) || null
-}
-
 function sameAddress(a, b) {
   if (!a || !b) return false
   return a.toLowerCase() === b.toLowerCase()
@@ -134,27 +129,6 @@ export class EVM extends System {
     this.abis = {
       erc20: ERC20_ABI,
     }
-  }
-
-  init() {
-    const exposeScripts = this.world.exposeScripts || this.world.inject
-    exposeScripts?.call(
-      this.world,
-      {
-        world: {
-          evm: (...args) => this.getRuntimeAPI(extractInjectedChainId(args)),
-        },
-        player: {
-          evm: {
-            get: player => getPlayerEvmAddress(player),
-          },
-          evmChainId: {
-            get: player => getPlayerEvmChainId(player),
-          },
-        },
-      },
-      '@gamedev/plugin-evm'
-    )
   }
 
   getRuntimeAPI(chainId = null) {

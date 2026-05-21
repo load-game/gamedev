@@ -30,7 +30,7 @@ apps/                       App scripts + blueprint JSON (defaults)
 assets/                     Local assets referenced by blueprints
 shared/                     Shared script modules (import via @shared/ or shared/)
 world.json                  World layout + per-instance placement/props overrides
-tsconfig.json               TypeScript config (points at `gamedev` types)
+tsconfig.json               TypeScript config (points at `gamedev` and default plugin types)
 .nvmrc                      Node version for this project
 .env                         Local world/app-server config (gitignored)
 .env.example                Shareable template for env vars

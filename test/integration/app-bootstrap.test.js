@@ -37,6 +37,8 @@ test('scaffold writes scene scaffold and world manifest', async () => {
   const tsconfigPath = path.join(rootDir, 'tsconfig.json')
   const tsconfig = await readJson(tsconfigPath)
   assert.ok(tsconfig.compilerOptions.types.includes('gamedev'))
+  assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/evm'))
+  assert.ok(tsconfig.compilerOptions.types.includes('gamedev/plugins/hyperliquid'))
   assert.equal(await fileExists(path.join(rootDir, 'hyperfy.app-runtime.d.ts')), false)
 
   const nvmrc = await fs.readFile(path.join(rootDir, '.nvmrc'), 'utf8')

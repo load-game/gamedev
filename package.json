@@ -33,6 +33,8 @@
     "index.d.ts",
     "index.node-client.d.ts",
     "index.plugins.d.ts",
+    "index.plugin-evm.d.ts",
+    "index.plugin-hyperliquid.d.ts",
     "index.presets-core.d.ts",
     "README.md",
     "LICENSE"
@@ -58,6 +60,18 @@
       "import": "./packages/core/plugins.js",
       "require": "./packages/core/plugins.js",
       "default": "./packages/core/plugins.js"
+    },
+    "./plugins/evm": {
+      "types": "./index.plugin-evm.d.ts",
+      "import": "./packages/core/plugins/evm.js",
+      "require": "./packages/core/plugins/evm.js",
+      "default": "./packages/core/plugins/evm.js"
+    },
+    "./plugins/hyperliquid": {
+      "types": "./index.plugin-hyperliquid.d.ts",
+      "import": "./packages/core/plugins/hyperliquid.js",
+      "require": "./packages/core/plugins/hyperliquid.js",
+      "default": "./packages/core/plugins/hyperliquid.js"
     },
     "./presets/core": {
       "types": "./index.presets-core.d.ts",

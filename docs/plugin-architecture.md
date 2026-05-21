@@ -14,20 +14,16 @@ Plugins declare what they install and what they need:
 
 ```js
 import { definePlugin } from 'gamedev/plugins'
+import { EVMClient } from 'gamedev/plugins/evm'
 
-export const evmPlugin = definePlugin({
-  name: '@gamedev/plugin-evm',
-  requires: ['core', 'network'],
-  provides: ['evm'],
-  systems: [['evm', EVMSystem]],
+export const evmClientPlugin = definePlugin({
+  name: '@gamedev/plugin-evm/client',
+  requires: ['core'],
+  provides: ['@gamedev/plugin-evm', 'evm'],
+  systems: [['evm', EVMClient]],
   scripts: {
     world: {
       evm: (entity, chainId) => entity.world.evm.getRuntimeAPI(chainId),
-    },
-    player: {
-      evm: {
-        get: player => player.data.custom?.evm || null,
-      },
     },
   },
 })
@@ -54,17 +50,21 @@ import { coreSystemsPlugin } from 'gamedev/presets/core'
 
 export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
-  plugins: [coreSystemsPlugin, clientRuntimePlugin, evmPlugin],
+  plugins: [coreSystemsPlugin, clientRuntimePlugin, evmClientPlugin],
 })
 ```
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
+
+The default client and server presets include the first-party EVM and Hyperliquid plugins. A custom build can omit those plugins, and then the corresponding systems and script APIs do not exist.
 
 ## Script APIs
 
 Plugins can expose script-facing APIs through `scripts`. Collisions are rejected. A world only exposes APIs such as `world.evm`, `world.hyperliquid`, or `player.evm` when the selected preset includes the plugin that contributes them.
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
+
+Plugin TypeScript declarations live with plugin entrypoints. For example, app code that uses EVM APIs should reference `gamedev/plugins/evm` in addition to the base `gamedev` types.
 
 ## Reference World
 

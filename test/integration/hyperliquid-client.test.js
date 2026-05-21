@@ -2,9 +2,36 @@ import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { getAddress } from 'viem'
 
-import { EVM } from '@gamedev/core/systems/EVMClient.js'
-import { EVM as ServerEVM } from '@gamedev/core/systems/EVMServer.js'
-import { Hyperliquid } from '@gamedev/core/systems/Hyperliquid.js'
+import {
+  EVMClient as EVM,
+  EVMServer as ServerEVM,
+  evmClientPlugin,
+  evmServerPlugin,
+} from '@gamedev/core/plugins/evm.js'
+import { Hyperliquid, hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
+
+function createEvmScriptRuntime(evm, plugin = evmClientPlugin) {
+  const entity = { world: { evm } }
+  return {
+    world: {
+      evm: (...args) => plugin.scripts.world.evm(entity, ...args),
+    },
+    player: plugin.scripts.player,
+  }
+}
+
+function createHyperliquidScriptRuntime(hl) {
+  const entity = {
+    data: { id: 'test-app' },
+    world: { hyperliquid: hl },
+  }
+  return {
+    entity,
+    world: {
+      hyperliquid: (...args) => hyperliquidPlugin.scripts.world.hyperliquid(entity, ...args),
+    },
+  }
+}
 
 test('EVM client tracks bound wallet state', () => {
   const evm = new EVM({})
@@ -20,15 +47,8 @@ test('EVM client tracks bound wallet state', () => {
 })
 
 test('EVM client injects world and player APIs', async () => {
-  let injected = null
-  const world = {
-    inject(runtime) {
-      injected = runtime
-    },
-  }
-
-  const evm = new EVM(world)
-  evm.init()
+  const evm = new EVM({})
+  const injected = createEvmScriptRuntime(evm)
   const runtime = injected.world.evm()
   const arbitrumRuntime = injected.world.evm(42161)
 
@@ -50,15 +70,8 @@ test('EVM client injects world and player APIs', async () => {
 })
 
 test('EVM server injects world and player APIs', async () => {
-  let injected = null
-  const world = {
-    inject(runtime) {
-      injected = runtime
-    },
-  }
-
-  const evm = new ServerEVM(world)
-  evm.init()
+  const evm = new ServerEVM({})
+  const injected = createEvmScriptRuntime(evm, evmServerPlugin)
   const runtime = injected.world.evm()
   const arbitrumRuntime = injected.world.evm(42161)
 
@@ -1149,15 +1162,8 @@ test('Hyperliquid updates perp leverage through the exchange client', async () =
 })
 
 test('Hyperliquid injects a stable runtime API per owner and address', () => {
-  let injected = null
-  const world = {
-    inject(runtime) {
-      injected = runtime
-    },
-  }
-
-  const hl = new Hyperliquid(world)
-  hl.init()
+  const hl = new Hyperliquid({})
+  const injected = createHyperliquidScriptRuntime(hl)
 
   const ownerA = { id: 'app-a' }
   const ownerB = { id: 'app-b' }
@@ -1202,13 +1208,8 @@ test('Hyperliquid injects a stable runtime API per owner and address', () => {
 })
 
 test('Hyperliquid verification reads use the bound target address and normalize results', async () => {
-  let injected = null
-  const hl = new Hyperliquid({
-    inject(runtime) {
-      injected = runtime
-    },
-  })
-  hl.init()
+  const hl = new Hyperliquid({})
+  const injected = createHyperliquidScriptRuntime(hl)
   hl.bind({
     address: '0x00000000000000000000000000000000000000CC',
     isConnected: false,
@@ -1879,13 +1880,8 @@ test('Hyperliquid reuses one upstream clearinghouseState stream per normalized a
 })
 
 test('Hyperliquid runtime subscribeAccount binds the default or addressed target', async () => {
-  let injected = null
-  const { hl, calls } = createHyperliquidMarketStreamHarness(['clearinghouseState'], {
-    inject(runtime) {
-      injected = runtime
-    },
-  })
-  hl.init()
+  const { hl, calls } = createHyperliquidMarketStreamHarness(['clearinghouseState'])
+  const injected = createHyperliquidScriptRuntime(hl)
   hl.bind({
     address: '0x00000000000000000000000000000000000000CC',
     isConnected: false,

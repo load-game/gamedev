@@ -857,7 +857,7 @@ type NodeNameToInit = {
 // -----------------------------
 // Player API
 // -----------------------------
-interface Player {
+export interface Player {
   // properties
   id: string
   name: string
@@ -903,148 +903,6 @@ interface RaycastHit {
   playerId: string | null
 }
 
-interface EVMAPI {
-  getAddress(): string | null
-  isConnected(): boolean
-  getNativeBalance(address?: string | null): Promise<number>
-  getTokenBalance(tokenAddress: string, address?: string | null, decimals?: number): Promise<number>
-  getUSDCBalance(address?: string | null): Promise<number>
-  transferNative(
-    to: string,
-    amount: number | string
-  ): Promise<{
-    hash: string
-    receipt: any
-  }>
-  transferToken(
-    tokenAddress: string,
-    to: string,
-    amount: number | string,
-    decimals?: number
-  ): Promise<{
-    hash: string
-    receipt: any
-  }>
-  transferUSDC(
-    to: string,
-    amount: number | string
-  ): Promise<{
-    hash: string
-    receipt: any
-  }>
-}
-
-interface HyperliquidPosition {
-  ticker: string
-  size: number
-  entryPrice: number
-  unrealizedPnl: number
-  liquidationPrice: number | null
-}
-
-interface HyperliquidStreamHandle {
-  failureSignal: AbortSignal
-  unsubscribe(): Promise<void>
-}
-
-type HyperliquidCandleInterval =
-  | '1m'
-  | '3m'
-  | '5m'
-  | '15m'
-  | '30m'
-  | '1h'
-  | '2h'
-  | '4h'
-  | '8h'
-  | '12h'
-  | '1d'
-  | '3d'
-  | '1w'
-  | '1M'
-
-interface HyperliquidTradesParams {
-  ticker: string
-}
-
-interface HyperliquidOrderBookParams {
-  ticker: string
-  nSigFigs?: number | null
-  mantissa?: number | null
-}
-
-interface HyperliquidCandleParams {
-  ticker: string
-  interval: HyperliquidCandleInterval
-}
-
-interface HyperliquidMidsPayload {
-  mids: Record<string, string>
-  [key: string]: any
-}
-
-type HyperliquidTradesPayload = any[]
-
-interface HyperliquidLeverage {
-  type: 'cross' | 'isolated'
-  value: number
-}
-
-interface HyperliquidLeverageUpdateOptions {
-  type?: 'cross' | 'isolated'
-}
-
-interface HyperliquidAccountPosition extends HyperliquidPosition {
-  marginUsed: number
-  maxLeverage: number
-  leverage: HyperliquidLeverage
-}
-
-interface HyperliquidAccountSnapshot {
-  address: string
-  accountValue: number
-  withdrawable: number
-  totalMarginUsed: number
-  totalNotionalPosition: number
-  positions: HyperliquidAccountPosition[]
-  timestamp: number
-}
-
-interface HyperliquidWatchOnlyAPI {
-  getPrice(ticker: string): Promise<number>
-  getBalance(): Promise<number>
-  getPositions(): Promise<HyperliquidPosition[]>
-  getAvailableTickers(): Promise<string[]>
-  subscribeMids(listener: (payload: HyperliquidMidsPayload) => void): Promise<HyperliquidStreamHandle>
-  subscribeTrades(
-    params: HyperliquidTradesParams,
-    listener: (payload: HyperliquidTradesPayload) => void
-  ): Promise<HyperliquidStreamHandle>
-  subscribeOrderBook(
-    params: HyperliquidOrderBookParams,
-    listener: (payload: any) => void
-  ): Promise<HyperliquidStreamHandle>
-  subscribeCandles(params: HyperliquidCandleParams, listener: (payload: any) => void): Promise<HyperliquidStreamHandle>
-  subscribeAccount(listener: (payload: HyperliquidAccountSnapshot) => void): Promise<HyperliquidStreamHandle>
-}
-
-interface HyperliquidAPI extends HyperliquidWatchOnlyAPI {
-  buy(ticker: string, amount: number, slippage?: number): Promise<any>
-  sell(ticker: string, amount: number, slippage?: number): Promise<any>
-  closePosition(ticker: string, slippage?: number): Promise<any>
-  updateLeverage(ticker: string, leverage: number, options?: HyperliquidLeverageUpdateOptions): Promise<any>
-  hasAgentKey(): boolean
-  setupAgentKey(name?: string): Promise<{ address: string }>
-  deposit(amount: number): Promise<{
-    status: string
-    txHash?: string
-    amount?: number
-    message?: string
-    [key: string]: any
-  }>
-  withdraw(amount: number, destination?: string): Promise<any>
-}
-
 interface WorldStorageEntry<T = unknown> {
   key: string
   exists: boolean
@@ -1065,7 +923,7 @@ interface WorldStorageCommitResult {
   entries: WorldStorageEntry[]
 }
 
-interface WorldAPI {
+export interface WorldAPI {
   // Identity / env
   readonly networkId: string
   readonly isServer: boolean
@@ -1118,13 +976,6 @@ interface WorldAPI {
 
   // Loader (subset)
   load(type: 'avatar' | 'model', url: string): Promise<BaseNode>
-
-  // EVM
-  evm(): EVMAPI
-
-  // Hyperliquid
-  hyperliquid(): HyperliquidAPI
-  hyperliquid(address: string): HyperliquidWatchOnlyAPI
 }
 
 // -----------------------------

@@ -185,6 +185,8 @@ Returns `true` when the clipboard write succeeds, otherwise `false`.
 
 ### `.evm(chainId?)`
 
+Requires the EVM plugin (`gamedev/plugins/evm`).
+
 Returns the EVM helper API.
 
 ```js
@@ -312,6 +314,8 @@ Returns:
 ```
 
 ### `.hyperliquid(address?)`
+
+Requires the Hyperliquid plugin (`gamedev/plugins/hyperliquid`).
 
 Returns the Hyperliquid helper API.
 
