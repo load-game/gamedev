@@ -8,10 +8,10 @@ import { isNumber } from 'lodash-es'
 import * as THREE from '@gamedev/core/extras/three.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
 import { validateBlueprintScriptFields } from '@gamedev/core/blueprintValidation.js'
-import { ensureBlueprintSyncMetadata, ensureEntitySyncMetadata } from './syncMetadata.js'
-import { hasSupportedAdminCode } from './runtimeBootstrap.js'
-import { getMaxUploadSizeMb, getWorldMaxPlayers } from './worldLimits.js'
-import { deriveAdminUrlFromRequest } from './forwardedPrefix.js'
+import { ensureBlueprintSyncMetadata, ensureEntitySyncMetadata } from '../../syncMetadata.js'
+import { hasSupportedAdminCode } from '../../runtimeBootstrap.js'
+import { getMaxUploadSizeMb, getWorldMaxPlayers } from '../../worldLimits.js'
+import { deriveAdminUrlFromRequest } from '../../forwardedPrefix.js'
 
 const SAVE_INTERVAL = parseInt(process.env.SAVE_INTERVAL || '60') // seconds
 const PING_RATE = 10 // seconds

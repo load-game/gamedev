@@ -22,6 +22,7 @@ import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 import { networkAdminPlugin } from '@gamedev/core/plugins/network/admin.js'
 import { networkClientPlugin } from '@gamedev/core/plugins/network/client.js'
+import { networkServerPlugin } from '@gamedev/server/plugins/network/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
 import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
@@ -227,6 +228,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
+      '@gamedev/plugin-network/server',
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
@@ -243,6 +245,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-chat',
       '@gamedev/server/runtime',
+      '@gamedev/plugin-network/server',
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
@@ -253,6 +256,7 @@ test('runtime factories are preset compositions', () => {
     ]
   )
   assert.ok(serverWorld.loader)
+  assert.ok(serverWorld.network)
   assert.ok(serverWorld.environment)
   assert.ok(serverWorld.monitor)
   assert.ok(serverWorld.chat)
@@ -262,6 +266,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.network.plugin, '@gamedev/plugin-network/server')
   assert.equal(serverWorld.environment.plugin, '@gamedev/plugin-environment/server')
   assert.equal(serverWorld.monitor.plugin, '@gamedev/plugin-monitor/server')
   assert.equal(serverWorld.chat.plugin, '@gamedev/plugin-chat')
@@ -388,6 +393,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, monitorServerPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-monitor\/server:server/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, chatPlugin, networkServerPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-network\/server:server/
   )
 
   const actionsWorld = new World({

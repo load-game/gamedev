@@ -9,17 +9,14 @@ import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
+import { networkServerPlugin } from './plugins/network/server.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
-import { ServerNetwork } from './ServerNetwork.js'
 
 export const serverRuntimePlugin = definePlugin({
   name: '@gamedev/server/runtime',
-  requires: ['core', 'chat'],
-  systems: [
-    ['server', Server],
-    ['network', ServerNetwork],
-  ],
+  requires: ['core'],
+  systems: [['server', Server]],
 })
 
 export const serverPreset = definePreset({
@@ -28,6 +25,7 @@ export const serverPreset = definePreset({
     coreSystemsPlugin,
     chatPlugin,
     serverRuntimePlugin,
+    networkServerPlugin,
     environmentServerPlugin,
     monitorServerPlugin,
     loaderServerPlugin,

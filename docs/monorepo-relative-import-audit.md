@@ -86,16 +86,17 @@ Current status: most listed cases have been converted to workspace package impor
 
 - `packages/node-client/index.js`: lines 2, 9, 10, 11
 
-### `@gamedev/server` -> `@gamedev/core` (32 imports, 9 files)
+### `@gamedev/server` -> `@gamedev/core` (35 imports, 10 files)
 
 - `packages/server/AssetsLocal.js`: lines 3
 - `packages/server/AssetsS3.js`: lines 10
-- `packages/server/ServerNetwork.js`: lines 2, 3, 4, 5, 6, 8, 9, 10
 - `packages/server/admin.js`: lines 4, 5, 6
 - `packages/server/cliAuth.js`: lines 3, 4, 5
-- `packages/server/createServerWorld.js`: lines 1, 3, 4, 5, 6, 7, 8, 9, 10, 11
+- `packages/server/createServerWorld.js`: lines 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14
 - `packages/server/db.js`: lines 4, 6
-- `packages/server/index.js`: lines 2, 48, 49
+- `packages/server/index.js`: lines 2, 52, 53
+- `packages/server/plugins/network/ServerNetwork.js`: lines 2, 3, 4, 5, 6, 8, 9, 10
+- `packages/server/plugins/network/server.js`: lines 1
 - `packages/server/syncMetadata.js`: lines 1
 
 ## Root Package Consumers
