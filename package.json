@@ -35,6 +35,7 @@
     "index.plugin-admin-client.d.ts",
     "index.plugin-ai-client.d.ts",
     "index.plugin-ai-server.d.ts",
+    "index.plugin-audio-client.d.ts",
     "index.plugin-builder-admin.d.ts",
     "index.plugin-builder-builtins.d.ts",
     "index.plugin-builder-client.d.ts",
@@ -93,6 +94,12 @@
       "import": "./packages/core/plugins/ai/server.js",
       "require": "./packages/core/plugins/ai/server.js",
       "default": "./packages/core/plugins/ai/server.js"
+    },
+    "./plugins/audio/client": {
+      "types": "./index.plugin-audio-client.d.ts",
+      "import": "./packages/core/plugins/audio/client.js",
+      "require": "./packages/core/plugins/audio/client.js",
+      "default": "./packages/core/plugins/audio/client.js"
     },
     "./plugins/evm": {
       "types": "./index.plugin-evm.d.ts",

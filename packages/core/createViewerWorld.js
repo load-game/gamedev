@@ -8,7 +8,6 @@ import { Client } from './systems/Client.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
-// import { ClientAudio } from './systems/ClientAudio.js'
 
 export { System } from './systems/System.js'
 
@@ -21,7 +20,6 @@ export const viewerRuntimePlugin = definePlugin({
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
   ],
-  // world.register('audio', ClientAudio)
 })
 
 export const viewerPreset = definePreset({

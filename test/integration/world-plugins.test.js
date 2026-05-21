@@ -7,6 +7,7 @@ import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { adminPreset } from '@gamedev/core/createAdminWorld.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
+import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
@@ -121,6 +122,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
@@ -137,6 +139,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-audio/client',
       '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
@@ -221,6 +224,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
+  assert.equal(coreWorld.audio, undefined)
   assert.equal(coreWorld.stats, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
@@ -249,6 +253,11 @@ test('feature APIs only appear when their plugins are selected', () => {
       ['network', DependentSystem],
     ],
   })
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-audio\/client:client/
+  )
 
   const statsWorld = new World({
     plugins: [coreSystemsPlugin, prefsClientPlugin, clientRuntimeStub, statsClientPlugin],

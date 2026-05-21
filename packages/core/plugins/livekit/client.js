@@ -5,7 +5,7 @@ export { ClientLiveKit }
 
 export const livekitClientPlugin = definePlugin({
   name: '@gamedev/plugin-livekit/client',
-  requires: ['core', 'client', 'network'],
+  requires: ['core', 'client', 'network', 'audio'],
   provides: ['@gamedev/plugin-livekit', 'livekit', 'voice'],
   systems: [['livekit', ClientLiveKit]],
 })

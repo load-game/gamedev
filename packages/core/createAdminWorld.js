@@ -2,6 +2,7 @@ import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { adminClientPlugin } from './plugins/admin/client.js'
+import { audioClientPlugin } from './plugins/audio/client.js'
 import { builderAdminPlugin } from './plugins/builder/admin.js'
 import { chatPlugin } from './plugins/chat.js'
 import { loaderClientPlugin } from './plugins/loader/client.js'
@@ -17,7 +18,6 @@ import { AdminNetwork } from './systems/AdminNetwork.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
-import { ClientAudio } from './systems/ClientAudio.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
 import { LODs } from './systems/LODs.js'
@@ -41,7 +41,6 @@ export const adminRuntimePlugin = definePlugin({
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
-    ['audio', ClientAudio],
     ['actions', ClientActions],
     ['target', ClientTarget],
     ['lods', LODs],
@@ -77,6 +76,7 @@ export const adminPreset = definePreset({
     chatPlugin,
     prefsClientPlugin,
     adminRuntimePlugin,
+    audioClientPlugin,
     statsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
