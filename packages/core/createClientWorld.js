@@ -16,6 +16,7 @@ import { livekitClientPlugin } from './plugins/livekit/client.js'
 import { lodsClientPlugin } from './plugins/lods/client.js'
 import { nametagsClientPlugin } from './plugins/nametags/client.js'
 import { particlesClientPlugin } from './plugins/particles/client.js'
+import { pointerClientPlugin } from './plugins/pointer/client.js'
 import { prefsClientPlugin } from './plugins/prefs/client.js'
 import { snapsClientPlugin } from './plugins/snaps/client.js'
 import { statsClientPlugin } from './plugins/stats/client.js'
@@ -24,7 +25,6 @@ import { uiClientPlugin } from './plugins/ui/client.js'
 import { windClientPlugin } from './plugins/wind/client.js'
 
 import { Client } from './systems/Client.js'
-import { ClientPointer } from './systems/ClientPointer.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
@@ -35,7 +35,6 @@ export const clientRuntimePlugin = definePlugin({
   requires: ['core', 'chat', 'prefs'],
   systems: [
     ['client', Client],
-    ['pointer', ClientPointer],
     ['controls', ClientControls],
     ['network', ClientNetwork],
     ['graphics', ClientGraphics],
@@ -50,6 +49,7 @@ export const clientPreset = definePreset({
     chatPlugin,
     prefsClientPlugin,
     clientRuntimePlugin,
+    pointerClientPlugin,
     cssClientPlugin,
     actionsClientPlugin,
     audioClientPlugin,

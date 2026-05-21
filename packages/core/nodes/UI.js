@@ -16,7 +16,6 @@ import {
   isJustifyContent,
   JustifyContent,
 } from '../extras/yoga.js'
-import CustomShaderMaterial from '../libs/three-custom-shader-material/index.js'
 import { borderRoundRect } from '../extras/borderRoundRect.js'
 import { clamp } from '../utils.js'
 
@@ -25,20 +24,15 @@ const v2 = new THREE.Vector3()
 const v3 = new THREE.Vector3()
 const v4 = new THREE.Vector3()
 const v5 = new THREE.Vector3()
-const v6 = new THREE.Vector3()
 const v7 = new THREE.Vector3()
 const v8 = new THREE.Vector3()
 const v9 = new THREE.Vector3()
 const v10 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
-const q2 = new THREE.Quaternion()
 const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const m1 = new THREE.Matrix4()
 
 const FORWARD = new THREE.Vector3(0, 0, 1)
-
-const iQuaternion = new THREE.Quaternion(0, 0, 0, 1)
-const iScale = new THREE.Vector3(1, 1, 1)
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -163,7 +157,7 @@ export class UI extends Node {
       this.canvas.style.position = 'absolute'
       this.canvas.style.width = this._width + 'px'
       this.canvas.style.height = this._height + 'px'
-      pivotCanvas(this._pivot, this.canvas, this._width, this._height)
+      pivotCanvas(this._pivot, this.canvas)
       this.updateScreenTransform()
       this.canvas.style.pointerEvents = this._pointerEvents ? 'auto' : 'none'
       if (this._pointerEvents) {
@@ -187,7 +181,7 @@ export class UI extends Node {
           hit.coords.x = x
           hit.coords.y = y
         }
-        const onPointerLeave = e => {
+        const onPointerLeave = () => {
           hit = null
           world.pointer.setScreenHit(null)
         }
@@ -211,7 +205,7 @@ export class UI extends Node {
           canvas.removeEventListener('pointerup', onPointerUp)
         }
       }
-      this.ctx.world.pointer.ui.prepend(this.canvas)
+      this.ctx.world.pointer?.ui?.prepend(this.canvas)
     }
     this.needsRebuild = false
   }
@@ -231,7 +225,7 @@ export class UI extends Node {
       this.ctx.world.setHot(this, false)
     }
     if (this.canvas) {
-      this.ctx.world.pointer.ui.removeChild(this.canvas)
+      this.ctx.world.pointer?.ui?.removeChild(this.canvas)
       this.canvas = null
     }
     this.cleanupPointer?.()
@@ -287,7 +281,10 @@ export class UI extends Node {
 
   mount() {
     if (this.ctx.world.network.isServer) return
-    if (this.parent?.ui) return console.error('ui: cannot be nested inside another ui')
+    if (this.parent?.ui) {
+      this.ctx.world.logs?.add('client', 'error', ['ui: cannot be nested inside another ui'])
+      return
+    }
     this.yogaNode = Yoga.Node.create()
     this.yogaNode.setWidth(this._width * this._res)
     this.yogaNode.setHeight(this._height * this._res)
@@ -337,7 +334,7 @@ export class UI extends Node {
     }
   }
 
-  lateUpdate(delta) {
+  lateUpdate() {
     if (this._space === 'world') {
       const world = this.ctx.world
       const camera = world.camera
@@ -1094,7 +1091,7 @@ function pivotGeometry(pivot, geometry, width, height) {
   }
 }
 
-function pivotCanvas(pivot, canvas, width, height) {
+function pivotCanvas(pivot, canvas) {
   // const halfWidth = width / 2
   // const halfHeight = height / 2
   switch (pivot) {

@@ -20,6 +20,7 @@ import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
+import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
 import { snapsClientPlugin } from '@gamedev/core/plugins/snaps/client.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
@@ -131,6 +132,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
@@ -157,6 +159,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-pointer/client',
       '@gamedev/plugin-css/client',
       '@gamedev/plugin-actions/client',
       '@gamedev/plugin-audio/client',
@@ -267,6 +270,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.environment, undefined)
   assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.css, undefined)
+  assert.equal(coreWorld.pointer, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
   assert.equal(coreWorld.actions, undefined)
@@ -314,6 +318,11 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, cssClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-css\/client:graphics/
+  )
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, pointerClientPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-pointer\/client:controls/
   )
 
   assert.throws(
@@ -373,6 +382,7 @@ test('feature APIs only appear when their plugins are selected', () => {
       chatPlugin,
       prefsClientPlugin,
       clientRuntimeStub,
+      pointerClientPlugin,
       actionsClientPlugin,
       targetClientPlugin,
       uiClientPlugin,

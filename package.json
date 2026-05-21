@@ -57,6 +57,7 @@
     "index.plugin-monitor-server.d.ts",
     "index.plugin-nametags-client.d.ts",
     "index.plugin-particles-client.d.ts",
+    "index.plugin-pointer-client.d.ts",
     "index.plugin-prefs-client.d.ts",
     "index.plugin-snaps-client.d.ts",
     "index.plugin-stats-client.d.ts",
@@ -232,6 +233,12 @@
       "import": "./packages/core/plugins/particles/client.js",
       "require": "./packages/core/plugins/particles/client.js",
       "default": "./packages/core/plugins/particles/client.js"
+    },
+    "./plugins/pointer/client": {
+      "types": "./index.plugin-pointer-client.d.ts",
+      "import": "./packages/core/plugins/pointer/client.js",
+      "require": "./packages/core/plugins/pointer/client.js",
+      "default": "./packages/core/plugins/pointer/client.js"
     },
     "./plugins/prefs/client": {
       "types": "./index.plugin-prefs-client.d.ts",

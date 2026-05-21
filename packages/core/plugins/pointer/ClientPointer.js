@@ -1,7 +1,7 @@
-import * as THREE from '../extras/three.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
+import * as THREE from '../../extras/three.js'
+import { ControlPriorities } from '../../extras/ControlPriorities.js'
 
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const v1 = new THREE.Vector3()
 
@@ -16,7 +16,9 @@ const v1 = new THREE.Vector3()
 export class ClientPointer extends System {
   constructor(world) {
     super(world)
-    this.pointerState = new PointerState()
+    this.pointerState = new PointerState(err => {
+      this.world.logs?.add('client', 'error', [err])
+    })
   }
 
   init({ ui }) {
@@ -29,7 +31,7 @@ export class ClientPointer extends System {
     })
   }
 
-  update(delta) {
+  update() {
     let hit
     let pressed
     let released
@@ -90,7 +92,8 @@ class PointerEvent {
 }
 
 class PointerState {
-  constructor() {
+  constructor(onError) {
+    this.onError = onError
     this.activePath = new Set()
     this.event = new PointerEvent()
     this.cursor = CURSOR_DEFAULT
@@ -112,7 +115,7 @@ class PointerState {
         try {
           oldPath[j].onPointerLeave?.(this.event)
         } catch (err) {
-          console.error(err)
+          this.onError?.(err)
         }
         // if (this.event._propagationStopped) break
       }
@@ -126,7 +129,7 @@ class PointerState {
         try {
           newPath[j].onPointerEnter?.(this.event)
         } catch (err) {
-          console.error(err)
+          this.onError?.(err)
         }
         if (this.event._propagationStopped) break
       }
@@ -157,7 +160,7 @@ class PointerState {
           try {
             node.onPointerDown(this.event)
           } catch (err) {
-            console.error(err)
+            this.onError?.(err)
           }
           this.pressedNodes.add(node)
           if (this.event._propagationStopped) break
@@ -173,7 +176,7 @@ class PointerState {
           try {
             node.onPointerUp(this.event)
           } catch (err) {
-            console.error(err)
+            this.onError?.(err)
           }
           if (this.event._propagationStopped) break
         }
