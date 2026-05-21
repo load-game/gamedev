@@ -1,6 +1,7 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitAdminPlugin } from './plugins/livekit/admin.js'
 
 import { Client } from './systems/Client.js'
@@ -9,7 +10,6 @@ import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { AdminNetwork } from './systems/AdminNetwork.js'
 import { AdminClient } from './systems/AdminClient.js'
-import { ClientLoader } from './systems/ClientLoader.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
@@ -39,7 +39,6 @@ export const adminRuntimePlugin = definePlugin({
     ['controls', ClientControls],
     ['network', AdminNetwork],
     ['admin', AdminClient],
-    ['loader', ClientLoader],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
@@ -77,7 +76,7 @@ export const adminRuntimePlugin = definePlugin({
 
 export const adminPreset = definePreset({
   name: '@gamedev/preset-admin',
-  plugins: [coreSystemsPlugin, adminRuntimePlugin, livekitAdminPlugin],
+  plugins: [coreSystemsPlugin, adminRuntimePlugin, loaderClientPlugin, livekitAdminPlugin],
 })
 
 export function createAdminWorld(options = {}) {

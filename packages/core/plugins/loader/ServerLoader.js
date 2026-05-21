@@ -1,15 +1,13 @@
 import fs from 'fs-extra'
-import path from 'path'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { GLTFLoader } from '../libs/gltfloader/GLTFLoader.js'
+import { GLTFLoader } from '../../libs/gltfloader/GLTFLoader.js'
 // import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
-import { System } from './System.js'
-import { createVRMFactory } from '../extras/createVRMFactory.js'
-import { glbToNodes } from '../extras/glbToNodes.js'
-import { createNode } from '../extras/createNode.js'
-import { createEmoteFactory } from '../extras/createEmoteFactory.js'
+import { System } from '../../systems/System.js'
+import { glbToNodes } from '../../extras/glbToNodes.js'
+import { createNode } from '../../extras/createNode.js'
+import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
 
 /**
  * Server Loader System
@@ -106,81 +104,74 @@ export class ServerLoader extends System {
       // ...
     }
     if (type === 'model') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const arrayBuffer = await this.fetchArrayBuffer(url)
-          this.gltfLoader.parse(arrayBuffer, '', glb => {
-            const node = glbToNodes(glb, this.world)
-            const model = {
-              toNodes() {
-                return node.clone(true)
-              },
-            }
-            this.results.set(key, model)
-            resolve(model)
-          })
-        } catch (err) {
-          reject(err)
-        }
+      promise = this.fetchArrayBuffer(url).then(arrayBuffer => {
+        return new Promise((resolve, reject) => {
+          this.gltfLoader.parse(
+            arrayBuffer,
+            '',
+            glb => {
+              const node = glbToNodes(glb, this.world)
+              const model = {
+                toNodes() {
+                  return node.clone(true)
+                },
+              }
+              this.results.set(key, model)
+              resolve(model)
+            },
+            reject
+          )
+        })
       })
     }
     if (type === 'emote') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const arrayBuffer = await this.fetchArrayBuffer(url)
-          this.gltfLoader.parse(arrayBuffer, '', glb => {
-            const factory = createEmoteFactory(glb, url)
-            const emote = {
-              toClip(options) {
-                return factory.toClip(options)
-              },
-            }
-            this.results.set(key, emote)
-            resolve(emote)
-          })
-        } catch (err) {
-          reject(err)
-        }
+      promise = this.fetchArrayBuffer(url).then(arrayBuffer => {
+        return new Promise((resolve, reject) => {
+          this.gltfLoader.parse(
+            arrayBuffer,
+            '',
+            glb => {
+              const factory = createEmoteFactory(glb, url)
+              const emote = {
+                toClip(options) {
+                  return factory.toClip(options)
+                },
+              }
+              this.results.set(key, emote)
+              resolve(emote)
+            },
+            reject
+          )
+        })
       })
     }
     if (type === 'avatar') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          // NOTE: we can't load vrms on the server yet but we don't need 'em anyway
-          let node
-          const glb = {
-            toNodes: () => {
-              if (!node) {
-                node = createNode('group')
-                const node2 = createNode('avatar', { id: 'avatar', factory: null })
-                node.add(node2)
-              }
-              return node.clone(true)
-            },
+      // NOTE: we can't load vrms on the server yet but we don't need 'em anyway.
+      let node
+      const glb = {
+        toNodes: () => {
+          if (!node) {
+            node = createNode('group')
+            const node2 = createNode('avatar', { id: 'avatar', factory: null })
+            node.add(node2)
           }
-          this.results.set(key, glb)
-          resolve(glb)
-        } catch (err) {
-          reject(err)
-        }
-      })
+          return node.clone(true)
+        },
+      }
+      this.results.set(key, glb)
+      promise = Promise.resolve(glb)
     }
     if (type === 'script') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const code = await this.fetchText(url)
+      promise = this.fetchText(url).then(code => {
+        return new Promise(resolve => {
           const script = this.world.scripts.evaluate(code)
           this.results.set(key, script)
           resolve(script)
-        } catch (err) {
-          reject(err)
-        }
+        })
       })
     }
     if (type === 'audio') {
-      promise = new Promise(async (resolve, reject) => {
-        reject(null)
-      })
+      promise = Promise.reject(null)
     }
     this.promises.set(key, promise)
     return promise

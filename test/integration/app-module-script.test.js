@@ -5,7 +5,7 @@ import path from 'path'
 import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
-import { ServerLoader } from '@gamedev/core/systems/ServerLoader.js'
+import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { createTempDir, getRepoRoot, waitFor } from './helpers.js'
 
 test('app executes module scripts via scriptRef', async () => {
@@ -28,8 +28,7 @@ test('app executes module scripts via scriptRef', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World({ plugins: [coreSystemsPlugin] })
-  world.register('loader', ServerLoader)
+  const world = new World({ plugins: [coreSystemsPlugin, loaderServerPlugin] })
   world.assetsDir = assetsDir
   world.environment = { csm: null }
   world.network = {

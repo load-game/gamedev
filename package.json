@@ -37,6 +37,8 @@
     "index.plugins.d.ts",
     "index.plugin-evm.d.ts",
     "index.plugin-hyperliquid.d.ts",
+    "index.plugin-loader-client.d.ts",
+    "index.plugin-loader-server.d.ts",
     "index.plugin-livekit-admin.d.ts",
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
@@ -89,6 +91,18 @@
       "import": "./packages/core/plugins/hyperliquid.js",
       "require": "./packages/core/plugins/hyperliquid.js",
       "default": "./packages/core/plugins/hyperliquid.js"
+    },
+    "./plugins/loader/client": {
+      "types": "./index.plugin-loader-client.d.ts",
+      "import": "./packages/core/plugins/loader/client.js",
+      "require": "./packages/core/plugins/loader/client.js",
+      "default": "./packages/core/plugins/loader/client.js"
+    },
+    "./plugins/loader/server": {
+      "types": "./index.plugin-loader-server.d.ts",
+      "import": "./packages/core/plugins/loader/server.js",
+      "require": "./packages/core/plugins/loader/server.js",
+      "default": "./packages/core/plugins/loader/server.js"
     },
     "./plugins/livekit/client": {
       "types": "./index.plugin-livekit-client.d.ts",

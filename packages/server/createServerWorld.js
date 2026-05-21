@@ -4,10 +4,10 @@ import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
+import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 
 import { Server } from '@gamedev/core/systems/Server.js'
-import { ServerLoader } from '@gamedev/core/systems/ServerLoader.js'
 import { ServerEnvironment } from '@gamedev/core/systems/ServerEnvironment.js'
 import { ServerMonitor } from '@gamedev/core/systems/ServerMonitor.js'
 import { ServerNetwork } from './ServerNetwork.js'
@@ -18,7 +18,6 @@ export const serverRuntimePlugin = definePlugin({
   systems: [
     ['server', Server],
     ['network', ServerNetwork],
-    ['loader', ServerLoader],
     ['environment', ServerEnvironment],
     ['monitor', ServerMonitor],
   ],
@@ -29,6 +28,7 @@ export const serverPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     serverRuntimePlugin,
+    loaderServerPlugin,
     livekitServerPlugin,
     aiServerPlugin,
     evmServerPlugin,

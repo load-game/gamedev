@@ -192,7 +192,6 @@ export class Apps extends System {
   initWorldHooks() {
     const self = this
     const world = this.world
-    const allowLoaders = ['avatar', 'model', 'splat']
     this.worldGetters = {
       networkId(entity) {
         return world.network.id
@@ -402,24 +401,6 @@ export class Apps extends System {
           return false
         }
         return copyToClipboard(world, value, options)
-      },
-      load(entity, type, url) {
-        return new Promise(async (resolve, reject) => {
-          const hook = entity.getDeadHook()
-          try {
-            if (!allowLoaders.includes(type)) {
-              return reject(new Error(`cannot load type: ${type}`))
-            }
-            let glb = world.loader.get(type, url)
-            if (!glb) glb = await world.loader.load(type, url)
-            if (hook.dead) return
-            const root = glb.toNodes()
-            resolve(type === 'avatar' ? root.children[0] : root)
-          } catch (err) {
-            if (hook.dead) return
-            reject(err)
-          }
-        })
       },
       getQueryParam(entity, key) {
         if (!isBrowser) {

@@ -1,11 +1,11 @@
 import { World } from './World.js'
 import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
+import { loaderServerPlugin } from './plugins/loader/server.js'
 
 import { NodeClient } from './systems/NodeClient.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
-import { ServerLoader } from './systems/ServerLoader.js'
 import { NodeEnvironment } from './systems/NodeEnvironment.js'
 // import { ClientActions } from './systems/ClientActions.js'
 // import { LODs } from './systems/LODs.js'
@@ -18,7 +18,6 @@ export const nodeClientRuntimePlugin = definePlugin({
     ['client', NodeClient],
     ['controls', ClientControls],
     ['network', ClientNetwork],
-    ['loader', ServerLoader], // TODO: ClientLoader should be named BrowserLoader and ServerLoader should be called NodeLoader
     ['environment', NodeEnvironment],
   ],
   // world.register('actions', ClientActions)
@@ -28,7 +27,7 @@ export const nodeClientRuntimePlugin = definePlugin({
 
 export const nodeClientPreset = definePreset({
   name: '@gamedev/preset-node-client',
-  plugins: [coreSystemsPlugin, nodeClientRuntimePlugin],
+  plugins: [coreSystemsPlugin, nodeClientRuntimePlugin, loaderServerPlugin],
 })
 
 export function createNodeClientWorld(options = {}) {

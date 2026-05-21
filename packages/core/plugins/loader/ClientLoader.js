@@ -1,16 +1,14 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
-import { System } from './System.js'
-import { createNode } from '../extras/createNode.js'
-import { createVRMFactory } from '../extras/createVRMFactory.js'
-import { glbToNodes } from '../extras/glbToNodes.js'
-import { createEmoteFactory } from '../extras/createEmoteFactory.js'
+import { System } from '../../systems/System.js'
+import { createNode } from '../../extras/createNode.js'
+import { createVRMFactory } from '../../extras/createVRMFactory.js'
+import { glbToNodes } from '../../extras/glbToNodes.js'
+import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
 import { TextureLoader } from 'three'
-import { formatBytes } from '../extras/formatBytes.js'
-import { emoteUrls } from '../extras/playerEmotes.js'
 import Hls from 'hls.js/dist/hls.js'
 
 // THREE.Cache.enabled = true
@@ -399,52 +397,37 @@ export class ClientLoader extends System {
       })
     }
     if (type === 'script') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const code = await file.text()
-          const script = this.world.scripts.evaluate(code)
-          this.results.set(key, script)
-          resolve(script)
-        } catch (err) {
-          reject(err)
-        }
+      promise = file.text().then(code => {
+        const script = this.world.scripts.evaluate(code)
+        this.results.set(key, script)
+        return script
       })
     }
     if (type === 'audio') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const arrayBuffer = await file.arrayBuffer()
-          const audioBuffer = await this.world.audio.ctx.decodeAudioData(arrayBuffer)
-          this.results.set(key, audioBuffer)
-          resolve(audioBuffer)
-        } catch (err) {
-          reject(err)
-        }
+      promise = file.arrayBuffer().then(async arrayBuffer => {
+        const audioBuffer = await this.world.audio.ctx.decodeAudioData(arrayBuffer)
+        this.results.set(key, audioBuffer)
+        return audioBuffer
       })
     }
     if (type === 'splat') {
-      promise = new Promise(async (resolve, reject) => {
-        try {
-          const fileBytes = await file.arrayBuffer()
-          const splatMesh = await this.createSplatMesh(fileBytes)
-          const node = createNode('group', { id: '$root' })
-          const splatNode = createNode('splat', { id: 'splat', mesh: splatMesh })
-          node.add(splatNode)
-          const splat = {
-            toNodes() {
-              return node.clone(true)
-            },
-            getStats() {
-              return {
-                fileBytes: file.size,
-              }
-            },
-          }
-          this.results.set(key, splat)
-          resolve(splat)
-        } catch (err) {
-          reject(err)
+      promise = file.arrayBuffer().then(async fileBytes => {
+        const splatMesh = await this.createSplatMesh(fileBytes)
+        const node = createNode('group', { id: '$root' })
+        const splatNode = createNode('splat', { id: 'splat', mesh: splatMesh })
+        node.add(splatNode)
+        const splat = {
+          toNodes() {
+            return node.clone(true)
+          },
+          getStats() {
+            return {
+              fileBytes: file.size,
+            }
+          },
         }
+        this.results.set(key, splat)
+        return splat
       })
     }
     this.promises.set(key, promise)
@@ -489,9 +472,7 @@ function createVideoFactory(world, url) {
     }
     const audio = world.audio.ctx.createMediaElementSource(elem)
     let n = 0
-    let dead
     world.audio.ready(() => {
-      if (dead) return
       elem.muted = false
     })
     // set linked=false to have a separate source (and texture)
@@ -510,7 +491,7 @@ function createVideoFactory(world, url) {
          * The following code handles this for us, and when streaming
          * will hit play just until we get the data needed, then pause.
          */
-        return new Promise(async resolve => {
+        return new Promise(resolve => {
           let playing = false
           let data = false
           elem.addEventListener(

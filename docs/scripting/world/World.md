@@ -28,6 +28,8 @@ Adds a node into world-space, maintaining its current world transform.
 
 ### `.load(type, url)`: Promise\<Node\>
 
+Requires the loader plugin (`gamedev/plugins/loader/client` or `gamedev/plugins/loader/server`).
+
 Asynchronously loads an asset and returns a node tree that can be added to the app or world.
 
 **Supported types:**

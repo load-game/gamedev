@@ -52,7 +52,7 @@ const DEFAULT_TSCONFIG = {
     strict: false,
     noEmit: true,
     skipLibCheck: true,
-    types: ['gamedev', 'gamedev/plugins/evm', 'gamedev/plugins/hyperliquid'],
+    types: ['gamedev', 'gamedev/plugins/loader/client', 'gamedev/plugins/evm', 'gamedev/plugins/hyperliquid'],
   },
   include: ['apps/**/*', 'shared/**/*'],
 }

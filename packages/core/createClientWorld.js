@@ -4,6 +4,7 @@ import { coreSystemsPlugin } from './presets/core.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
 import { aiClientPlugin } from './plugins/ai/client.js'
+import { loaderClientPlugin } from './plugins/loader/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 
 import { Client } from './systems/Client.js'
@@ -12,7 +13,6 @@ import { ClientPrefs } from './systems/ClientPrefs.js'
 import { ClientControls } from './systems/ClientControls.js'
 import { ClientNetwork } from './systems/ClientNetwork.js'
 import { AdminClient } from './systems/AdminClient.js'
-import { ClientLoader } from './systems/ClientLoader.js'
 import { ClientCSS } from './systems/ClientCSS.js'
 import { ClientGraphics } from './systems/ClientGraphics.js'
 import { ClientEnvironment } from './systems/ClientEnvironment.js'
@@ -40,7 +40,6 @@ export const clientRuntimePlugin = definePlugin({
     ['controls', ClientControls],
     ['network', ClientNetwork],
     ['admin', AdminClient],
-    ['loader', ClientLoader],
     ['css', ClientCSS],
     ['graphics', ClientGraphics],
     ['environment', ClientEnvironment],
@@ -65,6 +64,7 @@ export const clientPreset = definePreset({
   plugins: [
     coreSystemsPlugin,
     clientRuntimePlugin,
+    loaderClientPlugin,
     livekitClientPlugin,
     aiClientPlugin,
     evmClientPlugin,

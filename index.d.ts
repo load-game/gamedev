@@ -92,7 +92,7 @@ interface ScreenBounds {
 // -----------------------------
 // Base Node
 // -----------------------------
-interface BaseNode {
+export interface BaseNode {
   // Identity
   id: string
   name: string
@@ -973,9 +973,6 @@ export interface WorldAPI {
   listStorageKeys?(prefix?: string): Promise<string[]>
   setFresh?<T = unknown>(key: string, value: T | null): Promise<T | null>
   commitStorage?(operations: WorldStorageCommitOperation[]): Promise<WorldStorageCommitResult>
-
-  // Loader (subset)
-  load(type: 'avatar' | 'model', url: string): Promise<BaseNode>
 }
 
 // -----------------------------
