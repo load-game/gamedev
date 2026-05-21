@@ -14,6 +14,7 @@ import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
+import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
@@ -120,6 +121,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/admin/runtime',
+      '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -135,6 +137,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
       '@gamedev/client/runtime',
+      '@gamedev/plugin-stats/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
       '@gamedev/plugin-admin/client',
@@ -218,6 +221,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.chat, undefined)
   assert.equal(coreWorld.prefs, undefined)
+  assert.equal(coreWorld.stats, undefined)
   assert.equal(coreWorld.ui, undefined)
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
@@ -241,8 +245,16 @@ test('feature APIs only appear when their plugins are selected', () => {
     systems: [
       ['client', TestSystem],
       ['controls', DependentSystem],
+      ['graphics', TestSystem],
+      ['network', DependentSystem],
     ],
   })
+
+  const statsWorld = new World({
+    plugins: [coreSystemsPlugin, prefsClientPlugin, clientRuntimeStub, statsClientPlugin],
+  })
+  assert.ok(statsWorld.stats)
+  assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
 
   const uiWorld = new World({
     plugins: [coreSystemsPlugin, chatPlugin, prefsClientPlugin, clientRuntimeStub, uiClientPlugin],
