@@ -1,7 +1,7 @@
-import { System } from './System.js'
-import { uuid } from '../utils.js'
-import { isValidScriptPath } from '../blueprintValidation.js'
-import { getBlueprintAppName } from '../blueprintUtils.js'
+import { System } from '../../systems/System.js'
+import { uuid } from '../../utils.js'
+import { isValidScriptPath } from '../../blueprintValidation.js'
+import { getBlueprintAppName } from '../../blueprintUtils.js'
 
 function hasScriptFiles(blueprint) {
   return blueprint?.scriptFiles && typeof blueprint.scriptFiles === 'object' && !Array.isArray(blueprint.scriptFiles)

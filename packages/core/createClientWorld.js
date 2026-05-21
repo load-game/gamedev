@@ -3,6 +3,7 @@ import { definePlugin, definePreset } from './plugins.js'
 import { coreSystemsPlugin } from './presets/core.js'
 import { evmClientPlugin } from './plugins/evm.js'
 import { hyperliquidPlugin } from './plugins/hyperliquid.js'
+import { aiClientPlugin } from './plugins/ai/client.js'
 import { livekitClientPlugin } from './plugins/livekit/client.js'
 
 import { Client } from './systems/Client.js'
@@ -21,7 +22,6 @@ import { ClientBuilder } from './systems/ClientBuilder.js'
 import { ClientActions } from './systems/ClientActions.js'
 import { ClientTarget } from './systems/ClientTarget.js'
 import { ClientUI } from './systems/ClientUI.js'
-import { ClientAI } from './systems/ClientAI.js'
 import { ClientDrafts } from './systems/ClientDrafts.js'
 import { LODs } from './systems/LODs.js'
 import { Nametags } from './systems/Nametags.js'
@@ -50,7 +50,6 @@ export const clientRuntimePlugin = definePlugin({
     ['actions', ClientActions],
     ['target', ClientTarget],
     ['ui', ClientUI],
-    ['ai', ClientAI],
     ['drafts', ClientDrafts],
     ['lods', LODs],
     ['nametags', Nametags],
@@ -63,7 +62,14 @@ export const clientRuntimePlugin = definePlugin({
 
 export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
-  plugins: [coreSystemsPlugin, clientRuntimePlugin, livekitClientPlugin, evmClientPlugin, hyperliquidPlugin],
+  plugins: [
+    coreSystemsPlugin,
+    clientRuntimePlugin,
+    livekitClientPlugin,
+    aiClientPlugin,
+    evmClientPlugin,
+    hyperliquidPlugin,
+  ],
 })
 
 export function createClientWorld(options = {}) {
