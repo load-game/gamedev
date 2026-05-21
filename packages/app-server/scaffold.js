@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 import { SCENE_TEMPLATE } from './templates/builtins.js'
 import { WorldManifest } from './WorldManifest.js'
 import { uuid } from './utils.js'
+import { resolveBuiltinAssetPath as resolveServerBuiltinAssetPath } from '../server/plugins/builtins/server.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(__dirname, '..', '..')
@@ -240,19 +241,11 @@ function copyDirWithPolicy(srcDir, destDir, { force, writeFile, report }) {
 }
 
 function resolveBuiltinScriptPath(filename) {
-  const buildPath = path.join(repoRoot, 'build', 'world', 'assets', filename)
-  if (fs.existsSync(buildPath)) return buildPath
-  const srcPath = path.join(repoRoot, 'packages', 'server', 'world', 'assets', filename)
-  if (fs.existsSync(srcPath)) return srcPath
-  return null
+  return resolveServerBuiltinAssetPath(repoRoot, filename, fs.existsSync)
 }
 
 function resolveBuiltinAssetPath(filename) {
-  const buildPath = path.join(repoRoot, 'build', 'world', 'assets', filename)
-  if (fs.existsSync(buildPath)) return buildPath
-  const srcPath = path.join(repoRoot, 'packages', 'server', 'world', 'assets', filename)
-  if (fs.existsSync(srcPath)) return srcPath
-  return null
+  return resolveServerBuiltinAssetPath(repoRoot, filename, fs.existsSync)
 }
 
 function collectAssetFilenames(value, out) {

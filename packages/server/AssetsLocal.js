@@ -1,6 +1,7 @@
 import fs from 'fs-extra'
 import path from 'path'
 import { hashFile } from '@gamedev/core/utils-server.js'
+import { getBuiltinAssetSourceDirs } from './plugins/builtins/server.js'
 
 export class AssetsLocal {
   constructor() {
@@ -13,11 +14,11 @@ export class AssetsLocal {
     this.dir = path.join(worldDir, '/assets')
     // ensure assets directory exists
     await fs.ensureDir(this.dir)
-    // copy over built-in assets (from published build)
-    const builtInAssetsDir = path.join(rootDir, 'build/world/assets')
-    const exists = await fs.pathExists(builtInAssetsDir)
-    if (exists) {
-      await fs.copy(builtInAssetsDir, this.dir)
+    for (const builtInAssetsDir of getBuiltinAssetSourceDirs(rootDir).toReversed()) {
+      const exists = await fs.pathExists(builtInAssetsDir)
+      if (exists) {
+        await fs.copy(builtInAssetsDir, this.dir)
+      }
     }
   }
 

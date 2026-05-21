@@ -134,6 +134,8 @@ The default client and server presets include the first-party logs/diagnostics, 
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
+Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding.
+
 ## Script APIs
 
 Plugins can expose script-facing APIs through `scripts`. Contributions are validated when the plugin is defined. Collisions are rejected before the plugin mutates the world, and each contribution is also available as a capability such as `script:world.load`, `script:world.evm`, or `script:player.evm`. Other plugins can list those capability names in `requires`.

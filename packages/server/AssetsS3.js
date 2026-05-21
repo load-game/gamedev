@@ -9,6 +9,7 @@ import fs from 'fs-extra'
 import path from 'path'
 import { hashFile } from '@gamedev/core/utils-server.js'
 import { usesHostedRuntimeBootstrap } from './runtimeBootstrap.js'
+import { getBuiltinAssetSourceDirs } from './plugins/builtins/server.js'
 
 const contentTypes = {
   // Images
@@ -146,13 +147,13 @@ export class AssetsS3 {
       throw new Error(`Failed to access S3 bucket: ${error.message}`)
     }
 
-    // Upload built-in assets from local directory to S3
-    const builtInAssetsDir = path.join(rootDir, 'packages/server/world/assets')
     if (usesHostedRuntimeBootstrap(process.env)) {
       return
     }
-    if (await fs.exists(builtInAssetsDir)) {
-      await this.uploadDirectory(builtInAssetsDir, builtInAssetsDir)
+    for (const builtInAssetsDir of getBuiltinAssetSourceDirs(rootDir).toReversed()) {
+      if (await fs.exists(builtInAssetsDir)) {
+        await this.uploadDirectory(builtInAssetsDir, builtInAssetsDir)
+      }
     }
   }
 
