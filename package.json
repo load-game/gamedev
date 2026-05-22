@@ -129,9 +129,9 @@
     },
     "./plugins/admin/client": {
       "types": "./index.plugin-admin-client.d.ts",
-      "import": "./packages/core/plugins/admin/client.js",
-      "require": "./packages/core/plugins/admin/client.js",
-      "default": "./packages/core/plugins/admin/client.js"
+      "import": "./packages/plugins/admin/client.js",
+      "require": "./packages/plugins/admin/client.js",
+      "default": "./packages/plugins/admin/client.js"
     },
     "./plugins/animation": {
       "types": "./index.plugin-animation.d.ts",

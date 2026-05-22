@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { writePacket } from '@gamedev/core/packets.js'
-import { AdminClient, ADMIN_SHUTDOWN_COMMAND, RUNTIME_CREDENTIAL_COMMAND } from '@gamedev/core/plugins/admin/client.js'
+import { AdminClient, ADMIN_SHUTDOWN_COMMAND, RUNTIME_CREDENTIAL_COMMAND } from 'gamedev/plugins/admin/client'
 
 function createAdminClient() {
   const listeners = new Map()
