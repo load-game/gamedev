@@ -1,6 +1,6 @@
 import * as THREE from '../../core/math/three.js'
 import { clamp } from '../../core/math/scalar.js'
-import { ControlPriorities } from '../../core/plugins/controls/ControlPriorities.js'
+import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD } from '../../core/math/general.js'
 
 const MOVE_DIR = new THREE.Vector3()

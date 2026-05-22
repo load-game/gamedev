@@ -4,7 +4,7 @@ import { LoaderIcon, MessageSquareTextIcon, RefreshCwIcon, SendHorizonalIcon } f
 
 import { AvatarPane } from './AvatarPane.js'
 import { cls, isTouch } from '../utils.js'
-import { ControlPriorities } from '@gamedev/core/plugins/controls/ControlPriorities.js'
+import { ControlPriorities } from '../../plugins/controls/ControlPriorities.js'
 // import { AppsPane } from './AppsPane.js'
 // import { MenuMain } from './MenuMain'
 // import { MenuApp } from './MenuApp.js'

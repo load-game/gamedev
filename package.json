@@ -44,7 +44,9 @@
     "index.plugin-builder-builtins.d.ts",
     "index.plugin-builder-client.d.ts",
     "index.plugin-chat.d.ts",
+    "index.plugin-controls-buttons.d.ts",
     "index.plugin-controls-client.d.ts",
+    "index.plugin-controls-priorities.d.ts",
     "index.plugin-css-client.d.ts",
     "index.plugin-entities-admin-player.d.ts",
     "index.plugin-entities-app.d.ts",
@@ -207,9 +209,21 @@
     },
     "./plugins/controls/client": {
       "types": "./index.plugin-controls-client.d.ts",
-      "import": "./packages/core/plugins/controls/client.js",
-      "require": "./packages/core/plugins/controls/client.js",
-      "default": "./packages/core/plugins/controls/client.js"
+      "import": "./packages/plugins/controls/client.js",
+      "require": "./packages/plugins/controls/client.js",
+      "default": "./packages/plugins/controls/client.js"
+    },
+    "./plugins/controls/ControlPriorities": {
+      "types": "./index.plugin-controls-priorities.d.ts",
+      "import": "./packages/plugins/controls/ControlPriorities.js",
+      "require": "./packages/plugins/controls/ControlPriorities.js",
+      "default": "./packages/plugins/controls/ControlPriorities.js"
+    },
+    "./plugins/controls/buttons": {
+      "types": "./index.plugin-controls-buttons.d.ts",
+      "import": "./packages/plugins/controls/buttons.js",
+      "require": "./packages/plugins/controls/buttons.js",
+      "default": "./packages/plugins/controls/buttons.js"
     },
     "./plugins/css/client": {
       "types": "./index.plugin-css-client.d.ts",

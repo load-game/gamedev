@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ControlPriorities } from './ControlPriorities.js'
 import { ClientControls } from './ClientControls.js'
 

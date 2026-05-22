@@ -1,8 +1,8 @@
-import { isTouch } from '../../platform/browser/isTouch.js'
-import { bindRotations } from '../../math/bindRotations.js'
+import { isTouch } from '../../core/platform/browser/isTouch.js'
+import { bindRotations } from '../../core/math/bindRotations.js'
 import { buttons, codeToProp } from './buttons.js'
-import * as THREE from '../../math/three.js'
-import { System } from '../../systems/System.js'
+import * as THREE from '../../core/math/three.js'
+import { System } from '../../core/systems/System.js'
 
 const LMB = 1 // bitmask
 const RMB = 2 // bitmask

@@ -1,5 +1,5 @@
 import * as THREE from '../../math/three.js'
-import { ControlPriorities } from '../controls/ControlPriorities.js'
+import { ControlPriorities } from '../../../plugins/controls/ControlPriorities.js'
 
 import { System } from '../../systems/System.js'
 

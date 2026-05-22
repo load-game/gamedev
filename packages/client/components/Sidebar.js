@@ -17,7 +17,7 @@ import {
 import { MouseLeftIcon } from './MouseLeftIcon.js'
 import { MouseRightIcon } from './MouseRightIcon.js'
 import { MouseWheelIcon } from './MouseWheelIcon.js'
-import { buttons, propToLabel } from '@gamedev/core/plugins/controls/buttons.js'
+import { buttons, propToLabel } from '../../plugins/controls/buttons.js'
 import { World } from './sidebar/World.js'
 import { Apps } from './sidebar/Apps.js'
 import { Add } from './sidebar/Add.js'

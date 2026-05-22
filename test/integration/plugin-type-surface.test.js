@@ -105,14 +105,18 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         import 'gamedev/plugins/livekit/client'
         import 'gamedev/plugins/livekit/server'
         import 'gamedev/plugins/nodes'
+        import { ControlPriorities } from 'gamedev/plugins/controls/ControlPriorities'
+        import { buttons, propToLabel } from 'gamedev/plugins/controls/buttons'
 
         const prim = app.create('prim', { type: 'box', color: '#fff' })
         prim.color = '#000'
         app.asset('./assets/sprite.png')
 
-        const controls = app.control()
+        const controls = app.control({ priority: ControlPriorities.APP })
         controls.keyW.down
         controls.release()
+        buttons.has('keyW')
+        propToLabel.keyW.toLowerCase()
 
         world.getPlayer()?.teleport([0, 1, 0])
         world.getPlayer()?.damage(10)
