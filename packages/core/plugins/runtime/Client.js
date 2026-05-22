@@ -1,7 +1,7 @@
 import { System } from '../../systems/System.js'
 
 import * as THREE from '../../extras/three.js'
-import { initYoga } from '../../extras/yoga.js'
+import { initYoga } from '../nodes/yoga.js'
 
 let worker
 

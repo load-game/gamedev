@@ -1,8 +1,8 @@
 import Yoga from 'yoga-layout'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 import { Node } from '../../nodes/Node.js'
-import { Display, isDisplay } from '../../extras/yoga.js'
-import { fillRoundRect, imageRoundRect } from '../../extras/roundRect.js'
+import { Display, isDisplay } from './yoga.js'
+import { fillRoundRect, imageRoundRect } from './roundRect.js'
 
 const objectFits = ['contain', 'cover', 'fill']
 

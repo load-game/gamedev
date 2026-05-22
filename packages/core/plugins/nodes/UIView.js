@@ -2,7 +2,7 @@ import Yoga from 'yoga-layout'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 
 import { Node } from '../../nodes/Node.js'
-import { fillRoundRect } from '../../extras/roundRect.js'
+import { fillRoundRect } from './roundRect.js'
 import {
   AlignItems,
   AlignContent,
@@ -16,8 +16,8 @@ import {
   isAlignItem,
   isAlignContent,
   isFlexWrap,
-} from '../../extras/yoga.js'
-import { borderRoundRect } from '../../extras/borderRoundRect.js'
+} from './yoga.js'
+import { borderRoundRect } from './borderRoundRect.js'
 
 const defaults = {
   display: 'flex',

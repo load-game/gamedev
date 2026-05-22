@@ -3,7 +3,7 @@ import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 import Yoga from 'yoga-layout'
 
 import { Node } from '../../nodes/Node.js'
-import { fillRoundRect } from '../../extras/roundRect.js'
+import { fillRoundRect } from './roundRect.js'
 import {
   AlignContent,
   AlignItems,
@@ -15,8 +15,8 @@ import {
   isFlexWrap,
   isJustifyContent,
   JustifyContent,
-} from '../../extras/yoga.js'
-import { borderRoundRect } from '../../extras/borderRoundRect.js'
+} from './yoga.js'
+import { borderRoundRect } from './borderRoundRect.js'
 import { clamp } from '../../utils.js'
 
 const v1 = new THREE.Vector3()
