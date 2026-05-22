@@ -16,7 +16,7 @@ test('app executes module scripts via scriptRef', async () => {
   const assetsDir = path.join(rootDir, 'assets')
   await fs.mkdir(path.join(assetsDir, 'helpers'), { recursive: true })
   await fs.copyFile(
-    path.join(getRepoRoot(), 'packages/server/world/assets/empty.glb'),
+    path.join(getRepoRoot(), 'packages/server/plugins/builtins/assets/empty.glb'),
     path.join(assetsDir, 'model.glb')
   )
   await fs.writeFile(

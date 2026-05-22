@@ -149,7 +149,7 @@ The default client and server presets include the first-party logs/diagnostics, 
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
-Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding.
+Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding. The first-party built-in asset files live under the server built-ins plugin instead of a server runtime `world` directory.
 
 ## Script APIs
 

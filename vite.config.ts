@@ -108,7 +108,7 @@ export default defineConfig({
       copy: [
         ...serverRuntimeCopy,
         {
-          from: 'packages/server/world/assets',
+          from: 'packages/server/plugins/builtins/assets',
           to: 'build/world',
         },
       ],

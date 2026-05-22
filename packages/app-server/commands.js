@@ -360,7 +360,7 @@ export class HyperfyCLI {
     } catch (error) {
       const filename = String(error?.message || '').replace('missing_builtin_asset:', '')
       console.error(`❌ Missing builtin asset ${filename}`)
-      console.log(`💡 Expected ${filename} in build/world/assets or packages/server/world/assets`)
+      console.log(`💡 Expected ${filename} in build/world/assets or packages/server/plugins/builtins/assets`)
       return
     }
 

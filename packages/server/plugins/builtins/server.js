@@ -52,7 +52,10 @@ export const DEFAULT_SCENE_TEMPLATE = Object.freeze({
   keep: true,
 })
 
-export const BUILTIN_ASSET_SOURCE_PATHS = Object.freeze(['build/world/assets', 'packages/server/world/assets'])
+export const BUILTIN_ASSET_SOURCE_PATHS = Object.freeze([
+  'build/world/assets',
+  'packages/server/plugins/builtins/assets',
+])
 
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value))

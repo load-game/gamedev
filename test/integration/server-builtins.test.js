@@ -56,9 +56,12 @@ test('builtin asset source paths are server-plugin owned', async t => {
   })
 
   const dirs = getBuiltinAssetSourceDirs(rootDir)
-  assert.deepEqual(dirs, [path.join(rootDir, 'build/world/assets'), path.join(rootDir, 'packages/server/world/assets')])
+  assert.deepEqual(dirs, [
+    path.join(rootDir, 'build/world/assets'),
+    path.join(rootDir, 'packages/server/plugins/builtins/assets'),
+  ])
 
-  const sourceDir = path.join(rootDir, 'packages/server/world/assets')
+  const sourceDir = path.join(rootDir, 'packages/server/plugins/builtins/assets')
   const buildDir = path.join(rootDir, 'build/world/assets')
   await fsPromises.mkdir(sourceDir, { recursive: true })
   await fsPromises.mkdir(buildDir, { recursive: true })

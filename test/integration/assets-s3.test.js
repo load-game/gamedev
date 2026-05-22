@@ -8,7 +8,7 @@ import { createTempDir } from './helpers.js'
 
 test('AssetsS3 init skips built-in uploads when runtime bootstrap mode is enabled', async t => {
   const rootDir = await createTempDir('hyperfy-assets-s3-')
-  const builtInAssetsDir = path.join(rootDir, 'packages/server/world/assets')
+  const builtInAssetsDir = path.join(rootDir, 'packages/server/plugins/builtins/assets')
   await fsPromises.mkdir(builtInAssetsDir, { recursive: true })
   await fsPromises.writeFile(path.join(builtInAssetsDir, 'avatar.vrm'), 'avatar')
 
