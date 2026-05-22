@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash-es'
-import { hashFile } from '../utils-client.js'
-import { buildLegacyBodyModuleSource } from '../legacyBody.js'
+import { hashFile } from '../../utils-client.js'
+import { buildLegacyBodyModuleSource } from '../../legacyBody.js'
 
 const imageExts = new Set(['png', 'jpg', 'jpeg', 'webp'])
 const typeByExt = {
@@ -33,7 +33,10 @@ function sanitizeFilename(name) {
   if (typeof name !== 'string') return 'app'
   let safe = name.trim()
   if (!safe) return 'app'
-  safe = safe.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+  safe = safe.replace(/[<>:"/\\|?*]/g, '')
+  safe = Array.from(safe)
+    .filter(char => char.charCodeAt(0) >= 32)
+    .join('')
   safe = safe.replace(/\s+/g, ' ').trim()
   safe = safe.replace(/[. ]+$/g, '')
   return safe || 'app'

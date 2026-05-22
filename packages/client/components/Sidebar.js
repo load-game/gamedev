@@ -4,7 +4,7 @@ import { HammerIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
 import { cls } from './cls.js'
 import { theme } from './theme.js'
 import { HintProvider } from './Hint.js'
-import { exportApp } from '@gamedev/core/extras/appTools.js'
+import { exportApp } from '@gamedev/core/plugins/builder/appTools.js'
 import { assetPath, isTouch } from '../utils.js'
 import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
 import { useRank } from './useRank.js'
@@ -37,7 +37,7 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
       const file = await exportApp(app.blueprint, world.loader.loadFile, id => world.blueprints.get(id))
       downloadFile(file)
     } catch (err) {
-      console.error(err)
+      world.logs?.add('client', 'error', ['Export failed', err])
       world.emit('toast', 'Export failed')
     }
   }

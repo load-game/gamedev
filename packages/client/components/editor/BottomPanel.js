@@ -6,7 +6,7 @@ import { App } from '../sidebar/App.js'
 import { Nodes } from '../sidebar/Nodes.js'
 import { Meta } from '../sidebar/Meta.js'
 import { Console } from '../sidebar/Console.js'
-import { exportApp } from '@gamedev/core/extras/appTools.js'
+import { exportApp } from '@gamedev/core/plugins/builder/appTools.js'
 import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
 import { storage } from '@gamedev/core/plugins/storage/local.js'
 

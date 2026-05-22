@@ -149,6 +149,8 @@ The default client and server presets include the first-party logs/diagnostics, 
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
+Builder-owned `.hyp` import/export helpers live with the builder plugin rather than root core extras, so packaging and drag/drop tooling can move independently from the kernel.
+
 Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding. The first-party built-in asset files live under the server built-ins plugin instead of a server runtime `world` directory.
 
 Client-side local persistence used by first-party runtime plugins lives under `@gamedev/core/plugins/storage/local.js`. The kernel-level storage script API remains the `storagePlugin`; concrete browser/local fallback behavior is plugin support code rather than a root core module.
