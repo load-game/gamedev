@@ -323,9 +323,9 @@
     },
     "./plugins/monitor/server": {
       "types": "./index.plugin-monitor-server.d.ts",
-      "import": "./packages/core/plugins/monitor/server.js",
-      "require": "./packages/core/plugins/monitor/server.js",
-      "default": "./packages/core/plugins/monitor/server.js"
+      "import": "./packages/plugins/monitor/server.js",
+      "require": "./packages/plugins/monitor/server.js",
+      "default": "./packages/plugins/monitor/server.js"
     },
     "./plugins/lods/client": {
       "types": "./index.plugin-lods-client.d.ts",
