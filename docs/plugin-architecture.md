@@ -51,7 +51,7 @@ System keys, node types, entity types, loader asset types, and script APIs are a
 
 Presets are ordered plugin compositions:
 
-Preset modules are exported directly as `gamedev/presets/client`, `gamedev/presets/admin`, `gamedev/presets/viewer`, `gamedev/presets/node-client`, and `gamedev/presets/server`. The `create*World` helpers are thin wrappers over those presets, so build tooling can compose from the preset modules without importing a factory that hides the plugin list.
+Preset modules are exported directly as `gamedev/presets/client`, `gamedev/presets/admin`, `gamedev/presets/viewer`, `gamedev/presets/node-client`, and `gamedev/presets/server`. The `create*World` helpers are thin wrappers over those presets, so build tooling can compose from the preset modules without importing a factory that hides the plugin list. Preset type declarations also import the plugin type augmentations included by that preset, while narrower custom builds can reference only the plugin declarations they actually include.
 
 ```js
 import { definePreset } from 'gamedev/plugins'
