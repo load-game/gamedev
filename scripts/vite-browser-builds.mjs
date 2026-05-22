@@ -14,7 +14,7 @@ const clientPublicDir = path.join(rootDir, 'packages/client/public')
 const clientIndexHtmlSrc = path.join(clientPublicDir, 'index.html')
 const clientAdminHtmlSrc = path.join(clientPublicDir, 'admin.html')
 const worldAssetsDir = path.join(rootDir, 'packages/server/plugins/builtins/assets')
-const physxWasmSrc = path.join(rootDir, 'packages/core/plugins/spatial/physx/physx-js-webidl.wasm')
+const physxWasmSrc = path.join(rootDir, 'packages/plugins/spatial/physx/physx-js-webidl.wasm')
 
 const packageAliases = {
   '@gamedev/app-server': path.join(rootDir, 'packages/app-server'),

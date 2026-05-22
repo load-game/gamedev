@@ -419,9 +419,9 @@
     },
     "./plugins/spatial": {
       "types": "./index.plugin-spatial.d.ts",
-      "import": "./packages/core/plugins/spatial.js",
-      "require": "./packages/core/plugins/spatial.js",
-      "default": "./packages/core/plugins/spatial.js"
+      "import": "./packages/plugins/spatial.js",
+      "require": "./packages/plugins/spatial.js",
+      "default": "./packages/plugins/spatial.js"
     },
     "./plugins/stage": {
       "types": "./index.plugin-stage.d.ts",

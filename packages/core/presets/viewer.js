@@ -12,7 +12,7 @@ import { loaderClientHandlersPlugin } from '../../plugins/loader/client-handlers
 import { logsPlugin } from '../../plugins/logs.js'
 import { nodesPlugin } from '../../plugins/nodes.js'
 import { prefsClientPlugin } from '../../plugins/prefs/client.js'
-import { spatialPlugin } from '../plugins/spatial.js'
+import { spatialPlugin } from '../../plugins/spatial.js'
 import { stagePlugin } from '../../plugins/stage.js'
 import { viewPlugin } from '../../plugins/view.js'
 import { viewerRuntimePlugin } from '../../plugins/runtime/viewer.js'
