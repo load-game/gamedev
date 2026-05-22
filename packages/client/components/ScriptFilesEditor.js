@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { loadMonaco } from './monaco.js'
 import { hashFile } from '@gamedev/core/platform/browser/utils.js'
 import { isValidScriptPath } from '@gamedev/core/blueprints/validation.js'
-import { buildScriptGroups } from '@gamedev/core/plugins/builder/blueprintGroups.js'
+import { buildScriptGroups } from '../../plugins/builder/blueprintGroups.js'
 import { ScriptFilesAiOverlay } from './ScriptFilesEditor/ScriptFilesAiOverlay.js'
 import { ScriptFilesTree } from './ScriptFilesEditor/ScriptFilesTree.js'
 import {

@@ -183,21 +183,21 @@
     },
     "./plugins/builder/admin": {
       "types": "./index.plugin-builder-admin.d.ts",
-      "import": "./packages/core/plugins/builder/admin.js",
-      "require": "./packages/core/plugins/builder/admin.js",
-      "default": "./packages/core/plugins/builder/admin.js"
+      "import": "./packages/plugins/builder/admin.js",
+      "require": "./packages/plugins/builder/admin.js",
+      "default": "./packages/plugins/builder/admin.js"
     },
     "./plugins/builder/client": {
       "types": "./index.plugin-builder-client.d.ts",
-      "import": "./packages/core/plugins/builder/client.js",
-      "require": "./packages/core/plugins/builder/client.js",
-      "default": "./packages/core/plugins/builder/client.js"
+      "import": "./packages/plugins/builder/client.js",
+      "require": "./packages/plugins/builder/client.js",
+      "default": "./packages/plugins/builder/client.js"
     },
     "./plugins/builder/builtins": {
       "types": "./index.plugin-builder-builtins.d.ts",
-      "import": "./packages/core/plugins/builder/builtinApps.js",
-      "require": "./packages/core/plugins/builder/builtinApps.js",
-      "default": "./packages/core/plugins/builder/builtinApps.js"
+      "import": "./packages/plugins/builder/builtinApps.js",
+      "require": "./packages/plugins/builder/builtinApps.js",
+      "default": "./packages/plugins/builder/builtinApps.js"
     },
     "./plugins/chat": {
       "types": "./index.plugin-chat.d.ts",

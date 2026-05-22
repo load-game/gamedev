@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'vite-plus/test'
-import { exportApp } from '@gamedev/core/plugins/builder/appTools.js'
+import { exportApp } from '../../packages/plugins/builder/appTools.js'
 import { createTempDir, getRepoRoot } from './helpers.js'
 
 if (!globalThis.File) {

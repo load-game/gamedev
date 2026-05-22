@@ -1,17 +1,17 @@
 import moment from 'moment'
-import * as THREE from '../../math/three.js'
+import * as THREE from '../../core/math/three.js'
 import { cloneDeep, isBoolean, merge } from 'lodash-es'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
-import { hashFile } from '../../platform/browser/utils.js'
-import { uuid } from '../../ids/uuid.js'
-import { ControlPriorities } from '../controls/ControlPriorities.js'
-import { DEG2RAD, RAD2DEG } from '../../math/general.js'
+import { hashFile } from '../../core/platform/browser/utils.js'
+import { uuid } from '../../core/ids/uuid.js'
+import { ControlPriorities } from '../../core/plugins/controls/ControlPriorities.js'
+import { DEG2RAD, RAD2DEG } from '../../core/math/general.js'
 import { importApp } from './appTools.js'
 import { buildScriptGroups, getScriptGroupMain } from './blueprintGroups.js'
-import { syncLobbyProfilePatch } from '../../platform/browser/profileSync.js'
+import { syncLobbyProfilePatch } from '../../core/platform/browser/profileSync.js'
 import { BUILTIN_APP_TEMPLATES } from './builtinApps.js'
 
 const FORWARD = new THREE.Vector3(0, 0, -1)

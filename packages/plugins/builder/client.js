@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ClientBuilder } from './ClientBuilder.js'
 import { ClientDrafts } from './ClientDrafts.js'
 

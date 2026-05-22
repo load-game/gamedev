@@ -28,7 +28,7 @@ import {
 } from '../Fields.js'
 import { hashFile } from '@gamedev/core/platform/browser/utils.js'
 import { downloadFile } from '../downloadFile.js'
-import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/plugins/builder/blueprintGroups.js'
+import { areBlueprintsTwinUnique, buildScriptGroups } from '../../../plugins/builder/blueprintGroups.js'
 import { DEG2RAD, RAD2DEG } from '@gamedev/core/math/general.js'
 import * as THREE from '@gamedev/core/math/three.js'
 import { uuid } from '@gamedev/core/ids/uuid.js'

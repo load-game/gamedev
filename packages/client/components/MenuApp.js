@@ -19,7 +19,7 @@ import { hashFile } from '@gamedev/core/platform/browser/utils.js'
 import { isArray, isBoolean, isEqual, merge } from 'lodash-es'
 import { css } from '@firebolt-dev/css'
 import { RotateCcwIcon } from 'lucide-react'
-import { buildScriptGroups, getScriptGroupMain } from '@gamedev/core/plugins/builder/blueprintGroups.js'
+import { buildScriptGroups, getScriptGroupMain } from '../../plugins/builder/blueprintGroups.js'
 
 export function MenuApp({ world, app, blur }) {
   const [pages, setPages] = useState(() => ['index'])
