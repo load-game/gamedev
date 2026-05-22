@@ -183,7 +183,7 @@ Builder-owned `.hyp` import/export helpers live with the builder plugin rather t
 
 Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding. The first-party built-in asset files live under the server built-ins plugin instead of a server runtime `world` directory.
 
-Client-side local persistence used by first-party runtime plugins lives under `@gamedev/core/plugins/storage/local.js`. The kernel-level storage script API remains the `storagePlugin`; concrete browser/local fallback behavior is plugin support code rather than a root core module.
+Client-side local persistence used by first-party runtime plugins lives under `gamedev/plugins/storage/local`. The storage script API is installed by `storagePlugin`; concrete browser/local fallback behavior is plugin support code rather than a root core module.
 
 The PhysX loader and generated webidl artifacts live under the spatial plugin. They are copied into build output as runtime assets, but they are no longer root `@gamedev/core` modules.
 

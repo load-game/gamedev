@@ -13,7 +13,7 @@ import { MicIcon, MicOffIcon, VRIcon } from './Icons.js'
 import { sortBy } from 'lodash-es'
 import * as THREE from '@gamedev/core/math/three.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
-import { storage } from '@gamedev/core/plugins/storage/local.js'
+import { storage } from '../../plugins/storage/local.js'
 import { syncLobbyProfilePatch } from '@gamedev/core/platform/browser/profileSync.js'
 import {
   getPreferredServerUrl,

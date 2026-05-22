@@ -8,4 +8,4 @@ globalThis.__dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export { createNodeClientWorld } from '@gamedev/core/presets/node-client.js'
 export { System } from '@gamedev/core/systems/System.js'
-export { storage } from '@gamedev/core/plugins/storage/local.js'
+export { storage } from '../plugins/storage/local.js'

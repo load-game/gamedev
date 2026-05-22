@@ -1,6 +1,6 @@
 import { debounce } from 'lodash-es'
 import { useEffect } from 'react'
-import { storage } from '@gamedev/core/plugins/storage/local.js'
+import { storage } from '../../plugins/storage/local.js'
 
 const STORAGE_KEY = 'panes'
 

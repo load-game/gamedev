@@ -85,6 +85,7 @@
     "index.plugin-spatial.d.ts",
     "index.plugin-stage.d.ts",
     "index.plugin-storage.d.ts",
+    "index.plugin-storage-local.d.ts",
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
@@ -431,9 +432,15 @@
     },
     "./plugins/storage": {
       "types": "./index.plugin-storage.d.ts",
-      "import": "./packages/core/plugins/storage.js",
-      "require": "./packages/core/plugins/storage.js",
-      "default": "./packages/core/plugins/storage.js"
+      "import": "./packages/plugins/storage.js",
+      "require": "./packages/plugins/storage.js",
+      "default": "./packages/plugins/storage.js"
+    },
+    "./plugins/storage/local": {
+      "types": "./index.plugin-storage-local.d.ts",
+      "import": "./packages/plugins/storage/local.js",
+      "require": "./packages/plugins/storage/local.js",
+      "default": "./packages/plugins/storage/local.js"
     },
     "./plugins/stats/client": {
       "types": "./index.plugin-stats-client.d.ts",

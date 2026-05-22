@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 
-import { BrowserStorage, MemoryStorage } from '@gamedev/core/plugins/storage/local.js'
+import { BrowserStorage, MemoryStorage } from 'gamedev/plugins/storage/local'
 
 test('plugin local storage provides an in-memory fallback', () => {
   const storage = new MemoryStorage()

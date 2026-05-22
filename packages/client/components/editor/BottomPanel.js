@@ -8,7 +8,7 @@ import { Meta } from '../sidebar/Meta.js'
 import { Console } from '../sidebar/Console.js'
 import { exportApp } from '../../../plugins/builder/appTools.js'
 import { downloadFile } from '../downloadFile.js'
-import { storage } from '@gamedev/core/plugins/storage/local.js'
+import { storage } from '../../../plugins/storage/local.js'
 
 const tabs = [
   { id: 'app', label: 'Object' },
