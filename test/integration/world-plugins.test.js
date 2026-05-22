@@ -14,7 +14,7 @@ import { nodeClientRuntimePlugin as nodeClientRuntimeEntryPlugin } from '@gamede
 import { viewerRuntimePlugin as viewerRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/viewer.js'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { animationPlugin } from '@gamedev/core/plugins/animation.js'
-import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
+import { aiServerPlugin } from 'gamedev/plugins/ai/server'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { browserClientPlugin } from '@gamedev/core/plugins/browser/client.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'

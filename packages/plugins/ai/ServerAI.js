@@ -3,10 +3,10 @@ import path from 'path'
 import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { System } from '../../systems/System.js'
-import { hashFile } from '../../platform/server/utils.js'
-import { isValidScriptPath } from '../../blueprints/validation.js'
-import { getBlueprintAppName } from '../../blueprints/utils.js'
+import { System } from '../../core/systems/System.js'
+import { hashFile } from '../../core/platform/server/utils.js'
+import { isValidScriptPath } from '../../core/blueprints/validation.js'
+import { getBlueprintAppName } from '../../core/blueprints/utils.js'
 
 const aiDocs = loadAiDocs()
 const docsRoot = resolveDocsRoot()

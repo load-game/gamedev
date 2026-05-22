@@ -141,15 +141,15 @@
     },
     "./plugins/ai/client": {
       "types": "./index.plugin-ai-client.d.ts",
-      "import": "./packages/core/plugins/ai/client.js",
-      "require": "./packages/core/plugins/ai/client.js",
-      "default": "./packages/core/plugins/ai/client.js"
+      "import": "./packages/plugins/ai/client.js",
+      "require": "./packages/plugins/ai/client.js",
+      "default": "./packages/plugins/ai/client.js"
     },
     "./plugins/ai/server": {
       "types": "./index.plugin-ai-server.d.ts",
-      "import": "./packages/core/plugins/ai/server.js",
-      "require": "./packages/core/plugins/ai/server.js",
-      "default": "./packages/core/plugins/ai/server.js"
+      "import": "./packages/plugins/ai/server.js",
+      "require": "./packages/plugins/ai/server.js",
+      "default": "./packages/plugins/ai/server.js"
     },
     "./plugins/audio/client": {
       "types": "./index.plugin-audio-client.d.ts",

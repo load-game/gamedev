@@ -3,11 +3,11 @@ import path from 'path'
 import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { System } from '../../systems/System.js'
-import { isValidScriptPath } from '../../blueprints/validation.js'
-import { buildScriptGroups, getScriptGroupMain } from '../builder/blueprintGroups.js'
-import { hashFile } from '../../platform/server/utils.js'
-import { getBlueprintAppName } from '../../blueprints/utils.js'
+import { System } from '../../core/systems/System.js'
+import { isValidScriptPath } from '../../core/blueprints/validation.js'
+import { buildScriptGroups, getScriptGroupMain } from '../../core/plugins/builder/blueprintGroups.js'
+import { hashFile } from '../../core/platform/server/utils.js'
+import { getBlueprintAppName } from '../../core/blueprints/utils.js'
 
 function hasScriptFiles(blueprint) {
   return blueprint?.scriptFiles && typeof blueprint.scriptFiles === 'object' && !Array.isArray(blueprint.scriptFiles)

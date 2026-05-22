@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { ClientBuilder } from '@gamedev/core/plugins/builder/client.js'
-import { ServerAIScripts } from '@gamedev/core/plugins/ai/server.js'
+import { ServerAIScripts } from 'gamedev/plugins/ai/server'
 
 function createBlueprintStore(blueprints) {
   const items = Array.isArray(blueprints) ? blueprints.map(bp => ({ ...bp })) : []
