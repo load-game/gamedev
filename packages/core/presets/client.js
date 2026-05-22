@@ -22,7 +22,7 @@ import { loaderClientHandlersPlugin } from '../../plugins/loader/client-handlers
 import { livekitClientPlugin } from '../../plugins/livekit/client.js'
 import { lodsClientPlugin } from '../plugins/lods/client.js'
 import { logsPlugin } from '../plugins/logs.js'
-import { nametagsClientPlugin } from '../plugins/nametags/client.js'
+import { nametagsClientPlugin } from '../../plugins/nametags/client.js'
 import { networkClientPlugin } from '../../plugins/network/client.js'
 import { nodesPlugin } from '../../plugins/nodes.js'
 import { particlesClientPlugin } from '../plugins/particles/client.js'

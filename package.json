@@ -321,9 +321,9 @@
     },
     "./plugins/nametags/client": {
       "types": "./index.plugin-nametags-client.d.ts",
-      "import": "./packages/core/plugins/nametags/client.js",
-      "require": "./packages/core/plugins/nametags/client.js",
-      "default": "./packages/core/plugins/nametags/client.js"
+      "import": "./packages/plugins/nametags/client.js",
+      "require": "./packages/plugins/nametags/client.js",
+      "default": "./packages/plugins/nametags/client.js"
     },
     "./plugins/network/admin": {
       "types": "./index.plugin-network-admin.d.ts",

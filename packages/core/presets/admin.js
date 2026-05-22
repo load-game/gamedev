@@ -20,7 +20,7 @@ import { loaderClientHandlersPlugin } from '../../plugins/loader/client-handlers
 import { livekitAdminPlugin } from '../../plugins/livekit/admin.js'
 import { lodsClientPlugin } from '../plugins/lods/client.js'
 import { logsPlugin } from '../plugins/logs.js'
-import { nametagsClientPlugin } from '../plugins/nametags/client.js'
+import { nametagsClientPlugin } from '../../plugins/nametags/client.js'
 import { networkAdminPlugin } from '../../plugins/network/admin.js'
 import { nodesPlugin } from '../../plugins/nodes.js'
 import { particlesClientPlugin } from '../plugins/particles/client.js'
