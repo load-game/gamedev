@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { NodeEnvironment } from './NodeEnvironment.js'
 import { installEnvironmentMaterialApi } from './material.js'
 

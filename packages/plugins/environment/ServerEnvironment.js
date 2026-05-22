@@ -1,4 +1,4 @@
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 /**
  * Environment System

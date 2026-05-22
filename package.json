@@ -233,21 +233,21 @@
     },
     "./plugins/environment/client": {
       "types": "./index.plugin-environment-client.d.ts",
-      "import": "./packages/core/plugins/environment/client.js",
-      "require": "./packages/core/plugins/environment/client.js",
-      "default": "./packages/core/plugins/environment/client.js"
+      "import": "./packages/plugins/environment/client.js",
+      "require": "./packages/plugins/environment/client.js",
+      "default": "./packages/plugins/environment/client.js"
     },
     "./plugins/environment/node-client": {
       "types": "./index.plugin-environment-node-client.d.ts",
-      "import": "./packages/core/plugins/environment/node-client.js",
-      "require": "./packages/core/plugins/environment/node-client.js",
-      "default": "./packages/core/plugins/environment/node-client.js"
+      "import": "./packages/plugins/environment/node-client.js",
+      "require": "./packages/plugins/environment/node-client.js",
+      "default": "./packages/plugins/environment/node-client.js"
     },
     "./plugins/environment/server": {
       "types": "./index.plugin-environment-server.d.ts",
-      "import": "./packages/core/plugins/environment/server.js",
-      "require": "./packages/core/plugins/environment/server.js",
-      "default": "./packages/core/plugins/environment/server.js"
+      "import": "./packages/plugins/environment/server.js",
+      "require": "./packages/plugins/environment/server.js",
+      "default": "./packages/plugins/environment/server.js"
     },
     "./plugins/entities/admin-player": {
       "types": "./index.plugin-entities-admin-player.d.ts",
@@ -269,9 +269,9 @@
     },
     "./plugins/graphics/client": {
       "types": "./index.plugin-graphics-client.d.ts",
-      "import": "./packages/core/plugins/graphics/client.js",
-      "require": "./packages/core/plugins/graphics/client.js",
-      "default": "./packages/core/plugins/graphics/client.js"
+      "import": "./packages/plugins/graphics/client.js",
+      "require": "./packages/plugins/graphics/client.js",
+      "default": "./packages/plugins/graphics/client.js"
     },
     "./plugins/loader/client": {
       "types": "./index.plugin-loader-client.d.ts",

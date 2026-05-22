@@ -1,4 +1,4 @@
-import * as THREE from '../../math/three.js'
+import * as THREE from '../../core/math/three.js'
 import { N8AOPostPass } from 'n8ao'
 import {
   EffectComposer,
@@ -12,7 +12,7 @@ import {
   BloomEffect,
 } from 'postprocessing'
 
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 let renderer
 function getRenderer() {
