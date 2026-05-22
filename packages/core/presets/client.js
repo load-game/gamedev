@@ -17,6 +17,7 @@ import { hyperliquidPlugin } from '../plugins/hyperliquid.js'
 import { aiClientPlugin } from '../plugins/ai/client.js'
 import { browserClientPlugin } from '../plugins/browser/client.js'
 import { loaderClientPlugin } from '../plugins/loader/client.js'
+import { loaderClientHandlersPlugin } from '../plugins/loader/client-handlers.js'
 import { livekitClientPlugin } from '../plugins/livekit/client.js'
 import { lodsClientPlugin } from '../plugins/lods/client.js'
 import { logsPlugin } from '../plugins/logs.js'
@@ -73,6 +74,7 @@ export const clientPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    loaderClientHandlersPlugin,
     appEntityPlugin,
     playerEntitiesPlugin,
     environmentClientPlugin,

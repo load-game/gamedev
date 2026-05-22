@@ -6,6 +6,7 @@ import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
+import { loaderServerHandlersPlugin } from '@gamedev/core/plugins/loader/server-handlers.js'
 import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { createTempDir } from './helpers.js'
 
@@ -25,7 +26,7 @@ test('module scripts load and execute on server runtime', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin] })
+  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin] })
   world.assetsDir = assetsDir
 
   const blueprint = {
@@ -62,7 +63,7 @@ test('legacy-body entry preserves imports and wraps body', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin] })
+  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin] })
   world.assetsDir = assetsDir
 
   const blueprint = {
@@ -102,7 +103,7 @@ test('shared import aliases resolve to shared script files', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'shared-math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin] })
+  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin] })
   world.assetsDir = assetsDir
 
   const blueprint = {

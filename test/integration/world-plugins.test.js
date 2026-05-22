@@ -26,7 +26,9 @@ import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
 import { graphicsClientPlugin } from '@gamedev/core/plugins/graphics/client.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderClientPlugin } from '@gamedev/core/plugins/loader/client.js'
+import { loaderClientHandlersPlugin } from '@gamedev/core/plugins/loader/client-handlers.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
+import { loaderServerHandlersPlugin } from '@gamedev/core/plugins/loader/server-handlers.js'
 import { livekitClientPlugin } from '@gamedev/core/plugins/livekit/client.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
@@ -536,6 +538,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-loader-handlers/client',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
       '@gamedev/plugin-environment/client',
@@ -576,6 +579,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-nametags/client',
       '@gamedev/plugin-ui/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-loader-handlers/client',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
       '@gamedev/plugin-environment/client',
@@ -604,6 +608,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/node-client/runtime',
       '@gamedev/plugin-network/client',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-loader-handlers/server',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
       '@gamedev/plugin-environment/node-client',
@@ -626,6 +631,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/viewer/runtime',
       '@gamedev/plugin-browser/client',
       '@gamedev/plugin-loader/client',
+      '@gamedev/plugin-loader-handlers/client',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-environment/client',
     ]
@@ -648,6 +654,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-loader-handlers/server',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
       '@gamedev/plugin-livekit/server',
@@ -674,6 +681,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-environment/server',
       '@gamedev/plugin-monitor/server',
       '@gamedev/plugin-loader/server',
+      '@gamedev/plugin-loader-handlers/server',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
       '@gamedev/plugin-livekit/server',
@@ -707,7 +715,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.evm)
   assert.ok(serverWorld.hyperliquid)
   assert.equal(serverWorld.loader.plugin, '@gamedev/plugin-loader/server')
-  assert.equal(serverWorld.loader.handlers.get('model').plugin, '@gamedev/plugin-loader/server')
+  assert.equal(serverWorld.loader.handlers.get('model').plugin, '@gamedev/plugin-loader-handlers/server')
   assert.equal(serverWorld.logs.plugin, '@gamedev/plugin-logs')
   assert.equal(serverWorld.animation.plugin, '@gamedev/plugin-animation')
   assert.equal(serverWorld.physics.plugin, '@gamedev/plugin-spatial')
@@ -878,8 +886,21 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
 
+  const serverLoaderWorld = new World({
+    plugins: [coreSystemsPlugin, loaderServerPlugin],
+  })
+  assert.ok(serverLoaderWorld.loader)
+  assert.equal(typeof serverLoaderWorld.apps.worldMethods.load, 'function')
+  assert.equal(serverLoaderWorld.pluginCapabilities.has('loader'), true)
+  assert.equal(serverLoaderWorld.pluginCapabilities.has('loader:model'), false)
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, appEntityPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-entities\/app:loader:model/
+  )
+
   const appEntityWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, appEntityPlugin],
+    plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin, appEntityPlugin],
   })
   assert.equal(appEntityWorld.pluginCapabilities.has('entity:app'), true)
   assert.equal(appEntityWorld.pluginCapabilities.has('script:app.asset'), true)
@@ -920,6 +941,7 @@ test('feature APIs only appear when their plugins are selected', () => {
       chatPlugin,
       serverRuntimeStub,
       loaderServerPlugin,
+      loaderServerHandlersPlugin,
       playerEntitiesPlugin,
     ],
   })
@@ -1024,14 +1046,45 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof browserWorld.apps.worldMethods.getQueryParam, 'function')
   assert.equal(typeof browserWorld.apps.worldMethods.setQueryParam, 'function')
 
+  const clientLoaderRegistryWorld = new World({
+    plugins: [coreSystemsPlugin, clientOnlyRuntimeStub, loaderClientPlugin],
+  })
+  assert.ok(clientLoaderRegistryWorld.loader)
+  assert.equal(clientLoaderRegistryWorld.pluginCapabilities.has('loader'), true)
+  assert.equal(clientLoaderRegistryWorld.pluginCapabilities.has('loader:video'), false)
+
+  assert.throws(
+    () =>
+      new World({
+        plugins: [
+          coreSystemsPlugin,
+          nodesPlugin,
+          viewPlugin,
+          stagePlugin,
+          loaderServerPlugin,
+          loaderClientHandlersPlugin,
+        ],
+      }),
+    /plugin_missing_requirement:@gamedev\/plugin-loader-handlers\/client:client/
+  )
+
   const clientLoaderWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, stagePlugin, clientOnlyRuntimeStub, loaderClientPlugin],
+    plugins: [
+      coreSystemsPlugin,
+      nodesPlugin,
+      viewPlugin,
+      spatialPlugin,
+      stagePlugin,
+      clientOnlyRuntimeStub,
+      loaderClientPlugin,
+      loaderClientHandlersPlugin,
+    ],
   })
   assert.ok(clientLoaderWorld.loader)
   assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:model'), true)
   assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:video'), true)
   assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:splat'), true)
-  assert.equal(clientLoaderWorld.loader.handlers.get('splat').plugin, '@gamedev/plugin-loader/client')
+  assert.equal(clientLoaderWorld.loader.handlers.get('splat').plugin, '@gamedev/plugin-loader-handlers/client')
 
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, prefsClientPlugin, audioClientPlugin] }),
@@ -1051,7 +1104,15 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.throws(
     () =>
       new World({
-        plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, loaderServerPlugin, playerEntitiesPlugin],
+        plugins: [
+          coreSystemsPlugin,
+          nodesPlugin,
+          viewPlugin,
+          spatialPlugin,
+          loaderServerPlugin,
+          loaderServerHandlersPlugin,
+          playerEntitiesPlugin,
+        ],
       }),
     /plugin_missing_requirement:@gamedev\/plugin-entities\/player:network/
   )
@@ -1129,7 +1190,15 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof environmentWorld.setupMaterial, 'function')
 
   const networkWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
+    plugins: [
+      coreSystemsPlugin,
+      nodesPlugin,
+      viewPlugin,
+      spatialPlugin,
+      chatPlugin,
+      clientOnlyRuntimeStub,
+      networkClientPlugin,
+    ],
   })
   assert.ok(networkWorld.network)
   assert.equal(networkWorld.network.plugin, '@gamedev/plugin-network/client')
@@ -1272,6 +1341,7 @@ test('feature APIs only appear when their plugins are selected', () => {
       chatPlugin,
       serverRuntimeStub,
       loaderServerPlugin,
+      loaderServerHandlersPlugin,
       appEntityPlugin,
       playerEntitiesPlugin,
       livekitServerPlugin,

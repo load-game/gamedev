@@ -7,6 +7,7 @@ import { World } from '@gamedev/core/World.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
+import { loaderServerHandlersPlugin } from '@gamedev/core/plugins/loader/server-handlers.js'
 import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { createTempDir, getRepoRoot, waitFor } from './helpers.js'
 
@@ -30,7 +31,9 @@ test('app executes module scripts via scriptRef', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World({ plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, appEntityPlugin] })
+  const world = new World({
+    plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin, appEntityPlugin],
+  })
   world.assetsDir = assetsDir
   world.environment = { csm: null }
   world.network = {

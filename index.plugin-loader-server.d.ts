@@ -1,8 +1,6 @@
 import 'gamedev'
-import type { BaseNode } from 'gamedev'
+import type { LoaderScriptResult, LoaderScriptType } from 'gamedev'
 import type { LoaderHandler, WorldPlugin } from './index.plugins.d.ts'
-
-export type LoaderScriptType = 'avatar' | 'model' | 'splat'
 
 export declare class ServerLoader {
   constructor(world: any)
@@ -17,11 +15,9 @@ export declare class ServerLoader {
   destroy(): void
 }
 
-export declare const serverLoaderHandlers: Readonly<Record<string, LoaderHandler<ServerLoader>>>
-
 export declare const loaderScriptApi: {
   world: {
-    load(entity: any, type: LoaderScriptType, url: string): Promise<BaseNode>
+    load<T extends LoaderScriptType>(entity: any, type: T, url: string): Promise<LoaderScriptResult<T>>
   }
 }
 
@@ -29,6 +25,6 @@ export declare const loaderServerPlugin: WorldPlugin
 
 declare module 'gamedev' {
   interface WorldAPI {
-    load(type: LoaderScriptType, url: string): Promise<BaseNode>
+    load<T extends LoaderScriptType>(type: T, url: string): Promise<LoaderScriptResult<T>>
   }
 }

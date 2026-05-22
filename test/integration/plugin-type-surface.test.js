@@ -47,6 +47,8 @@ test('plugin and preset type surfaces gate script APIs', async () => {
   try {
     const rootOnly = path.join(tempDir, 'root-only.ts')
     const pluginEnabled = path.join(tempDir, 'plugin-enabled.ts')
+    const loaderRegistryOnly = path.join(tempDir, 'loader-registry-only.ts')
+    const loaderServerHandlers = path.join(tempDir, 'loader-server-handlers.ts')
     const livekitClientOnly = path.join(tempDir, 'livekit-client-only.ts')
     const livekitServerOnly = path.join(tempDir, 'livekit-server-only.ts')
     const presetEnabled = path.join(tempDir, 'preset-enabled.ts')
@@ -71,6 +73,9 @@ test('plugin and preset type surfaces gate script APIs', async () => {
 
         // @ts-expect-error app asset resolution is provided by the app entities plugin
         app.asset('./assets/sprite.png')
+
+        // @ts-expect-error world.load is provided by the loader registry plugin
+        world.load('model', 'asset://model.glb')
 
         // @ts-expect-error controls are provided by the controls client plugin
         app.control()
@@ -119,6 +124,32 @@ test('plugin and preset type surfaces gate script APIs', async () => {
     )
 
     await fs.writeFile(
+      loaderRegistryOnly,
+      `
+        import 'gamedev'
+        import 'gamedev/plugins/loader/server'
+
+        // @ts-expect-error loader asset types are provided by loader handler plugins
+        world.load('model', 'asset://model.glb')
+      `
+    )
+
+    await fs.writeFile(
+      loaderServerHandlers,
+      `
+        import 'gamedev'
+        import 'gamedev/plugins/loader/server'
+        import 'gamedev/plugins/loader/server-handlers'
+
+        world.load('model', 'asset://model.glb')
+        world.load('avatar', 'asset://avatar.vrm')
+
+        // @ts-expect-error splat loading is provided by the client handler plugin
+        world.load('splat', 'asset://scan.spz')
+      `
+    )
+
+    await fs.writeFile(
       livekitClientOnly,
       `
         import 'gamedev'
@@ -161,6 +192,8 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         world.get<number>('score')
         world.evm().isConnected()
         world.hyperliquid().getAvailableTickers()
+        world.load('model', 'asset://model.glb')
+        world.load('splat', 'asset://scan.spz')
         world.getPlayer()?.teleport([0, 1, 0])
         world.getPlayer()?.damage(10)
         world.getPlayer()?.screenshare('monitor')
@@ -170,6 +203,8 @@ test('plugin and preset type surfaces gate script APIs', async () => {
 
     await runTsc(rootOnly)
     await runTsc(pluginEnabled)
+    await runTsc(loaderRegistryOnly)
+    await runTsc(loaderServerHandlers)
     await runTsc(livekitClientOnly)
     await runTsc(livekitServerOnly)
     await runTsc(presetEnabled)

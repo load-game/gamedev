@@ -150,6 +150,14 @@ export type NodeNameToInit = {
 }
 
 // -----------------------------
+// Script loader type mapping
+// -----------------------------
+export interface LoaderScriptResultRegistry {}
+
+export type LoaderScriptType = keyof LoaderScriptResultRegistry & string
+export type LoaderScriptResult<T extends LoaderScriptType = LoaderScriptType> = LoaderScriptResultRegistry[T]
+
+// -----------------------------
 // Player API
 // -----------------------------
 export interface Player {

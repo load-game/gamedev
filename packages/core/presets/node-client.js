@@ -7,6 +7,7 @@ import { environmentNodeClientPlugin } from '../plugins/environment/node-client.
 import { appEntityPlugin } from '../plugins/entities/app.js'
 import { playerEntitiesPlugin } from '../plugins/entities/player.js'
 import { loaderServerPlugin } from '../plugins/loader/server.js'
+import { loaderServerHandlersPlugin } from '../plugins/loader/server-handlers.js'
 import { logsPlugin } from '../plugins/logs.js'
 import { networkClientPlugin } from '../plugins/network/client.js'
 import { nodesPlugin } from '../plugins/nodes.js'
@@ -36,6 +37,7 @@ export const nodeClientPreset = definePreset({
     nodeClientRuntimePlugin,
     networkClientPlugin,
     loaderServerPlugin,
+    loaderServerHandlersPlugin,
     appEntityPlugin,
     playerEntitiesPlugin,
     environmentNodeClientPlugin,

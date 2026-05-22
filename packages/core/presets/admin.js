@@ -14,6 +14,7 @@ import { appEntityPlugin } from '../plugins/entities/app.js'
 import { playerEntitiesPlugin } from '../plugins/entities/player.js'
 import { graphicsClientPlugin } from '../plugins/graphics/client.js'
 import { loaderClientPlugin } from '../plugins/loader/client.js'
+import { loaderClientHandlersPlugin } from '../plugins/loader/client-handlers.js'
 import { livekitAdminPlugin } from '../plugins/livekit/admin.js'
 import { lodsClientPlugin } from '../plugins/lods/client.js'
 import { logsPlugin } from '../plugins/logs.js'
@@ -89,6 +90,7 @@ export const adminPreset = definePreset({
     nametagsClientPlugin,
     uiClientPlugin,
     loaderClientPlugin,
+    loaderClientHandlersPlugin,
     appEntityPlugin,
     playerEntitiesPlugin,
     environmentClientPlugin,

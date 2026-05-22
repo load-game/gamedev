@@ -34,7 +34,7 @@ Adds a node into world-space, maintaining its current world transform.
 
 ### `.load(type, url)`: Promise\<Node\>
 
-Requires the loader plugin (`gamedev/plugins/loader/client` or `gamedev/plugins/loader/server`).
+Requires a loader registry plugin (`gamedev/plugins/loader/client` or `gamedev/plugins/loader/server`) plus a handler plugin that provides the requested asset type, such as `gamedev/plugins/loader/client-handlers` or `gamedev/plugins/loader/server-handlers`.
 
 Asynchronously loads an asset and returns a node tree that can be added to the app or world.
 

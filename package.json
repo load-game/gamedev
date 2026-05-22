@@ -56,7 +56,9 @@
     "index.plugin-graphics-client.d.ts",
     "index.plugin-hyperliquid.d.ts",
     "index.plugin-loader-client.d.ts",
+    "index.plugin-loader-client-handlers.d.ts",
     "index.plugin-loader-server.d.ts",
+    "index.plugin-loader-server-handlers.d.ts",
     "index.plugin-livekit-admin.d.ts",
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
@@ -251,11 +253,23 @@
       "require": "./packages/core/plugins/loader/client.js",
       "default": "./packages/core/plugins/loader/client.js"
     },
+    "./plugins/loader/client-handlers": {
+      "types": "./index.plugin-loader-client-handlers.d.ts",
+      "import": "./packages/core/plugins/loader/client-handlers.js",
+      "require": "./packages/core/plugins/loader/client-handlers.js",
+      "default": "./packages/core/plugins/loader/client-handlers.js"
+    },
     "./plugins/loader/server": {
       "types": "./index.plugin-loader-server.d.ts",
       "import": "./packages/core/plugins/loader/server.js",
       "require": "./packages/core/plugins/loader/server.js",
       "default": "./packages/core/plugins/loader/server.js"
+    },
+    "./plugins/loader/server-handlers": {
+      "types": "./index.plugin-loader-server-handlers.d.ts",
+      "import": "./packages/core/plugins/loader/server-handlers.js",
+      "require": "./packages/core/plugins/loader/server-handlers.js",
+      "default": "./packages/core/plugins/loader/server-handlers.js"
     },
     "./plugins/livekit/client": {
       "types": "./index.plugin-livekit-client.d.ts",
