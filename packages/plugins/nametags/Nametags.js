@@ -1,6 +1,6 @@
 import { fillRoundRect } from '../nodes/roundRect.js'
 import * as THREE from '../../core/math/three.js'
-import CustomShaderMaterial from '../../core/libs/three-custom-shader-material/index.js'
+import CustomShaderMaterial from '../rendering/three-custom-shader-material/index.js'
 import { System } from '../../core/systems/System.js'
 
 /**

@@ -2,12 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { getAddress } from 'viem'
 
-import {
-  EVMClient as EVM,
-  EVMServer as ServerEVM,
-  evmClientPlugin,
-  evmServerPlugin,
-} from 'gamedev/plugins/evm'
+import { EVMClient as EVM, EVMServer as ServerEVM, evmClientPlugin, evmServerPlugin } from 'gamedev/plugins/evm'
 import { Hyperliquid, hyperliquidPlugin } from 'gamedev/plugins/hyperliquid'
 
 function createEvmScriptRuntime(evm, plugin = evmClientPlugin) {

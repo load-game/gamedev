@@ -1,7 +1,7 @@
 import { isBoolean, isNumber, isString } from 'lodash-es'
 import { Node } from '../../core/nodes/Node.js'
 import * as THREE from '../../core/math/three.js'
-import CustomShaderMaterial from '../../core/libs/three-custom-shader-material/index.js'
+import CustomShaderMaterial from '../rendering/three-custom-shader-material/index.js'
 
 const fits = ['none', 'cover', 'contain']
 const pivots = [

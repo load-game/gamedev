@@ -2,7 +2,7 @@ import * as THREE from '../../core/math/three.js'
 
 import { System } from '../../core/systems/System.js'
 
-import { CSM } from '../../core/libs/csm/CSM.js'
+import { CSM } from './csm/CSM.js'
 import { isNumber, isString } from 'lodash-es'
 
 const csmLevels = {

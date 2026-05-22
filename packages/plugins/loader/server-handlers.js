@@ -1,5 +1,5 @@
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { GLTFLoader } from '../../core/libs/gltfloader/GLTFLoader.js'
+import { GLTFLoader } from './gltfloader/GLTFLoader.js'
 // import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
 import { definePlugin } from '../../core/plugins.js'
