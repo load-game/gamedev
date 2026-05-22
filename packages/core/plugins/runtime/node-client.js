@@ -1,5 +1,5 @@
 import { definePlugin } from '../../plugins.js'
-import { NodeClient } from '../../systems/NodeClient.js'
+import { NodeClient } from './NodeClient.js'
 
 export { NodeClient }
 

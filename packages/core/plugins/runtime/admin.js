@@ -1,5 +1,5 @@
 import { definePlugin } from '../../plugins.js'
-import { Client } from '../../systems/Client.js'
+import { Client } from './Client.js'
 
 export { Client }
 

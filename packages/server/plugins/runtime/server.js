@@ -1,5 +1,5 @@
 import { definePlugin } from '@gamedev/core/plugins.js'
-import { Server } from '@gamedev/core/systems/Server.js'
+import { Server } from './Server.js'
 
 export { Server }
 

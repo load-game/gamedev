@@ -1,15 +1,15 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 const TICK_RATE = 1 / 30
 
 /**
- * Server System
+ * Node Client System
  *
- * - Runs on the server
+ * - Runs on node
  * - Ticks!
  *
  */
-export class Server extends System {
+export class NodeClient extends System {
   constructor(world) {
     super(world)
     this.timerId = null
