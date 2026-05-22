@@ -1,4 +1,4 @@
-import { definePlugin, definePreset } from '../plugins.js'
+import { definePreset } from '../plugins.js'
 import { coreSystemsPlugin } from './core.js'
 import { animationPlugin } from '../plugins/animation.js'
 import { browserClientPlugin } from '../plugins/browser/client.js'
@@ -14,13 +14,9 @@ import { prefsClientPlugin } from '../plugins/prefs/client.js'
 import { spatialPlugin } from '../plugins/spatial.js'
 import { stagePlugin } from '../plugins/stage.js'
 import { viewPlugin } from '../plugins/view.js'
-import { Client } from '../systems/Client.js'
+import { viewerRuntimePlugin } from '../plugins/runtime/viewer.js'
 
-export const viewerRuntimePlugin = definePlugin({
-  name: '@gamedev/viewer/runtime',
-  requires: ['core', 'graphics', 'controls'],
-  systems: [['client', Client]],
-})
+export { viewerRuntimePlugin }
 
 export const viewerPreset = definePreset({
   name: '@gamedev/preset-viewer',

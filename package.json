@@ -74,6 +74,11 @@
     "index.plugin-particles-client.d.ts",
     "index.plugin-pointer-client.d.ts",
     "index.plugin-prefs-client.d.ts",
+    "index.plugin-runtime-admin.d.ts",
+    "index.plugin-runtime-client.d.ts",
+    "index.plugin-runtime-node-client.d.ts",
+    "index.plugin-runtime-server.d.ts",
+    "index.plugin-runtime-viewer.d.ts",
     "index.plugin-snaps-client.d.ts",
     "index.plugin-spatial.d.ts",
     "index.plugin-stage.d.ts",
@@ -361,6 +366,36 @@
       "import": "./packages/core/plugins/prefs/client.js",
       "require": "./packages/core/plugins/prefs/client.js",
       "default": "./packages/core/plugins/prefs/client.js"
+    },
+    "./plugins/runtime/admin": {
+      "types": "./index.plugin-runtime-admin.d.ts",
+      "import": "./packages/core/plugins/runtime/admin.js",
+      "require": "./packages/core/plugins/runtime/admin.js",
+      "default": "./packages/core/plugins/runtime/admin.js"
+    },
+    "./plugins/runtime/client": {
+      "types": "./index.plugin-runtime-client.d.ts",
+      "import": "./packages/core/plugins/runtime/client.js",
+      "require": "./packages/core/plugins/runtime/client.js",
+      "default": "./packages/core/plugins/runtime/client.js"
+    },
+    "./plugins/runtime/node-client": {
+      "types": "./index.plugin-runtime-node-client.d.ts",
+      "import": "./packages/core/plugins/runtime/node-client.js",
+      "require": "./packages/core/plugins/runtime/node-client.js",
+      "default": "./packages/core/plugins/runtime/node-client.js"
+    },
+    "./plugins/runtime/server": {
+      "types": "./index.plugin-runtime-server.d.ts",
+      "import": "./packages/server/plugins/runtime/server.js",
+      "require": "./packages/server/plugins/runtime/server.js",
+      "default": "./packages/server/plugins/runtime/server.js"
+    },
+    "./plugins/runtime/viewer": {
+      "types": "./index.plugin-runtime-viewer.d.ts",
+      "import": "./packages/core/plugins/runtime/viewer.js",
+      "require": "./packages/core/plugins/runtime/viewer.js",
+      "default": "./packages/core/plugins/runtime/viewer.js"
     },
     "./plugins/snaps/client": {
       "types": "./index.plugin-snaps-client.d.ts",

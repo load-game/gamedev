@@ -1,4 +1,4 @@
-import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
+import { definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { animationPlugin } from '@gamedev/core/plugins/animation.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
@@ -18,14 +18,10 @@ import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { stagePlugin } from '@gamedev/core/plugins/stage.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { viewPlugin } from '@gamedev/core/plugins/view.js'
-import { Server } from '@gamedev/core/systems/Server.js'
 import { networkServerPlugin } from '../plugins/network/server.js'
+import { serverRuntimePlugin } from '../plugins/runtime/server.js'
 
-export const serverRuntimePlugin = definePlugin({
-  name: '@gamedev/server/runtime',
-  requires: ['core'],
-  systems: [['server', Server]],
-})
+export { serverRuntimePlugin }
 
 export const serverPreset = definePreset({
   name: '@gamedev/preset-server',

@@ -1,4 +1,4 @@
-import { definePlugin, definePreset } from '../plugins.js'
+import { definePreset } from '../plugins.js'
 import { coreSystemsPlugin } from './core.js'
 import { animationPlugin } from '../plugins/animation.js'
 import { chatPlugin } from '../plugins/chat.js'
@@ -14,13 +14,9 @@ import { nodesPlugin } from '../plugins/nodes.js'
 import { spatialPlugin } from '../plugins/spatial.js'
 import { stagePlugin } from '../plugins/stage.js'
 import { viewPlugin } from '../plugins/view.js'
-import { NodeClient } from '../systems/NodeClient.js'
+import { nodeClientRuntimePlugin } from '../plugins/runtime/node-client.js'
 
-export const nodeClientRuntimePlugin = definePlugin({
-  name: '@gamedev/node-client/runtime',
-  requires: ['core'],
-  systems: [['client', NodeClient]],
-})
+export { nodeClientRuntimePlugin }
 
 export const nodeClientPreset = definePreset({
   name: '@gamedev/preset-node-client',

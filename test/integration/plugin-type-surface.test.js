@@ -51,6 +51,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
     const loaderServerHandlers = path.join(tempDir, 'loader-server-handlers.ts')
     const livekitClientOnly = path.join(tempDir, 'livekit-client-only.ts')
     const livekitServerOnly = path.join(tempDir, 'livekit-server-only.ts')
+    const runtimePlugins = path.join(tempDir, 'runtime-plugins.ts')
     const presetEnabled = path.join(tempDir, 'preset-enabled.ts')
 
     await fs.writeFile(
@@ -178,6 +179,23 @@ test('plugin and preset type surfaces gate script APIs', async () => {
     )
 
     await fs.writeFile(
+      runtimePlugins,
+      `
+        import { adminRuntimePlugin } from 'gamedev/plugins/runtime/admin'
+        import { clientRuntimePlugin } from 'gamedev/plugins/runtime/client'
+        import { nodeClientRuntimePlugin } from 'gamedev/plugins/runtime/node-client'
+        import { serverRuntimePlugin } from 'gamedev/plugins/runtime/server'
+        import { viewerRuntimePlugin } from 'gamedev/plugins/runtime/viewer'
+
+        adminRuntimePlugin.name
+        clientRuntimePlugin.name
+        nodeClientRuntimePlugin.name
+        serverRuntimePlugin.name
+        viewerRuntimePlugin.name
+      `
+    )
+
+    await fs.writeFile(
       presetEnabled,
       `
         import 'gamedev'
@@ -207,6 +225,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
     await runTsc(loaderServerHandlers)
     await runTsc(livekitClientOnly)
     await runTsc(livekitServerOnly)
+    await runTsc(runtimePlugins)
     await runTsc(presetEnabled)
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true })

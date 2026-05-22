@@ -8,6 +8,10 @@ import { adminPreset as directAdminPreset } from '@gamedev/core/presets/admin.js
 import { clientPreset as directClientPreset } from '@gamedev/core/presets/client.js'
 import { nodeClientPreset as directNodeClientPreset } from '@gamedev/core/presets/node-client.js'
 import { viewerPreset as directViewerPreset } from '@gamedev/core/presets/viewer.js'
+import { adminRuntimePlugin as adminRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/admin.js'
+import { clientRuntimePlugin as clientRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/client.js'
+import { nodeClientRuntimePlugin as nodeClientRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/node-client.js'
+import { viewerRuntimePlugin as viewerRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/viewer.js'
 import { adminPreset } from '@gamedev/core/createAdminWorld.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
@@ -56,6 +60,7 @@ import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
 import { xrClientPlugin } from '@gamedev/core/plugins/xr/client.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
 import { serverPreset as directServerPreset } from '@gamedev/server/presets/server.js'
+import { serverRuntimePlugin as serverRuntimeEntryPlugin } from '@gamedev/server/plugins/runtime/server.js'
 import { System } from '@gamedev/core/systems/System.js'
 
 class TestSystem extends System {}
@@ -508,6 +513,27 @@ test('runtime factories are preset compositions', () => {
   assert.equal(nodeClientPreset, directNodeClientPreset)
   assert.equal(viewerPreset, directViewerPreset)
   assert.equal(serverPreset, directServerPreset)
+
+  assert.equal(
+    adminPreset.plugins.find(plugin => plugin.name === '@gamedev/admin/runtime'),
+    adminRuntimeEntryPlugin
+  )
+  assert.equal(
+    clientPreset.plugins.find(plugin => plugin.name === '@gamedev/client/runtime'),
+    clientRuntimeEntryPlugin
+  )
+  assert.equal(
+    nodeClientPreset.plugins.find(plugin => plugin.name === '@gamedev/node-client/runtime'),
+    nodeClientRuntimeEntryPlugin
+  )
+  assert.equal(
+    viewerPreset.plugins.find(plugin => plugin.name === '@gamedev/viewer/runtime'),
+    viewerRuntimeEntryPlugin
+  )
+  assert.equal(
+    serverPreset.plugins.find(plugin => plugin.name === '@gamedev/server/runtime'),
+    serverRuntimeEntryPlugin
+  )
 
   assert.deepEqual(
     adminPreset.plugins.map(plugin => plugin.name),

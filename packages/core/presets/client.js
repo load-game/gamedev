@@ -1,4 +1,4 @@
-import { definePlugin, definePreset } from '../plugins.js'
+import { definePreset } from '../plugins.js'
 import { coreSystemsPlugin } from './core.js'
 import { actionsClientPlugin } from '../plugins/actions/client.js'
 import { adminClientPlugin } from '../plugins/admin/client.js'
@@ -36,13 +36,9 @@ import { uiClientPlugin } from '../plugins/ui/client.js'
 import { viewPlugin } from '../plugins/view.js'
 import { windClientPlugin } from '../plugins/wind/client.js'
 import { xrClientPlugin } from '../plugins/xr/client.js'
-import { Client } from '../systems/Client.js'
+import { clientRuntimePlugin } from '../plugins/runtime/client.js'
 
-export const clientRuntimePlugin = definePlugin({
-  name: '@gamedev/client/runtime',
-  requires: ['core', 'graphics'],
-  systems: [['client', Client]],
-})
+export { clientRuntimePlugin }
 
 export const clientPreset = definePreset({
   name: '@gamedev/preset-client',
