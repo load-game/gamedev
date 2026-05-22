@@ -10,7 +10,7 @@ import { uuid } from '../../utils.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD, RAD2DEG } from '../../extras/general.js'
 import { importApp } from './appTools.js'
-import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'
+import { buildScriptGroups, getScriptGroupMain } from './blueprintGroups.js'
 import { syncLobbyProfilePatch } from '../../profileSync.js'
 import { BUILTIN_APP_TEMPLATES } from './builtinApps.js'
 

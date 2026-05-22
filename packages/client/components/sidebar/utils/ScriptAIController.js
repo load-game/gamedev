@@ -1,6 +1,6 @@
 import { uuid } from '@gamedev/core/utils.js'
 import { isValidScriptPath } from '@gamedev/core/blueprintValidation.js'
-import { buildScriptGroups, getScriptGroupMain } from '@gamedev/core/extras/blueprintGroups.js'
+import { buildScriptGroups, getScriptGroupMain } from '@gamedev/core/plugins/builder/blueprintGroups.js'
 import { getBlueprintAppName } from '@gamedev/core/blueprintUtils.js'
 
 export function hasScriptFiles(blueprint) {

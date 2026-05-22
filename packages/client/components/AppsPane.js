@@ -25,7 +25,7 @@ import { usePane } from './usePane.js'
 import { cls } from './cls.js'
 import { orderBy } from 'lodash-es'
 import { formatBytes } from './formatBytes.js'
-import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/extras/blueprintGroups.js'
+import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/plugins/builder/blueprintGroups.js'
 
 export function AppsPane({ world, close }) {
   const paneRef = useRef()

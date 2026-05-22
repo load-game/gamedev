@@ -161,6 +161,8 @@ The UI plugin owns reticle theme validation because `world.ui.setReticle()` is a
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
+Builder/editor script grouping and unique-variant comparison helpers live with builder plugin support code. Script AI can reuse those helpers, but they are no longer root core extras.
+
 Builder-owned `.hyp` import/export helpers live with the builder plugin rather than root core extras, so packaging and drag/drop tooling can move independently from the kernel.
 
 Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. That plugin module owns the default `$scene` seed data and built-in asset source paths used by local/S3 asset bootstrap and app project scaffolding. The first-party built-in asset files live under the server built-ins plugin instead of a server runtime `world` directory.

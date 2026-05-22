@@ -5,7 +5,7 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { System } from '../../systems/System.js'
 import { isValidScriptPath } from '../../blueprintValidation.js'
-import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'
+import { buildScriptGroups, getScriptGroupMain } from '../builder/blueprintGroups.js'
 import { hashFile } from '../../utils-server.js'
 import { getBlueprintAppName } from '../../blueprintUtils.js'
 
