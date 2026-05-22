@@ -10,7 +10,7 @@ import { CurvePreview } from './CurvePreview.js'
 import { Portal } from './Portal.js'
 import { CurvePane } from './CurvePane.js'
 import { isArray } from 'lodash-es'
-import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
+import { downloadFile } from './downloadFile.js'
 import { HexColorPicker } from 'react-colorful'
 
 export function FieldText({ label, hint, placeholder, value, onChange }) {

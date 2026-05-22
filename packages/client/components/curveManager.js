@@ -1,7 +1,7 @@
 import { clamp } from 'lodash'
 import * as d3 from 'd3'
 
-import { Curve } from './Curve.js'
+import { Curve } from '@gamedev/core/extras/Curve.js'
 
 export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, yMax = 1 }) {
   const boundFirstLast = false
@@ -9,10 +9,6 @@ export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, y
     curve = new Curve()
       .add({ time: 0, value: 0, inTangent: 0, outTangent: 0 })
       .add({ time: 1, value: 1, inTangent: 0, outTangent: 0 })
-  }
-
-  const margin = {
-    right: 10,
   }
 
   const x = d3.scaleLinear().domain([0, 1]).range([0, width])
@@ -102,12 +98,12 @@ export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, y
       .attr('d', e => line(d3.ticks(0, 1, width).map(t => [x(t), y(e(t))])))
 
     g.selectAll('.tangentesCont')
-      .data(curve.keyframes, (d, i) => d.id)
+      .data(curve.keyframes, d => d.id)
       .join(enter =>
         enter
           .append('g')
           .attr('class', 'tangentesCont')
-          .each(function (d) {
+          .each(function () {
             d3.select(this)
               .append('line')
               .attr('opacity', d => (d.id === curve.firstKeyframe.id ? 0 : 1))
@@ -190,7 +186,7 @@ export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, y
   }
 
   // Updated drag functions to use D3 v6+ event handling
-  function dragstartedKey(event, d) {
+  function dragstartedKey() {
     d3.select(this).raise().attr('r', 6)
   }
 
@@ -203,7 +199,7 @@ export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, y
     update()
   }
 
-  function dragendedKey(event, d) {
+  function dragendedKey() {
     d3.select(this).raise().attr('r', 5)
     updateValue()
     update()
