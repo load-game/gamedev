@@ -156,7 +156,7 @@ export class Stage extends System {
       raw.metalnessMap = raw.metalnessMap.clone()
       textures.push(raw.metalnessMap)
     }
-    this.world.setupMaterial(raw)
+    this.world.setupMaterial?.(raw)
     const proxy = {
       get id() {
         return raw.uuid

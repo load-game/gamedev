@@ -18,6 +18,7 @@ import { chatPlugin } from '@gamedev/core/plugins/chat.js'
 import { controlsClientPlugin } from '@gamedev/core/plugins/controls/client.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
+import { environmentServerPlugin } from '@gamedev/core/plugins/environment/server.js'
 import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
 import { playerEntitiesPlugin } from '@gamedev/core/plugins/entities/player.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
@@ -682,6 +683,7 @@ test('runtime factories are preset compositions', () => {
   assert.ok(serverWorld.stage)
   assert.ok(serverWorld.network)
   assert.ok(serverWorld.environment)
+  assert.equal(typeof serverWorld.setupMaterial, 'function')
   assert.ok(serverWorld.monitor)
   assert.ok(serverWorld.chat)
   assert.ok(serverWorld.livekit)
@@ -739,6 +741,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.aiScripts, undefined)
   assert.equal(coreWorld.loader, undefined)
   assert.equal(coreWorld.environment, undefined)
+  assert.equal(coreWorld.setupMaterial, undefined)
   assert.equal(coreWorld.monitor, undefined)
   assert.equal(coreWorld.graphics, undefined)
   assert.equal(coreWorld.controls, undefined)
@@ -1090,6 +1093,13 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(storageWorld.apps.worldMethods.get({ world: storageWorld }, 'key'), 'value')
   storageWorld.apps.worldMethods.set({ world: storageWorld }, 'next', 42)
   assert.equal(storageWorld.storage.values.get('next'), 42)
+
+  const environmentWorld = new World({
+    plugins: [coreSystemsPlugin, serverRuntimeStub, environmentServerPlugin],
+  })
+  assert.ok(environmentWorld.environment)
+  assert.equal(environmentWorld.environment.plugin, '@gamedev/plugin-environment/server')
+  assert.equal(typeof environmentWorld.setupMaterial, 'function')
 
   const networkWorld = new World({
     plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],

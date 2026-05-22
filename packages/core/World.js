@@ -237,10 +237,6 @@ export class World extends EventEmitter {
     }
   }
 
-  setupMaterial = material => {
-    this.environment?.csm?.setupMaterial(material)
-  }
-
   setHot(item, hot) {
     if (hot) {
       this.hot.add(item)

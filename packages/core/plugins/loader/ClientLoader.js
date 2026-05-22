@@ -79,7 +79,7 @@ export class ClientLoader extends System {
       camera: this.world.camera,
       scene: this.world.stage.scene,
       octree: this.world.stage.octree,
-      setupMaterial: this.world.setupMaterial,
+      setupMaterial: material => this.world.setupMaterial?.(material),
       loader: this.world.loader,
     }
   }
@@ -271,7 +271,7 @@ async function loadClientAvatar(loader, url) {
   const file = await loader.loadFile(url)
   const buffer = await file.arrayBuffer()
   const glb = await loader.gltfLoader.parseAsync(buffer)
-  const factory = createVRMFactory(glb, loader.world.setupMaterial)
+  const factory = createVRMFactory(glb, material => loader.world.setupMaterial?.(material))
   const hooks = loader.vrmHooks
   const node = loader.world.createNode('group', { id: '$root' })
   const node2 = loader.world.createNode('avatar', { id: 'avatar', factory, hooks })

@@ -244,7 +244,7 @@ export class Video extends Node {
           }
         `,
       })
-      this.ctx.world.setupMaterial(material)
+      this.ctx.world.setupMaterial?.(material)
 
       let geometry
       // custom

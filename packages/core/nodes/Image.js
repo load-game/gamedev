@@ -216,7 +216,7 @@ export class Image extends Node {
         }
       `,
     })
-    this.ctx.world.setupMaterial(material)
+    this.ctx.world.setupMaterial?.(material)
     this.mesh = new THREE.Mesh(geometry, material)
     this.mesh.castShadow = this._castShadow
     this.mesh.receiveShadow = this._receiveShadow

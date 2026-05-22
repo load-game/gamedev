@@ -570,7 +570,7 @@ export class UI extends Node {
     material.depthWrite = false
     material.map = texture
     material.side = doubleside ? THREE.DoubleSide : THREE.FrontSide
-    this.ctx.world.setupMaterial(material)
+    this.ctx.world.setupMaterial?.(material)
     return material
   }
 
