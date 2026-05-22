@@ -1,5 +1,5 @@
-import * as THREE from '../../extras/three.js'
-import { Layers } from '../../extras/Layers.js'
+import * as THREE from '../../math/three.js'
+import { Layers } from '../../layers/Layers.js'
 
 const BACKWARD = new THREE.Vector3(0, 0, 1)
 

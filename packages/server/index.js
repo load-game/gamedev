@@ -50,7 +50,7 @@ import {
   createJWT,
   verifyIdentityExchangeTokenWithLobby,
 } from '@gamedev/core/utils-server.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 
 function resolveRuntimeRootDir() {
   const candidates = [path.resolve(__dirname, '..'), path.resolve(__dirname, '../..'), process.cwd()]

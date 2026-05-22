@@ -3,7 +3,7 @@ import moment from 'moment'
 import path from 'path'
 import { uuid } from '@gamedev/core/utils.js'
 import { defaults } from 'lodash-es'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { getWorldMaxPlayers } from './worldLimits.js'
 import { createDefaultWorldSeedRecords } from './plugins/builtins/server.js'
 

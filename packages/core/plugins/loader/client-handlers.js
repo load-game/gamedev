@@ -1,4 +1,4 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin } from '@pixiv/three-vrm'

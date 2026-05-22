@@ -1,5 +1,5 @@
 import { isBoolean } from 'lodash-es'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 
 import { getRef, Node } from '../../nodes/Node.js'
 

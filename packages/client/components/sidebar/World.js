@@ -2,7 +2,7 @@ import { css } from '@firebolt-dev/css'
 import { useEffect, useState } from 'react'
 import { FieldFile, FieldNumber, FieldSwitch, FieldText, FieldToggle } from '../Fields.js'
 import { useRank } from '../useRank.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { theme } from '../theme.js'
 import { Pane } from './Pane.js'
 

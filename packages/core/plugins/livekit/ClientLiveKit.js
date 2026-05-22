@@ -1,5 +1,5 @@
 import { Participant, ParticipantEvent, Room, RoomEvent, ScreenSharePresets, Track } from 'livekit-client'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 
 import { System } from '../../systems/System.js'
 import { isBoolean } from 'lodash-es'

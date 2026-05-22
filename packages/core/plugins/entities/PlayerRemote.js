@@ -1,6 +1,6 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { Entity } from '../../entities/Entity.js'
-import { hasRank, Ranks } from '../../extras/ranks.js'
+import { hasRank, Ranks } from '../../permissions/ranks.js'
 import { BufferedLerpVector3 } from '../../script-api/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../../script-api/BufferedLerpQuaternion.js'
 import { Ragdoll } from './Ragdoll.js'

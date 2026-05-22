@@ -1,4 +1,4 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../math/three.js'
 import { definePlugin } from '../plugins.js'
 
 export function installView(world) {

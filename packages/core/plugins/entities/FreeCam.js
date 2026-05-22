@@ -1,7 +1,7 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { clamp } from '../../utils.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
-import { DEG2RAD } from '../../extras/general.js'
+import { DEG2RAD } from '../../math/general.js'
 
 const MOVE_DIR = new THREE.Vector3()
 const MOVE_STEP = new THREE.Vector3()

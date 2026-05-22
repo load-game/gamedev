@@ -1,7 +1,7 @@
 import { Entity } from '../../entities/Entity.js'
 import { BufferedLerpVector3 } from '../../script-api/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../../script-api/BufferedLerpQuaternion.js'
-import { hasRank, Ranks } from '../../extras/ranks.js'
+import { hasRank, Ranks } from '../../permissions/ranks.js'
 
 export class AdminPlayerRemote extends Entity {
   constructor(world, data, local) {

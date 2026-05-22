@@ -1,6 +1,6 @@
 import { isBoolean } from 'lodash-es'
 import { System } from './System.js'
-import { Ranks } from '../extras/ranks.js'
+import { Ranks } from '../permissions/ranks.js'
 
 export class Settings extends System {
   constructor(world) {

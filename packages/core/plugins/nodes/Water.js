@@ -1,6 +1,6 @@
 import { isNumber, isString, isArray } from 'lodash-es'
 import { Water as ThreeWater } from './ThreeWater.js'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { Node } from '../../nodes/Node.js'
 
 const _rotMatrix = new THREE.Matrix4().makeRotationX(-Math.PI / 2)

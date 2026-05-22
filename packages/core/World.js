@@ -1,6 +1,6 @@
 import EventEmitter from 'eventemitter3'
 import { installWorldExtension } from './plugins.js'
-import { warn } from './extras/warn.js'
+import { warn } from './diagnostics/warn.js'
 
 export class World extends EventEmitter {
   constructor(options = {}) {

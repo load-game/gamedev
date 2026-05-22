@@ -1,10 +1,10 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { isNumber, isBoolean, isString, isFunction } from 'lodash-es'
 
-import { DEG2RAD } from '../../extras/general.js'
+import { DEG2RAD } from '../../math/general.js'
 
 import { Node } from '../../nodes/Node.js'
-import { Layers } from '../../extras/Layers.js'
+import { Layers } from '../../layers/Layers.js'
 
 const layers = ['environment', 'prop', 'player', 'tool']
 

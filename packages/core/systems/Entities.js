@@ -1,4 +1,4 @@
-import { warn } from '../extras/warn.js'
+import { warn } from '../diagnostics/warn.js'
 import { System } from './System.js'
 
 /**

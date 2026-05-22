@@ -1,5 +1,5 @@
 import { fillRoundRect } from '../nodes/roundRect.js'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
 import { System } from '../../systems/System.js'
 

@@ -1,8 +1,8 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { isBoolean, isNumber, isString, isArray, isEqual } from 'lodash-es'
 
 import { Node } from '../../nodes/Node.js'
-import { Layers } from '../../extras/Layers.js'
+import { Layers } from '../../layers/Layers.js'
 import { geometryToPxMesh } from './geometryToPxMesh.js'
 
 const defaults = {

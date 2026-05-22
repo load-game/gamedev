@@ -1,10 +1,10 @@
 import moment from 'moment'
 import { isArray, isFunction } from 'lodash-es'
-import * as THREE from '../extras/three.js'
+import * as THREE from '../math/three.js'
 
 import { System } from './System.js'
 import { getRef } from '../nodes/Node.js'
-import { warn } from '../extras/warn.js'
+import { warn } from '../diagnostics/warn.js'
 
 const internalEvents = [
   'fixedUpdate',

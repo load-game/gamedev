@@ -1,8 +1,8 @@
 import { System } from './System.js'
 import { parse as acornParse } from 'acorn'
 
-import * as THREE from '../extras/three.js'
-import { DEG2RAD, RAD2DEG } from '../extras/general.js'
+import * as THREE from '../math/three.js'
+import { DEG2RAD, RAD2DEG } from '../math/general.js'
 import { clamp, num, uuid } from '../utils.js'
 import { LerpVector3 } from '../script-api/LerpVector3.js'
 import { LerpQuaternion } from '../script-api/LerpQuaternion.js'

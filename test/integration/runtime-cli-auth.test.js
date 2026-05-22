@@ -6,7 +6,7 @@ import WebSocket from 'ws'
 import Database from 'better-sqlite3'
 
 import { readPacket, writePacket } from '@gamedev/core/packets.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { buildRuntimeBootstrapAuthorization } from '@gamedev/server/runtimeBootstrap.js'
 import { AdminWsClient, fetchJson, startStandbyRuntimeServer, startWorldServer, waitFor } from './helpers.js'
 

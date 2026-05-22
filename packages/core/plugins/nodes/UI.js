@@ -1,4 +1,4 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 import Yoga from 'yoga-layout'
 

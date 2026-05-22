@@ -1,5 +1,5 @@
 import { isNumber, isString } from 'lodash-es'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { Node } from '../../nodes/Node.js'
 
 const defaults = {

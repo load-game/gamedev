@@ -1,6 +1,6 @@
 import { isBoolean, isNumber, isString } from 'lodash-es'
 import { Node } from '../../nodes/Node.js'
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
 
 const fits = ['none', 'cover', 'contain']

@@ -1,7 +1,7 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { extendThreePhysX } from './physx/extendThreePhysX.js'
 import { System } from '../../systems/System.js'
-import { Layers } from '../../extras/Layers.js'
+import { Layers } from '../../layers/Layers.js'
 import { loadPhysX } from './physx/loadPhysX.js'
 
 const _raycastHit = {

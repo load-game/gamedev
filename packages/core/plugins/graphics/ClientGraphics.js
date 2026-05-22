@@ -1,4 +1,4 @@
-import * as THREE from '../../extras/three.js'
+import * as THREE from '../../math/three.js'
 import { N8AOPostPass } from 'n8ao'
 import {
   EffectComposer,
