@@ -4,11 +4,9 @@ import { definePlugin } from '../plugins.js'
 import { Layers } from '../extras/Layers.js'
 import { Anchors } from '../systems/Anchors.js'
 import { Avatars } from '../systems/Avatars.js'
-import { Animation } from '../systems/Animation.js'
 import { Physics } from '../systems/Physics.js'
-import { Stage } from '../systems/Stage.js'
 
-export { Anchors, Avatars, Animation, Physics, Stage }
+export { Anchors, Avatars, Physics }
 
 const raycastHits = new WeakMap()
 
@@ -69,14 +67,12 @@ export const spatialScriptApi = {
 
 export const spatialPlugin = definePlugin({
   name: '@gamedev/plugin-spatial',
-  requires: ['core', 'apps', 'entities', 'view'],
+  requires: ['core', 'apps', 'entities'],
   provides: ['spatial'],
   systems: [
     ['anchors', Anchors],
     ['avatars', Avatars],
-    ['animation', Animation],
     ['physics', Physics],
-    ['stage', Stage],
   ],
   scripts: spatialScriptApi,
 })

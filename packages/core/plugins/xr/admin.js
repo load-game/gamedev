@@ -5,7 +5,7 @@ export { AdminXR }
 
 export const xrAdminPlugin = definePlugin({
   name: '@gamedev/plugin-xr/admin',
-  requires: ['core'],
+  requires: ['core', 'view'],
   provides: ['@gamedev/plugin-xr', 'xr'],
   systems: [['xr', AdminXR]],
 })

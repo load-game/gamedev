@@ -5,7 +5,7 @@ export { Nametags }
 
 export const nametagsClientPlugin = definePlugin({
   name: '@gamedev/plugin-nametags/client',
-  requires: ['core', 'client', 'stage'],
+  requires: ['core', 'client', 'stage', 'view'],
   provides: ['@gamedev/plugin-nametags', 'nametags'],
   systems: [['nametags', Nametags]],
 })

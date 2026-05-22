@@ -34,6 +34,7 @@
     "index.node-client.d.ts",
     "index.plugin-actions-client.d.ts",
     "index.plugin-admin-client.d.ts",
+    "index.plugin-animation.d.ts",
     "index.plugin-ai-client.d.ts",
     "index.plugin-ai-server.d.ts",
     "index.plugin-audio-client.d.ts",
@@ -72,6 +73,7 @@
     "index.plugin-prefs-client.d.ts",
     "index.plugin-snaps-client.d.ts",
     "index.plugin-spatial.d.ts",
+    "index.plugin-stage.d.ts",
     "index.plugin-storage.d.ts",
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
@@ -122,6 +124,12 @@
       "import": "./packages/core/plugins/admin/client.js",
       "require": "./packages/core/plugins/admin/client.js",
       "default": "./packages/core/plugins/admin/client.js"
+    },
+    "./plugins/animation": {
+      "types": "./index.plugin-animation.d.ts",
+      "import": "./packages/core/plugins/animation.js",
+      "require": "./packages/core/plugins/animation.js",
+      "default": "./packages/core/plugins/animation.js"
     },
     "./plugins/ai/client": {
       "types": "./index.plugin-ai-client.d.ts",
@@ -344,6 +352,12 @@
       "import": "./packages/core/plugins/spatial.js",
       "require": "./packages/core/plugins/spatial.js",
       "default": "./packages/core/plugins/spatial.js"
+    },
+    "./plugins/stage": {
+      "types": "./index.plugin-stage.d.ts",
+      "import": "./packages/core/plugins/stage.js",
+      "require": "./packages/core/plugins/stage.js",
+      "default": "./packages/core/plugins/stage.js"
     },
     "./plugins/storage": {
       "types": "./index.plugin-storage.d.ts",

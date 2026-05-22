@@ -2,6 +2,7 @@ import { definePlugin, definePreset } from '../plugins.js'
 import { coreSystemsPlugin } from './core.js'
 import { actionsClientPlugin } from '../plugins/actions/client.js'
 import { adminClientPlugin } from '../plugins/admin/client.js'
+import { animationPlugin } from '../plugins/animation.js'
 import { audioClientPlugin } from '../plugins/audio/client.js'
 import { builderAdminPlugin } from '../plugins/builder/admin.js'
 import { browserClientPlugin } from '../plugins/browser/client.js'
@@ -24,6 +25,7 @@ import { pointerClientPlugin } from '../plugins/pointer/client.js'
 import { prefsClientPlugin } from '../plugins/prefs/client.js'
 import { snapsClientPlugin } from '../plugins/snaps/client.js'
 import { spatialPlugin } from '../plugins/spatial.js'
+import { stagePlugin } from '../plugins/stage.js'
 import { statsClientPlugin } from '../plugins/stats/client.js'
 import { targetClientPlugin } from '../plugins/target/client.js'
 import { uiClientPlugin } from '../plugins/ui/client.js'
@@ -64,7 +66,9 @@ export const adminPreset = definePreset({
     logsPlugin,
     nodesPlugin,
     viewPlugin,
+    animationPlugin,
     spatialPlugin,
+    stagePlugin,
     chatPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,

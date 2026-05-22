@@ -5,7 +5,7 @@ export { ClientAudio }
 
 export const audioClientPlugin = definePlugin({
   name: '@gamedev/plugin-audio/client',
-  requires: ['core', 'client', 'prefs'],
+  requires: ['core', 'client', 'prefs', 'view'],
   provides: ['@gamedev/plugin-audio', 'audio'],
   systems: [['audio', ClientAudio]],
 })

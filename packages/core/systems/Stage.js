@@ -36,7 +36,9 @@ export class Stage extends System {
 
   init({ viewport }) {
     this.viewport = viewport
-    this.scene.add(this.world.rig)
+    if (this.world.rig) {
+      this.scene.add(this.world.rig)
+    }
   }
 
   update(delta) {
@@ -221,6 +223,7 @@ export class Stage extends System {
 
   raycastPointer(position, layers = this.maskNone, min = 0, max = Infinity) {
     if (!this.viewport) throw new Error('no viewport')
+    if (!this.world.camera) throw new Error('no camera')
     const rect = this.viewport.getBoundingClientRect()
     vec2.x = ((position.x - rect.left) / rect.width) * 2 - 1
     vec2.y = -((position.y - rect.top) / rect.height) * 2 + 1
@@ -235,6 +238,7 @@ export class Stage extends System {
 
   raycastReticle(layers = this.maskNone, min = 0, max = Infinity) {
     if (!this.viewport) throw new Error('no viewport')
+    if (!this.world.camera) throw new Error('no camera')
     vec2.x = 0
     vec2.y = 0
     this.raycaster.setFromCamera(vec2, this.world.camera)
@@ -247,7 +251,6 @@ export class Stage extends System {
   }
 
   raycast(origin, direction, layers = this.maskNone, min = 0, max = Infinity) {
-    if (!this.viewport) throw new Error('no viewport')
     vec2.x = 0
     vec2.y = 0
     this.raycaster.set(origin, direction)

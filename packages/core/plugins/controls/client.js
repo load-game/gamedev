@@ -22,7 +22,7 @@ export const controlsClientScriptApi = {
 
 export const controlsClientPlugin = definePlugin({
   name: '@gamedev/plugin-controls/client',
-  requires: ['core'],
+  requires: ['core', 'view'],
   provides: ['@gamedev/plugin-controls', 'controls'],
   systems: [['controls', ClientControls]],
   scripts: controlsClientScriptApi,

@@ -59,6 +59,7 @@ Preset modules are exported directly as `gamedev/presets/client`, `gamedev/prese
 import { definePreset } from 'gamedev/plugins'
 import { actionsClientPlugin } from 'gamedev/plugins/actions/client'
 import { adminClientPlugin } from 'gamedev/plugins/admin/client'
+import { animationPlugin } from 'gamedev/plugins/animation'
 import { aiClientPlugin } from 'gamedev/plugins/ai/client'
 import { audioClientPlugin } from 'gamedev/plugins/audio/client'
 import { browserClientPlugin } from 'gamedev/plugins/browser/client'
@@ -84,6 +85,7 @@ import { pointerClientPlugin } from 'gamedev/plugins/pointer/client'
 import { prefsClientPlugin } from 'gamedev/plugins/prefs/client'
 import { snapsClientPlugin } from 'gamedev/plugins/snaps/client'
 import { spatialPlugin } from 'gamedev/plugins/spatial'
+import { stagePlugin } from 'gamedev/plugins/stage'
 import { statsClientPlugin } from 'gamedev/plugins/stats/client'
 import { targetClientPlugin } from 'gamedev/plugins/target/client'
 import { uiClientPlugin } from 'gamedev/plugins/ui/client'
@@ -99,7 +101,9 @@ export const clientPreset = definePreset({
     logsPlugin,
     nodesPlugin,
     viewPlugin,
+    animationPlugin,
     spatialPlugin,
+    stagePlugin,
     chatPlugin,
     prefsClientPlugin,
     graphicsClientPlugin,
@@ -136,7 +140,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The view plugin owns the default Three.js `world.rig` and `world.camera`. The entity plugins own concrete app and player entity construction. The loader plugins own concrete asset handlers such as `loader:model`, `loader:avatar`, `loader:script`, and client-only handlers such as `loader:video` and `loader:splat`. The spatial plugin owns anchors, avatars, animation, physics, stage, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`. The environment plugins own material setup hooks such as `world.setupMaterial`, so worlds without environment support do not carry CSM-specific material plumbing. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, view/camera, app entities, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, entity constructors, node constructors, loader types, and script APIs do not exist.
+The default client and server presets include the first-party logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The view plugin owns the default Three.js `world.rig` and `world.camera`. The entity plugins own concrete app and player entity construction. The loader plugins own concrete asset handlers such as `loader:model`, `loader:avatar`, `loader:script`, and client-only handlers such as `loader:video` and `loader:splat`. The spatial plugin owns anchors, avatars, physics, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`; camera-distance app throttling and the scene/octree stage are owned by `gamedev/plugins/animation` and `gamedev/plugins/stage` respectively. The environment plugins own material setup hooks such as `world.setupMaterial`, so worlds without environment support do not carry CSM-specific material plumbing. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, view/camera, app entities, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, entity constructors, node constructors, loader types, and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
