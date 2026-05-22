@@ -68,7 +68,9 @@ Requires the nodes plugin (`gamedev/plugins/nodes`) to register the built-in nod
 
 ### `.asset(relativePath)`: String
 
-Resolves relative asset paths to absolute URLs that can be used to load app assets like images, models, or audio files.
+Requires the app entities plugin (`gamedev/plugins/entities/app`) or a preset that includes it.
+
+Resolves relative asset paths from the app blueprint `assetMap` to absolute URLs that can be used to load app assets like images, models, or audio files. Returns an empty string when the asset is not mapped.
 
 **Example:**
 ```javascript

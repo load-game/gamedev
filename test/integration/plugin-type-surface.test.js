@@ -69,6 +69,9 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         // @ts-expect-error concrete node names are provided by the nodes plugin
         app.create('prim', { color: '#fff' })
 
+        // @ts-expect-error app asset resolution is provided by the app entities plugin
+        app.asset('./assets/sprite.png')
+
         // @ts-expect-error controls are provided by the controls client plugin
         app.control()
 
@@ -91,6 +94,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
       `
         import 'gamedev'
         import 'gamedev/plugins/controls/client'
+        import 'gamedev/plugins/entities/app'
         import 'gamedev/plugins/entities/player'
         import 'gamedev/plugins/livekit/client'
         import 'gamedev/plugins/livekit/server'
@@ -98,6 +102,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
 
         const prim = app.create('prim', { type: 'box', color: '#fff' })
         prim.color = '#000'
+        app.asset('./assets/sprite.png')
 
         const controls = app.control()
         controls.keyW.down
@@ -149,6 +154,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         import 'gamedev/presets/server'
 
         app.create('ui', { width: 320, height: 180 })
+        app.asset('./assets/sprite.png')
         app.control().pointer.lock()
 
         world.set('score', 10)

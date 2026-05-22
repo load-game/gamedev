@@ -762,6 +762,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldGetters.isClient, undefined)
   assert.equal(coreWorld.apps.worldGetters.networkId, undefined)
   assert.equal(coreWorld.apps.worldMethods.getTime, undefined)
+  assert.equal(coreWorld.apps.appMethods.asset, undefined)
   assert.equal(coreWorld.apps.appMethods.send, undefined)
   assert.equal(coreWorld.apps.appMethods.sendTo, undefined)
   assert.equal(coreWorld.apps.appMethods.control, undefined)
@@ -826,7 +827,34 @@ test('feature APIs only appear when their plugins are selected', () => {
     plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, appEntityPlugin],
   })
   assert.equal(appEntityWorld.pluginCapabilities.has('entity:app'), true)
+  assert.equal(appEntityWorld.pluginCapabilities.has('script:app.asset'), true)
   assert.equal(appEntityWorld.entityTypes.has('app'), true)
+  assert.equal(typeof appEntityWorld.apps.appMethods.asset, 'function')
+  appEntityWorld.assetsUrl = 'https://assets.example.test/assets'
+  assert.equal(
+    appEntityWorld.apps.appMethods.asset(
+      {
+        world: appEntityWorld,
+        blueprint: {
+          assetMap: {
+            'assets/sprite.png': 'asset://sprite.hash.png',
+          },
+        },
+      },
+      './assets/sprite.png?frame=1'
+    ),
+    'https://assets.example.test/assets/sprite.hash.png?frame=1'
+  )
+  assert.equal(
+    appEntityWorld.apps.appMethods.asset(
+      {
+        world: appEntityWorld,
+        blueprint: { assetMap: {} },
+      },
+      './assets/missing.png'
+    ),
+    ''
+  )
 
   const playerEntityWorld = new World({
     plugins: [

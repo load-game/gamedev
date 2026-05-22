@@ -82,6 +82,19 @@ function rewriteBlueprintUrls(blueprint, urlMap) {
       blueprint.scriptFiles = nextFiles
     }
   }
+  const assetMap = blueprint.assetMap
+  if (assetMap && typeof assetMap === 'object' && !Array.isArray(assetMap)) {
+    let changed = false
+    const nextMap = {}
+    for (const [relPath, url] of Object.entries(assetMap)) {
+      const nextUrl = rewrite(url)
+      if (nextUrl !== url) changed = true
+      nextMap[relPath] = nextUrl
+    }
+    if (changed) {
+      blueprint.assetMap = nextMap
+    }
+  }
   const props = blueprint.props
   if (props && typeof props === 'object' && !Array.isArray(props)) {
     for (const [key, value] of Object.entries(props)) {
@@ -286,6 +299,13 @@ export async function exportApp(blueprint, resolveFile, resolveBlueprint) {
     for (const url of Object.values(scriptFiles)) {
       if (!url || typeof url !== 'string') continue
       await addAsset({ type: 'script', url })
+    }
+  }
+  const assetMap = safeBlueprint.assetMap
+  if (assetMap && typeof assetMap === 'object' && !Array.isArray(assetMap)) {
+    for (const url of Object.values(assetMap)) {
+      if (!url || typeof url !== 'string') continue
+      await addAsset({ type: inferAssetType(url) || 'file', url })
     }
   }
 

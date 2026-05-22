@@ -101,6 +101,46 @@ function getWorldStatusDiscoveryTimeoutMs() {
   return readTimeoutMs('WORLD_ADMIN_REQUEST_TIMEOUT_MS', DEFAULT_WORLD_STATUS_DISCOVERY_TIMEOUT_MS)
 }
 
+function normalizeAssetMapPath(value) {
+  if (typeof value !== 'string') return null
+  let normalized = normalizeAssetPath(value).trim()
+  while (normalized.startsWith('./')) normalized = normalized.slice(2)
+  if (!normalized || normalized.startsWith('../') || normalized.includes('/../')) return null
+  return normalized
+}
+
+function normalizeAssetMap(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const out = {}
+  for (const [key, assetUrl] of Object.entries(value)) {
+    const normalizedKey = normalizeAssetMapPath(key)
+    if (!normalizedKey || typeof assetUrl !== 'string' || !assetUrl.trim()) continue
+    out[normalizedKey] = normalizeAssetPath(assetUrl.trim())
+  }
+  return out
+}
+
+function isScriptResolvableAssetUrl(value) {
+  if (typeof value !== 'string') return false
+  return (
+    value.startsWith('asset://') ||
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('blob:') ||
+    value.startsWith('data:') ||
+    value.startsWith('//') ||
+    value.startsWith('/')
+  )
+}
+
+function recordAssetMapEntry(assetMap, sourceUrl, resolvedUrl) {
+  const key = normalizeAssetMapPath(sourceUrl)
+  if (!key || !key.startsWith('assets/')) return
+  const value = typeof resolvedUrl === 'string' ? normalizeAssetPath(resolvedUrl.trim()) : ''
+  if (!isScriptResolvableAssetUrl(value)) return
+  assetMap[key] = value
+}
+
 export class DirectAppServer {
   constructor({ worldUrl, adminCode, authToken, worldId = null, rootDir = process.cwd() }) {
     this.rootDir = rootDir
@@ -4300,18 +4340,37 @@ export class DirectAppServer {
 
   async _resolveLocalBlueprintToAssetUrls(cfg, { upload = true, current = null } = {}) {
     const out = { ...cfg }
+    const assetMap = normalizeAssetMap(out.assetMap)
+    const currentAssetMap = normalizeAssetMap(current?.assetMap)
+    const shouldRecordAssetMap = upload || Object.keys(assetMap).length > 0
+
+    const resolveBlueprintAsset = async (url, options = {}) => {
+      const resolved = await this._resolveLocalAssetToWorldUrl(url, options)
+      if (shouldRecordAssetMap) {
+        recordAssetMapEntry(assetMap, url, resolved)
+      }
+      return resolved
+    }
+
+    for (const [key, value] of Object.entries(assetMap)) {
+      assetMap[key] = await this._resolveLocalAssetToWorldUrl(value, {
+        upload,
+        existingUrl: currentAssetMap[key] || null,
+      })
+    }
 
     if (typeof out.model === 'string') {
-      out.model = await this._resolveLocalAssetToWorldUrl(out.model, {
+      out.model = await resolveBlueprintAsset(out.model, {
         upload,
         existingUrl: typeof current?.model === 'string' ? current.model : null,
       })
     }
 
     if (out.image && typeof out.image === 'object' && typeof out.image.url === 'string') {
+      const imageUrl = out.image.url
       out.image = {
         ...out.image,
-        url: await this._resolveLocalAssetToWorldUrl(out.image.url, {
+        url: await resolveBlueprintAsset(imageUrl, {
           upload,
           existingUrl: getExistingAssetUrl(current?.image),
         }),
@@ -4325,9 +4384,10 @@ export class DirectAppServer {
       for (const [k, v] of Object.entries(out.props)) {
         if (v && typeof v === 'object' && typeof v.url === 'string') {
           const existingValue = existingProps[k]
+          const propUrl = v.url
           nextProps[k] = {
             ...v,
-            url: await this._resolveLocalAssetToWorldUrl(v.url, {
+            url: await resolveBlueprintAsset(propUrl, {
               upload,
               existingUrl: getExistingAssetUrl(existingValue),
             }),
@@ -4337,6 +4397,12 @@ export class DirectAppServer {
         }
       }
       out.props = nextProps
+    }
+
+    if (Object.keys(assetMap).length) {
+      out.assetMap = assetMap
+    } else {
+      delete out.assetMap
     }
 
     return out
@@ -5064,6 +5130,16 @@ export class DirectAppServer {
         this._scheduleDeployBlueprint(info.id)
         continue
       }
+      const assetMap = normalizeAssetMap(cfg.assetMap)
+      let matchedAssetMap = false
+      for (const [key, value] of Object.entries(assetMap)) {
+        if (key === assetRelPath || normalizeAssetMapPath(value) === assetRelPath) {
+          this._scheduleDeployBlueprint(info.id)
+          matchedAssetMap = true
+          break
+        }
+      }
+      if (matchedAssetMap) continue
       const props = cfg.props && typeof cfg.props === 'object' ? cfg.props : {}
       for (const value of Object.values(props)) {
         if (value && typeof value === 'object' && normalizeAssetPath(value.url) === assetRelPath) {

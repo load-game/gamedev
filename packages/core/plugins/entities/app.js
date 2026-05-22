@@ -1,7 +1,9 @@
 import { definePlugin } from '../../plugins.js'
 import { App } from '../../entities/App.js'
+import { appEntityScriptApi } from './appScriptApi.js'
 
 export { App }
+export { appEntityScriptApi }
 
 export const appEntityPlugin = definePlugin({
   name: '@gamedev/plugin-entities/app',
@@ -21,4 +23,5 @@ export const appEntityPlugin = definePlugin({
   entities: {
     app: App,
   },
+  scripts: appEntityScriptApi,
 })

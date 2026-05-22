@@ -1,5 +1,6 @@
 import './index.plugin-chat.d.ts'
 import './index.plugin-controls-client.d.ts'
+import './index.plugin-entities-app.d.ts'
 import './index.plugin-entities-player.d.ts'
 import './index.plugin-loader-server.d.ts'
 import './index.plugin-network-client.d.ts'

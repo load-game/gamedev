@@ -1,6 +1,7 @@
 import './index.plugin-browser-client.d.ts'
 import './index.plugin-chat.d.ts'
 import './index.plugin-controls-client.d.ts'
+import './index.plugin-entities-app.d.ts'
 import './index.plugin-entities-player.d.ts'
 import './index.plugin-evm.d.ts'
 import './index.plugin-hyperliquid.d.ts'

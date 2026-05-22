@@ -10,6 +10,7 @@ import { isValidScriptPath } from '../core/blueprintValidation.js'
 export const BLUEPRINT_FIELDS = [
   'model',
   'image',
+  'assetMap',
   'props',
   'preload',
   'public',
