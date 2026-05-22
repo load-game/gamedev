@@ -333,9 +333,9 @@
     },
     "./plugins/network/client": {
       "types": "./index.plugin-network-client.d.ts",
-      "import": "./packages/core/plugins/network/client.js",
-      "require": "./packages/core/plugins/network/client.js",
-      "default": "./packages/core/plugins/network/client.js"
+      "import": "./packages/plugins/network/client.js",
+      "require": "./packages/plugins/network/client.js",
+      "default": "./packages/plugins/network/client.js"
     },
     "./plugins/network/server": {
       "types": "./index.plugin-network-server.d.ts",

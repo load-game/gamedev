@@ -1,5 +1,5 @@
 import { definePlugin } from '@gamedev/core/plugins.js'
-import { networkScriptApi } from '@gamedev/core/plugins/network/scriptApi.js'
+import { networkScriptApi } from '../../../plugins/network/scriptApi.js'
 import { ServerNetwork } from './ServerNetwork.js'
 
 export { ServerNetwork, networkScriptApi }

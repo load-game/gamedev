@@ -175,7 +175,7 @@ Client-only UI helpers such as file download, byte formatting, and curve editing
 
 The UI plugin owns reticle theme validation because `world.ui.setReticle()` is available only when the selected preset installs UI support.
 
-Admin client tooling, the admin network bridge, admin XR no-op, builder client/admin tooling, and builder-owned built-in app templates live outside `@gamedev/core`. The templates are exported from `gamedev/plugins/builder/builtins` and are intentionally no longer part of the core kernel surface.
+Admin client tooling, the client/admin network bridges, admin XR no-op, builder client/admin tooling, and builder-owned built-in app templates live outside `@gamedev/core`. The templates are exported from `gamedev/plugins/builder/builtins` and are intentionally no longer part of the core kernel surface.
 
 Builder/editor script grouping and unique-variant comparison helpers live with builder plugin support code. Script AI can reuse those helpers, but they are no longer root core extras.
 

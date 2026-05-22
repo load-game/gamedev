@@ -1,6 +1,6 @@
 import { definePlugin } from '../../core/plugins.js'
 import { AdminNetwork } from './AdminNetwork.js'
-import { networkScriptApi } from '../../core/plugins/network/scriptApi.js'
+import { networkScriptApi } from './scriptApi.js'
 
 export { AdminNetwork, networkScriptApi }
 
