@@ -1,4 +1,4 @@
-import * as THREE from './three.js'
+import * as THREE from '../../extras/three.js'
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 const cache = new Map() // id -> { id, pmesh, refs }
@@ -114,8 +114,7 @@ export function geometryToPxMesh(world, geometry, convex) {
     try {
       pmesh = PHYSX.CreateTriangleMesh(cookingParams, desc)
     } catch (err) {
-      console.error('geometryToPxMesh failed...')
-      console.error(err)
+      world.logs?.add('geometry', 'error', ['geometryToPxMesh failed', err])
     } finally {
       PHYSX._webidl_free(indexPtr)
     }

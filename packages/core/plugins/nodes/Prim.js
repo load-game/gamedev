@@ -3,7 +3,7 @@ import { isBoolean, isNumber, isString, isArray, isEqual } from 'lodash-es'
 
 import { Node } from '../../nodes/Node.js'
 import { Layers } from '../../extras/Layers.js'
-import { geometryToPxMesh } from '../../extras/geometryToPxMesh.js'
+import { geometryToPxMesh } from './geometryToPxMesh.js'
 
 const defaults = {
   type: 'box',
