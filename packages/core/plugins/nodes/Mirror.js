@@ -1,7 +1,7 @@
 import { isNumber, isString } from 'lodash-es'
 import { Node } from '../../nodes/Node.js'
 import * as THREE from '../../extras/three.js'
-import { Reflector } from '../../extras/Reflector.js'
+import { Reflector } from './Reflector.js'
 
 const defaults = {
   width: 2,

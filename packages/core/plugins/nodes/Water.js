@@ -1,5 +1,5 @@
 import { isNumber, isString, isArray } from 'lodash-es'
-import { Water as ThreeWater } from '../../extras/ThreeWater.js'
+import { Water as ThreeWater } from './ThreeWater.js'
 import * as THREE from '../../extras/three.js'
 import { Node } from '../../nodes/Node.js'
 
