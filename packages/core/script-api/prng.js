@@ -5,7 +5,8 @@
  * and modernized to work with newer build tools and ES6+
  */
 
-const DEFAULT_SEED = 149304961039362642461
+// 31-bit register seed derived from the legacy default seed.
+const DEFAULT_SEED = 46104576
 const REGISTER_LENGTH = 31
 const FLUSH_TIMES = 20
 
@@ -160,8 +161,7 @@ class LFSR {
     this.register = seed & mask
   }
   shift() {
-    let tapsNum = this.taps.length
-    let i
+    const tapsNum = this.taps.length
     let bit = this.register >> (this.n - this.taps[0])
     for (let i = 1; i < tapsNum; i++) {
       bit = bit ^ (this.register >> (this.n - this.taps[i]))

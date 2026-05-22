@@ -1,7 +1,7 @@
 import { clamp } from 'lodash'
 import * as d3 from 'd3'
 
-import { Curve } from '@gamedev/core/extras/Curve.js'
+import { Curve } from '@gamedev/core/script-api/Curve.js'
 
 export function curveManager({ curve, width, height, xLabel, yLabel, yMin = 0, yMax = 1 }) {
   const boundFirstLast = false

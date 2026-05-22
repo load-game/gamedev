@@ -6,7 +6,7 @@ import { hashFile } from '@gamedev/core/utils-client.js'
 import { LoaderIcon, XIcon } from 'lucide-react'
 import { downloadFile } from './downloadFile.js'
 import { CurvePreview } from './CurvePreview.js'
-import { Curve } from '@gamedev/core/extras/Curve.js'
+import { Curve } from '@gamedev/core/script-api/Curve.js'
 import { Portal } from './Portal.js'
 import { CurvePane } from './CurvePane.js'
 
