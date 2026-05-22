@@ -153,6 +153,8 @@ Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. 
 
 Client-side local persistence used by first-party runtime plugins lives under `@gamedev/core/plugins/storage/local.js`. The kernel-level storage script API remains the `storagePlugin`; concrete browser/local fallback behavior is plugin support code rather than a root core module.
 
+The PhysX loader and generated webidl artifacts live under the spatial plugin. They are copied into build output as runtime assets, but they are no longer root `@gamedev/core` modules.
+
 ## Script APIs
 
 Plugins can expose script-facing APIs through `scripts`. Contributions are validated when the plugin is defined. Collisions are rejected before the plugin mutates the world, and each contribution is also available as a capability such as `script:world.load`, `script:world.evm`, or `script:player.evm`. Other plugins can list those capability names in `requires`.

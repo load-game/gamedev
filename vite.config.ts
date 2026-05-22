@@ -11,10 +11,13 @@ const packageJson = JSON.parse(fs.readFileSync(fromRoot('./package.json'), 'utf-
 const externalPackages = Object.keys(packageJson.dependencies ?? {}).filter(name => !name.startsWith('@gamedev/'))
 
 const runtimeCopy = [
-  { from: 'packages/core/physx-js-webidl.js', to: 'build' },
-  { from: 'packages/core/physx-js-webidl.wasm', to: 'build' },
+  { from: 'packages/core/plugins/spatial/physx/physx-js-webidl.js', to: 'build' },
+  { from: 'packages/core/plugins/spatial/physx/physx-js-webidl.wasm', to: 'build' },
 ]
-const serverRuntimeCopy = [...runtimeCopy, { from: 'packages/core/physx-js-webidl.wasm', to: 'build/server-chunks' }]
+const serverRuntimeCopy = [
+  ...runtimeCopy,
+  { from: 'packages/core/plugins/spatial/physx/physx-js-webidl.wasm', to: 'build/server-chunks' },
+]
 
 export default defineConfig({
   plugins: [
@@ -44,8 +47,8 @@ export default defineConfig({
       '.codex-status/**',
       'node_modules/**',
       'packages/core/libs/**',
-      'packages/core/physx-js-webidl.js',
-      'packages/core/physx-js-webidl.wasm',
+      'packages/core/plugins/spatial/physx/physx-js-webidl.js',
+      'packages/core/plugins/spatial/physx/physx-js-webidl.wasm',
     ],
     rules: {
       'no-console': 'warn',
@@ -59,8 +62,8 @@ export default defineConfig({
       '.codex-status/**',
       'node_modules/**',
       'packages/core/libs/**',
-      'packages/core/physx-js-webidl.js',
-      'packages/core/physx-js-webidl.wasm',
+      'packages/core/plugins/spatial/physx/physx-js-webidl.js',
+      'packages/core/plugins/spatial/physx/physx-js-webidl.wasm',
     ],
     semi: false,
     singleQuote: true,
