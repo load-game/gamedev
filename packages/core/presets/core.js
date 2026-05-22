@@ -29,7 +29,6 @@ const coreScriptApiCapabilities = [
   'script:app.off',
   'script:app.emit',
   'script:app.create',
-  'script:app.control',
   'script:app.configure',
 ]
 

@@ -4,7 +4,6 @@ import * as THREE from '../extras/three.js'
 
 import { System } from './System.js'
 import { getRef } from '../nodes/Node.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { warn } from '../extras/warn.js'
 
 const internalEvents = [
@@ -168,17 +167,6 @@ export class Apps extends System {
       create(entity, name, data) {
         const node = entity.createNode(name, data)
         return node.getProxy()
-      },
-      control(entity, options) {
-        entity.control?.release()
-        // TODO: only allow on user interaction
-        // TODO: show UI with a button to release()
-        entity.control = world.controls.bind({
-          ...options,
-          priority: ControlPriorities.APP,
-          object: entity,
-        })
-        return entity.control
       },
       configure(entity, fnOrArray) {
         if (isArray(fnOrArray)) {

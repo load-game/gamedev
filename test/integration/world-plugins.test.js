@@ -657,6 +657,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.getTime, undefined)
   assert.equal(coreWorld.apps.appMethods.send, undefined)
   assert.equal(coreWorld.apps.appMethods.sendTo, undefined)
+  assert.equal(coreWorld.apps.appMethods.control, undefined)
   assert.equal(coreWorld.apps.worldMethods.get, undefined)
   assert.equal(coreWorld.apps.worldMethods.commitStorage, undefined)
   assert.equal(coreWorld.apps.worldMethods.chat, undefined)
@@ -825,6 +826,8 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(controlsWorld.controls)
   assert.equal(controlsWorld.controls.plugin, '@gamedev/plugin-controls/client')
+  assert.equal(controlsWorld.pluginCapabilities.has('script:app.control'), true)
+  assert.equal(typeof controlsWorld.apps.appMethods.control, 'function')
 
   const storageWorld = new World({
     plugins: [coreSystemsPlugin, storagePlugin],
