@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 
 /**
  * Avatars System

@@ -1,8 +1,8 @@
-import * as THREE from '../extras/three.js'
-import { extendThreePhysX } from '../extras/extendThreePhysX.js'
-import { System } from './System.js'
-import { Layers } from '../extras/Layers.js'
-import { loadPhysX } from '../loadPhysX.js'
+import * as THREE from '../../extras/three.js'
+import { extendThreePhysX } from '../../extras/extendThreePhysX.js'
+import { System } from '../../systems/System.js'
+import { Layers } from '../../extras/Layers.js'
+import { loadPhysX } from '../../loadPhysX.js'
 
 const _raycastHit = {
   actor: null,
@@ -22,12 +22,12 @@ const _overlapHit = {
   actor: null,
 }
 
-const triggerResult = {
-  tag: null,
-}
-
 const overlapHitPool = []
 const overlapHits = []
+
+function reportPhysicsError(world, ...args) {
+  world.logs?.add('physics', 'error', args)
+}
 
 /**
  * Physics System
@@ -58,6 +58,7 @@ export class Physics extends System {
     this.defaultMaterial = this.physics.createMaterial(0.2, 0.2, 0.2)
 
     this.callbackQueue = []
+    const reportError = (...args) => reportPhysicsError(this.world, ...args)
 
     this.getContactCallback = createPool(() => {
       const contactPool = []
@@ -105,14 +106,14 @@ export class Physics extends System {
             try {
               this.fn0(this.event0)
             } catch (err) {
-              console.error(err)
+              reportError(err)
             }
           }
           if (this.fn1) {
             try {
               this.fn1(this.event1)
             } catch (err) {
-              console.error(err)
+              reportError(err)
             }
           }
           this.release()
@@ -197,7 +198,7 @@ export class Physics extends System {
           try {
             this.fn(this.event)
           } catch (err) {
-            console.error(err)
+            reportError(err)
           }
           this.release()
         },
@@ -256,7 +257,7 @@ export class Physics extends System {
       }
     }
     simulationEventCallback.onConstraintBreak = (...args) => {
-      console.error('TODO: onContraintBreak', ...args)
+      reportError('TODO: onContraintBreak', ...args)
     }
 
     const sceneDesc = new PHYSX.PxSceneDesc(this.tolerances)
@@ -294,7 +295,7 @@ export class Physics extends System {
     this.controllerFilters = new PHYSX.PxControllerFilters()
     this.controllerFilters.mFilterData = new PHYSX.PxFilterData(Layers.player.group, Layers.player.mask, 0, 0) // prettier-ignore
     const filterCallback = new PHYSX.PxQueryFilterCallbackImpl()
-    filterCallback.simplePreFilter = (filterDataPtr, shapePtr, actor) => {
+    filterCallback.simplePreFilter = (filterDataPtr, shapePtr, _actor) => {
       const filterData = PHYSX.wrapPointer(filterDataPtr, PHYSX.PxFilterData)
       const shape = PHYSX.wrapPointer(shapePtr, PHYSX.PxShape)
       const shapeFilterData = shape.getQueryFilterData()
@@ -309,7 +310,7 @@ export class Physics extends System {
     }
     this.controllerFilters.mFilterCallback = filterCallback
     const cctFilterCallback = new PHYSX.PxControllerFilterCallbackImpl()
-    cctFilterCallback.filter = (aPtr, bPtr) => {
+    cctFilterCallback.filter = (_aPtr, _bPtr) => {
       // const a = PHYSX.wrapPointer(aPtr, PHYSX.PxCapsuleController)
       // const b = PHYSX.wrapPointer(bPtr, PHYSX.PxCapsuleController)
       return true // for now ALL cct's collide

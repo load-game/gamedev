@@ -2,9 +2,9 @@ import { isNumber } from 'lodash-es'
 import * as THREE from '../extras/three.js'
 import { definePlugin } from '../plugins.js'
 import { Layers } from '../extras/Layers.js'
-import { Anchors } from '../systems/Anchors.js'
-import { Avatars } from '../systems/Avatars.js'
-import { Physics } from '../systems/Physics.js'
+import { Anchors } from './spatial/Anchors.js'
+import { Avatars } from './spatial/Avatars.js'
+import { Physics } from './spatial/Physics.js'
 
 export { Anchors, Avatars, Physics }
 
