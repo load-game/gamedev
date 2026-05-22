@@ -1,5 +1,5 @@
-import * as THREE from '../math/three.js'
-import { definePlugin } from '../plugins.js'
+import * as THREE from '../core/math/three.js'
+import { definePlugin } from '../core/plugins.js'
 
 export function installView(world) {
   if (!world.rig) {

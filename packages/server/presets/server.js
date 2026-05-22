@@ -18,7 +18,7 @@ import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { stagePlugin } from '@gamedev/core/plugins/stage.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
-import { viewPlugin } from '@gamedev/core/plugins/view.js'
+import { viewPlugin } from '../../plugins/view.js'
 import { networkServerPlugin } from '../plugins/network/server.js'
 import { serverRuntimePlugin } from '../plugins/runtime/server.js'
 

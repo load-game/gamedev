@@ -441,9 +441,9 @@
     },
     "./plugins/view": {
       "types": "./index.plugin-view.d.ts",
-      "import": "./packages/core/plugins/view.js",
-      "require": "./packages/core/plugins/view.js",
-      "default": "./packages/core/plugins/view.js"
+      "import": "./packages/plugins/view.js",
+      "require": "./packages/plugins/view.js",
+      "default": "./packages/plugins/view.js"
     },
     "./plugins/wind/client": {
       "types": "./index.plugin-wind-client.d.ts",
