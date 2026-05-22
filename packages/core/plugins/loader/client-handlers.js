@@ -6,9 +6,9 @@ import { TextureLoader } from 'three'
 import Hls from 'hls.js/dist/hls.js'
 
 import { definePlugin } from '../../plugins.js'
-import { createVRMFactory } from '../../extras/createVRMFactory.js'
-import { glbToNodes } from '../../extras/glbToNodes.js'
-import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
+import { createVRMFactory } from './createVRMFactory.js'
+import { glbToNodes } from './glbToNodes.js'
+import { createEmoteFactory } from './createEmoteFactory.js'
 
 let sparkRenderer = null
 
@@ -144,7 +144,7 @@ async function loadClientEmote(loader, url) {
   const file = await loader.loadFile(url)
   const buffer = await file.arrayBuffer()
   const glb = await getGltfLoader(loader).parseAsync(buffer)
-  const factory = createEmoteFactory(glb, url)
+  const factory = createEmoteFactory(glb)
   return {
     toClip(options) {
       return factory.toClip(options)

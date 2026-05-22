@@ -3,8 +3,8 @@ import { GLTFLoader } from '../../libs/gltfloader/GLTFLoader.js'
 // import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
 import { definePlugin } from '../../plugins.js'
-import { glbToNodes } from '../../extras/glbToNodes.js'
-import { createEmoteFactory } from '../../extras/createEmoteFactory.js'
+import { glbToNodes } from './glbToNodes.js'
+import { createEmoteFactory } from './createEmoteFactory.js'
 
 function getGltfLoader(loader) {
   if (!loader.gltfLoader) {
@@ -33,9 +33,8 @@ async function loadServerModel(loader, url) {
 }
 
 async function loadServerEmote(loader, url) {
-  const resolvedUrl = loader.world.resolveURL(url, true)
   const glb = await parseServerGltf(loader, url)
-  const factory = createEmoteFactory(glb, resolvedUrl)
+  const factory = createEmoteFactory(glb)
   return {
     toClip(options) {
       return factory.toClip(options)

@@ -1,17 +1,14 @@
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
-import * as THREE from './three.js'
-import { DEG2RAD } from './general.js'
-import { getTrianglesFromGeometry } from './getTrianglesFromGeometry.js'
-import { getTextureBytesFromMaterial } from './getTextureBytesFromMaterial.js'
-import { Emotes } from './playerEmotes.js'
+import * as THREE from '../../extras/three.js'
+import { DEG2RAD } from '../../extras/general.js'
+import { getTrianglesFromGeometry } from '../../extras/getTrianglesFromGeometry.js'
+import { getTextureBytesFromMaterial } from '../../extras/getTextureBytesFromMaterial.js'
+import { Emotes } from '../../extras/playerEmotes.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
-const m1 = new THREE.Matrix4()
-
-const FORWARD = new THREE.Vector3(0, 0, -1)
 
 const DIST_MIN_RATE = 1 / 5 // 5 times per second
 const DIST_MAX_RATE = 1 / 60 // 40 times per second
@@ -186,7 +183,6 @@ export function createVRMFactory(glb, setupMaterial) {
 
   function create(matrix, hooks, node) {
     const vrm = cloneGLB(glb)
-    const tvrm = vrm.userData.vrm
     const skinnedMeshes = getSkinnedMeshes(vrm.scene)
     const skeleton = skinnedMeshes[0].skeleton // should be same across all skinnedMeshes
     const rootBone = skeleton.bones[0] // should always be 0
@@ -372,6 +368,14 @@ export function createVRMFactory(glb, setupMaterial) {
       }
     }
 
+    const logAvatarWarning = message => {
+      node?.ctx?.world?.logs?.add('avatar', 'warn', [message])
+    }
+
+    const logAvatarError = (message, err) => {
+      node?.ctx?.world?.logs?.add('avatar', 'error', [message, err])
+    }
+
     const aimBone = (() => {
       const smoothedRotations = new Map()
       const normalizedDir = new THREE.Vector3()
@@ -402,8 +406,14 @@ export function createVRMFactory(glb, setupMaterial) {
         } = options
         const bone = findBone(boneName)
         const parentBone = glb.userData.vrm.humanoid.humanBones[boneName].node.parent
-        if (!bone) return console.warn(`aimBone: missing bone (${boneName})`)
-        if (!parentBone) return console.warn(`aimBone: no parent bone`)
+        if (!bone) {
+          logAvatarWarning(`aimBone: missing bone (${boneName})`)
+          return
+        }
+        if (!parentBone) {
+          logAvatarWarning('aimBone: no parent bone')
+          return
+        }
         // get or create smoothed state for this bone
         const boneId = bone.uuid
         if (!smoothedRotations.has(boneId)) {
@@ -488,17 +498,6 @@ export function createVRMFactory(glb, setupMaterial) {
       }
     })()
 
-    // position target equivalent of aimBone()
-    const aimBoneDir = new THREE.Vector3()
-    function aimBoneAt(boneName, targetPos, delta, options = {}) {
-      const bone = findBone(boneName)
-      if (!bone) return console.warn(`aimBone: missing bone (${boneName})`)
-      const boneWorldMatrix = getBoneTransform(boneName)
-      const boneWorldPos = v1.setFromMatrixPosition(boneWorldMatrix)
-      aimBoneDir.subVectors(targetPos, boneWorldPos).normalize()
-      aimBone(boneName, aimBoneDir, delta, options)
-    }
-
     // hooks.loader.load('emote', 'asset://rifle-aim.glb').then(emo => {
     //   const clip = emo.toClip({
     //     rootToHips,
@@ -582,7 +581,7 @@ export function createVRMFactory(glb, setupMaterial) {
         .catch(err => {
           if (pose.loadId !== loadId) return
           pose.loading = false
-          console.error(err)
+          logAvatarError('Avatar emote load failed', err)
         })
     }
     Object.keys(DefaultLocomotionEmotes).forEach(key => {

@@ -4,7 +4,7 @@ const q1 = new THREE.Quaternion()
 const restRotationInverse = new THREE.Quaternion()
 const parentRestWorldRotation = new THREE.Quaternion()
 
-export function createEmoteFactory(glb, url) {
+export function createEmoteFactory(glb) {
   // console.time('emote-init')
 
   const clip = glb.animations[0]
@@ -21,15 +21,12 @@ export function createEmoteFactory(glb, url) {
   // scale and other positions are rejected.
   // NOTE: there is a risk that the first position track is not the root but
   // i haven't been able to find one so far.
-  let haveRoot
-
   clip.tracks = clip.tracks.filter(track => {
     if (track instanceof THREE.VectorKeyframeTrack) {
       const [name, type] = track.name.split('.')
       if (type !== 'position') return
       // we need both root and hip bones
       if (name === 'Root') {
-        haveRoot = true
         return true
       }
       if (name === 'mixamorigHips') {
