@@ -9,7 +9,7 @@ import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth'
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
 import { arbitrum } from '@privy-io/chains'
 
-import { storage } from '@gamedev/core/storage.js'
+import { storage } from '@gamedev/core/plugins/storage/local.js'
 import { resolveConnectionPolicy } from '@gamedev/core/utils-client.js'
 import { Client } from './world-client.js'
 

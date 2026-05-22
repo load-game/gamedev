@@ -8,7 +8,7 @@ import { Meta } from '../sidebar/Meta.js'
 import { Console } from '../sidebar/Console.js'
 import { exportApp } from '@gamedev/core/extras/appTools.js'
 import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
-import { storage } from '@gamedev/core/storage.js'
+import { storage } from '@gamedev/core/plugins/storage/local.js'
 
 const tabs = [
   { id: 'app', label: 'Object' },
@@ -56,8 +56,7 @@ export function BottomPanel({ world }) {
     try {
       const file = await exportApp(app.blueprint, world.loader.loadFile, id => world.blueprints.get(id))
       downloadFile(file)
-    } catch (err) {
-      console.error(err)
+    } catch {
       world.emit('toast', 'Export failed')
     }
   }

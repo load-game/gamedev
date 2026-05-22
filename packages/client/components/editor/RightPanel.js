@@ -2,7 +2,7 @@ import { css } from '@firebolt-dev/css'
 import { useEffect, useRef, useState } from 'react'
 import { editorTheme as theme } from './editorTheme.js'
 import { Script } from '../sidebar/Script.js'
-import { storage } from '@gamedev/core/storage.js'
+import { storage } from '@gamedev/core/plugins/storage/local.js'
 
 export function RightPanel({ world }) {
   const panelRef = useRef()

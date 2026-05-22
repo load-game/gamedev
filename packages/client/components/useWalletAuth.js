@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { storage } from '@gamedev/core/storage.js'
+import { storage } from '@gamedev/core/plugins/storage/local.js'
 
 const defaultWalletAuthState = {
   enabled: false,

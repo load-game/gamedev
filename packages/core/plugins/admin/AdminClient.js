@@ -1,5 +1,5 @@
 import { readPacket, writePacket } from '../../packets.js'
-import { storage } from '../../storage.js'
+import { storage } from '../storage/local.js'
 import { uuid } from '../../utils.js'
 import { hashFile } from '../../utils-client.js'
 import { System } from '../../systems/System.js'
