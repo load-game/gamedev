@@ -1,7 +1,7 @@
 import { definePlugin } from '../../plugins.js'
-import { AdminLocalPlayer } from '../../entities/AdminLocalPlayer.js'
-import { AdminPlayerRemote } from '../../entities/AdminPlayerRemote.js'
-import { FreeCam } from '../../entities/FreeCam.js'
+import { AdminLocalPlayer } from './AdminLocalPlayer.js'
+import { AdminPlayerRemote } from './AdminPlayerRemote.js'
+import { FreeCam } from './FreeCam.js'
 import { uuid } from '../../utils.js'
 
 export { AdminLocalPlayer, AdminPlayerRemote, FreeCam }

@@ -1,9 +1,9 @@
-import * as THREE from '../extras/three.js'
-import { Entity } from './Entity.js'
-import { hasRank, Ranks } from '../extras/ranks.js'
-import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3.js'
-import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion.js'
-import { Ragdoll } from '../extras/Ragdoll.js'
+import * as THREE from '../../extras/three.js'
+import { Entity } from '../../entities/Entity.js'
+import { hasRank, Ranks } from '../../extras/ranks.js'
+import { BufferedLerpVector3 } from '../../extras/BufferedLerpVector3.js'
+import { BufferedLerpQuaternion } from '../../extras/BufferedLerpQuaternion.js'
+import { Ragdoll } from '../../extras/Ragdoll.js'
 
 let capsuleGeometry
 {

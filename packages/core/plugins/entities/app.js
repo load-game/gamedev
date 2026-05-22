@@ -1,5 +1,5 @@
 import { definePlugin } from '../../plugins.js'
-import { App } from '../../entities/App.js'
+import { App } from './App.js'
 import { appEntityScriptApi } from './appScriptApi.js'
 
 export { App }

@@ -1,6 +1,6 @@
 import { definePlugin } from '../../plugins.js'
-import { PlayerLocal } from '../../entities/PlayerLocal.js'
-import { PlayerRemote } from '../../entities/PlayerRemote.js'
+import { PlayerLocal } from './PlayerLocal.js'
+import { PlayerRemote } from './PlayerRemote.js'
 import { cleanupPlayerEntityProxy, playerEntityScriptApi } from './playerScriptApi.js'
 
 export { PlayerLocal, PlayerRemote }

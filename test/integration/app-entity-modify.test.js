@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 
-import { App } from '@gamedev/core/entities/App.js'
+import { App } from '@gamedev/core/plugins/entities/app.js'
 
 test('app modify rebuilds when mover updates arrive before lerp buffers exist', () => {
   const ctx = {
