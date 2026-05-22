@@ -1,5 +1,5 @@
 import { definePlugin } from '../plugins.js'
-import { Animation } from '../systems/Animation.js'
+import { Animation } from './animation/Animation.js'
 
 export { Animation }
 

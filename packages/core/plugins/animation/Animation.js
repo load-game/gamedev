@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '../../systems/System.js'
 import * as THREE from 'three'
 
 const v1 = new THREE.Vector3()

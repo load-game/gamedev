@@ -1,8 +1,8 @@
-import * as THREE from '../extras/three.js'
+import * as THREE from '../../extras/three.js'
 import { isNumber } from 'lodash-es'
 
-import { System } from './System.js'
-import { LooseOctree } from '../extras/LooseOctree.js'
+import { System } from '../../systems/System.js'
+import { LooseOctree } from '../../extras/LooseOctree.js'
 
 const vec2 = new THREE.Vector2()
 
@@ -41,7 +41,7 @@ export class Stage extends System {
     }
   }
 
-  update(delta) {
+  update(_delta) {
     this.models.forEach(model => model.clean())
   }
 
@@ -213,7 +213,8 @@ export class Stage extends System {
       //   return self.createMaterial(options).proxy
       // },
       get _ref() {
-        if (world._allowMaterial) return material
+        if (self.world._allowMaterial) return material
+        return undefined
       },
     }
     material.raw = raw
@@ -479,7 +480,6 @@ class Model {
   }
 
   getEntity(instanceId) {
-    console.warn('TODO: remove if you dont ever see this')
     return this.items[instanceId]?.node.ctx.entity
   }
 

@@ -1,5 +1,5 @@
 import { definePlugin } from '../plugins.js'
-import { Stage } from '../systems/Stage.js'
+import { Stage } from './stage/Stage.js'
 
 export { Stage }
 

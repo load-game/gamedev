@@ -1,5 +1,5 @@
 import { definePlugin } from '../plugins.js'
-import { Logs } from '../systems/Logs.js'
+import { Logs } from './logs/Logs.js'
 
 export { Logs }
 
