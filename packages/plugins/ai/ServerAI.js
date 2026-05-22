@@ -4,7 +4,7 @@ import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { System } from '../../core/systems/System.js'
-import { hashFile } from '../../core/platform/server/utils.js'
+import { hashFile } from '../../server/platform/utils.js'
 import { isValidScriptPath } from '../../core/blueprints/validation.js'
 import { getBlueprintAppName } from '../../core/blueprints/utils.js'
 

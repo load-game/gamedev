@@ -45,11 +45,7 @@ import {
   verifyRuntimeBootstrapAuthorization,
   usesHostedRuntimeBootstrap,
 } from './runtimeBootstrap.js'
-import {
-  buildRuntimeControlAuthorization,
-  createJWT,
-  verifyIdentityExchangeTokenWithLobby,
-} from '@gamedev/core/platform/server/utils.js'
+import { buildRuntimeControlAuthorization, createJWT, verifyIdentityExchangeTokenWithLobby } from './platform/utils.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 
 function resolveRuntimeRootDir() {
