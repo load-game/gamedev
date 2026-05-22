@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { PlayerLocal } from './PlayerLocal.js'
 import { PlayerRemote } from './PlayerRemote.js'
 import { cleanupPlayerEntityProxy, playerEntityScriptApi } from './playerScriptApi.js'

@@ -1,7 +1,7 @@
-import * as THREE from '../../math/three.js'
-import { Layers } from '../../layers/Layers.js'
-import { DEG2RAD } from '../../math/general.js'
-import { warn } from '../../diagnostics/warn.js'
+import * as THREE from '../../core/math/three.js'
+import { Layers } from '../../core/layers/Layers.js'
+import { DEG2RAD } from '../../core/math/general.js'
+import { warn } from '../../core/diagnostics/warn.js'
 
 export const State = {
   OFF: -1,

@@ -1,4 +1,4 @@
-import * as THREE from '../../math/three.js'
+import * as THREE from '../../core/math/three.js'
 
 export function createPlayerProxy(entity, player) {
   const world = player.world

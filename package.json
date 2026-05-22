@@ -243,15 +243,15 @@
     },
     "./plugins/entities/app": {
       "types": "./index.plugin-entities-app.d.ts",
-      "import": "./packages/core/plugins/entities/app.js",
-      "require": "./packages/core/plugins/entities/app.js",
-      "default": "./packages/core/plugins/entities/app.js"
+      "import": "./packages/plugins/entities/app.js",
+      "require": "./packages/plugins/entities/app.js",
+      "default": "./packages/plugins/entities/app.js"
     },
     "./plugins/entities/player": {
       "types": "./index.plugin-entities-player.d.ts",
-      "import": "./packages/core/plugins/entities/player.js",
-      "require": "./packages/core/plugins/entities/player.js",
-      "default": "./packages/core/plugins/entities/player.js"
+      "import": "./packages/plugins/entities/player.js",
+      "require": "./packages/plugins/entities/player.js",
+      "default": "./packages/plugins/entities/player.js"
     },
     "./plugins/graphics/client": {
       "types": "./index.plugin-graphics-client.d.ts",

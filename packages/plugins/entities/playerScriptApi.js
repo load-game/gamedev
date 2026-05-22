@@ -1,5 +1,6 @@
-import { syncLobbyProfilePatch } from '../../platform/browser/profileSync.js'
-import { clamp } from '../../math/scalar.js'
+import { syncLobbyProfilePatch } from '../../core/platform/browser/profileSync.js'
+import { clamp } from '../../core/math/scalar.js'
+import { warn } from '../../core/diagnostics/warn.js'
 
 const HEALTH_MAX = 100
 const playerEffects = new WeakMap()
@@ -96,7 +97,7 @@ export const playerEntityScriptApi = {
           player.modify({ avatar, sessionAvatar: null })
           world.network.send('playerAvatar', { avatar })
         } else {
-          console.error('setAvatar can only be called on the local player from client scripts')
+          warn('setAvatar can only be called on the local player from client scripts')
         }
       },
       meta: {
@@ -257,10 +258,10 @@ export const playerEntityScriptApi = {
       call(player, newEmotes, reset = false) {
         const world = player.world
         if (!world.network.isClient) {
-          return console.error('replaceAnimations can only be called on the client')
+          return warn('replaceAnimations can only be called on the client')
         }
         if (player.data.owner !== world.network.id) {
-          return console.error('replaceAnimations can only be called on local player')
+          return warn('replaceAnimations can only be called on local player')
         }
         player.replaceAnimations?.(newEmotes, reset)
       },
@@ -274,10 +275,10 @@ export const playerEntityScriptApi = {
       call(player, value = true) {
         const world = player.world
         if (!world.network.isClient) {
-          return console.error('firstPerson can only be called on the client')
+          return warn('firstPerson can only be called on the client')
         }
         if (player.data.owner !== world.network.id) {
-          return console.error('firstPerson can only be called on local player')
+          return warn('firstPerson can only be called on local player')
         }
         player.firstPerson(value)
       },
