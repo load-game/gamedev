@@ -173,10 +173,6 @@ export interface WorldAPI {
   on(event: string, callback: (data?: any) => void): void
   off(event: string, callback: (data?: any) => void): void
 
-  // Players
-  getPlayer(playerId?: string): Player | null
-  getPlayers(): Player[]
-
   getTimestamp(format?: string): string
 }
 

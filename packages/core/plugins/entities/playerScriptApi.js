@@ -27,6 +27,30 @@ function setActiveEffectConfig(entity, player, config) {
 }
 
 export const playerEntityScriptApi = {
+  world: {
+    getPlayer: {
+      call(entity, playerId) {
+        return entity.getPlayerProxy(playerId)
+      },
+      meta: {
+        summary: 'Return the local player, or a player by id.',
+        docs: '/docs/scripting/world/World.md#getplayerplayerid-player',
+      },
+    },
+    getPlayers: {
+      call(entity) {
+        const players = []
+        entity.world.entities.players.forEach(player => {
+          players.push(entity.getPlayerProxy(player.data.id))
+        })
+        return players
+      },
+      meta: {
+        summary: 'Return all connected players.',
+        docs: '/docs/scripting/world/World.md#getplayers-player',
+      },
+    },
+  },
   player: {
     teleport: {
       call(player, position, rotationY) {

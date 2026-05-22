@@ -113,9 +113,13 @@ Requires the spatial plugin (`gamedev/plugins/spatial`).
 
 ### `.getPlayer(playerId)`: Player
 
+Requires the player entities plugin (`gamedev/plugins/entities/player`) or a preset that includes it.
+
 Returns a player. If no `playerId` is provided it returns the local player.
 
 ### `.getPlayers()`: [...Player]
+
+Requires the player entities plugin (`gamedev/plugins/entities/player`) or a preset that includes it.
 
 Returns an array of all players.
 

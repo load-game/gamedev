@@ -776,6 +776,8 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.createLayerMask, undefined)
   assert.equal(coreWorld.apps.worldMethods.raycast, undefined)
   assert.equal(coreWorld.apps.worldMethods.overlapSphere, undefined)
+  assert.equal(coreWorld.apps.worldMethods.getPlayer, undefined)
+  assert.equal(coreWorld.apps.worldMethods.getPlayers, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
   assert.equal(coreWorld.apps.playerMethods.teleport, undefined)
@@ -838,9 +840,13 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
   assert.equal(playerEntityWorld.pluginCapabilities.has('entity:player'), true)
+  assert.equal(playerEntityWorld.pluginCapabilities.has('script:world.getPlayer'), true)
+  assert.equal(playerEntityWorld.pluginCapabilities.has('script:world.getPlayers'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.teleport'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.applyEffect'), true)
   assert.equal(playerEntityWorld.entityTypes.has('player'), true)
+  assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayer, 'function')
+  assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayers, 'function')
   assert.equal(typeof playerEntityWorld.apps.playerMethods.teleport, 'function')
   assert.equal(typeof playerEntityWorld.apps.playerMethods.damage, 'function')
   assert.equal(typeof playerEntityWorld.apps.playerMethods.applyEffect, 'function')
@@ -873,7 +879,17 @@ test('feature APIs only appear when their plugins are selected', () => {
       this.pushed = force
     },
   }
-  const fakeAppEntity = { data: { id: 'app-1' } }
+  const fakeAppEntity = {
+    data: { id: 'app-1' },
+    world: playerEntityWorld,
+    getPlayerProxy(playerId) {
+      return { id: playerId || 'local-player' }
+    },
+  }
+  playerEntityWorld.entities.players.set('player-1', fakePlayerEntity)
+  assert.deepEqual(playerEntityWorld.apps.worldMethods.getPlayer(fakeAppEntity, 'player-1'), { id: 'player-1' })
+  assert.deepEqual(playerEntityWorld.apps.worldMethods.getPlayer(fakeAppEntity), { id: 'local-player' })
+  assert.deepEqual(playerEntityWorld.apps.worldMethods.getPlayers(fakeAppEntity), [{ id: 'player-1' }])
   const fakeVector = {
     toArray() {
       return [1, 2, 3]

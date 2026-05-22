@@ -15,8 +15,6 @@ const coreScriptApiCapabilities = [
   'script:world.off',
   'script:world.emit',
   'script:world.getTimestamp',
-  'script:world.getPlayer',
-  'script:world.getPlayers',
   'script:app.instanceId',
   'script:app.version',
   'script:app.modelUrl',

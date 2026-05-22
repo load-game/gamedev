@@ -106,17 +106,6 @@ export class Apps extends System {
         if (!format) return moment().toISOString()
         return moment().format(format)
       },
-      getPlayer(entity, playerId) {
-        return entity.getPlayerProxy(playerId)
-      },
-      getPlayers(entity) {
-        // tip: probably dont wanna call this every frame
-        const players = []
-        world.entities.players.forEach(player => {
-          players.push(entity.getPlayerProxy(player.data.id))
-        })
-        return players
-      },
     }
   }
 

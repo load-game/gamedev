@@ -1,5 +1,5 @@
 import 'gamedev'
-import type { BaseNode, Matrix4, Vector3, Vector3Like } from './index.d.ts'
+import type { BaseNode, Matrix4, Player, Vector3, Vector3Like } from './index.d.ts'
 import type { WorldPlugin } from './index.plugins.d.ts'
 
 export declare class AdminPlayerRemote {
@@ -46,6 +46,14 @@ export interface PlayerRagdollOptions {
 }
 
 export declare const playerEntityScriptApi: {
+  world: {
+    getPlayer: {
+      call(entity: any, playerId?: string): Player | null
+    }
+    getPlayers: {
+      call(entity: any): Player[]
+    }
+  }
   player: {
     teleport: {
       call(player: any, position: Vector3Like, rotationY?: number): void
@@ -94,6 +102,11 @@ export declare function cleanupPlayerEntityProxy(entity: any, player: any): void
 export declare const playerEntitiesPlugin: WorldPlugin
 
 declare module 'gamedev' {
+  interface WorldAPI {
+    getPlayer(playerId?: string): Player | null
+    getPlayers(): Player[]
+  }
+
   interface Player {
     teleport(position: Vector3Like, rotationY?: number): void
     push(force: Vector3, options?: PlayerPushOptions): void

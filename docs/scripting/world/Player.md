@@ -1,6 +1,6 @@
 # Player
 
-Represents a player. An instance of Player can be retrived via [World.getPlayer](/docs/scripting/world/World.md)
+Represents a player. An instance of Player can be retrieved via [World.getPlayer](/docs/scripting/world/World.md) when the player entities plugin or a preset that includes it is installed.
 
 ## Properties
 

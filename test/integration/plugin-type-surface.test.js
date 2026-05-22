@@ -58,8 +58,13 @@ test('plugin and preset type surfaces gate script APIs', async () => {
 
         app.configure([])
         app.get('node-id')
+        const player = null as unknown as import('gamedev').Player
+
+        // @ts-expect-error player lookup is provided by the player entities plugin
         world.getPlayers()
-        const player = world.getPlayer()
+
+        // @ts-expect-error player lookup is provided by the player entities plugin
+        world.getPlayer()
 
         // @ts-expect-error concrete node names are provided by the nodes plugin
         app.create('prim', { color: '#fff' })
@@ -112,6 +117,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
       livekitClientOnly,
       `
         import 'gamedev'
+        import 'gamedev/plugins/entities/player'
         import 'gamedev/plugins/livekit/client'
 
         world.getPlayer()?.screenshare('monitor')
@@ -125,6 +131,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
       livekitServerOnly,
       `
         import 'gamedev'
+        import 'gamedev/plugins/entities/player'
         import 'gamedev/plugins/livekit/server'
 
         world.getPlayer()?.setVoiceLevel('global')
