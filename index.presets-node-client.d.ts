@@ -15,3 +15,4 @@ import type { WorldPlugin, WorldPreset } from './index.plugins.d.ts'
 
 export declare const nodeClientRuntimePlugin: WorldPlugin
 export declare const nodeClientPreset: WorldPreset
+export declare function createNodeClientWorld(options?: { plugins?: any }): any

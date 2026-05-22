@@ -1,4 +1,5 @@
 import { definePreset } from '../plugins.js'
+import { createWorldFromPreset } from './createWorld.js'
 import { coreSystemsPlugin } from './core.js'
 import { actionsClientPlugin } from '../plugins/actions/client.js'
 import { adminClientPlugin } from '../plugins/admin/client.js'
@@ -83,3 +84,7 @@ export const clientPreset = definePreset({
     hyperliquidPlugin,
   ],
 })
+
+export function createClientWorld(options = {}) {
+  return createWorldFromPreset(clientPreset, options)
+}

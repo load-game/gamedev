@@ -1,4 +1,5 @@
 import { definePreset } from '../plugins.js'
+import { createWorldFromPreset } from './createWorld.js'
 import { coreSystemsPlugin } from './core.js'
 import { animationPlugin } from '../plugins/animation.js'
 import { browserClientPlugin } from '../plugins/browser/client.js'
@@ -39,3 +40,7 @@ export const viewerPreset = definePreset({
     environmentClientPlugin,
   ],
 })
+
+export function createViewerWorld(options = {}) {
+  return createWorldFromPreset(viewerPreset, options)
+}

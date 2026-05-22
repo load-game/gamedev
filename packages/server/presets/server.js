@@ -1,4 +1,5 @@
 import { definePreset } from '@gamedev/core/plugins.js'
+import { createWorldFromPreset } from '@gamedev/core/presets/createWorld.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { animationPlugin } from '@gamedev/core/plugins/animation.js'
 import { chatPlugin } from '@gamedev/core/plugins/chat.js'
@@ -49,3 +50,7 @@ export const serverPreset = definePreset({
     hyperliquidPlugin,
   ],
 })
+
+export function createServerWorld(options = {}) {
+  return createWorldFromPreset(serverPreset, options)
+}

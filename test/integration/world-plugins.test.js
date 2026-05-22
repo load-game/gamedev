@@ -4,16 +4,14 @@ import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
-import { adminPreset as directAdminPreset } from '@gamedev/core/presets/admin.js'
-import { clientPreset as directClientPreset } from '@gamedev/core/presets/client.js'
-import { nodeClientPreset as directNodeClientPreset } from '@gamedev/core/presets/node-client.js'
-import { viewerPreset as directViewerPreset } from '@gamedev/core/presets/viewer.js'
+import { adminPreset, createAdminWorld } from '@gamedev/core/presets/admin.js'
+import { clientPreset, createClientWorld } from '@gamedev/core/presets/client.js'
+import { nodeClientPreset, createNodeClientWorld } from '@gamedev/core/presets/node-client.js'
+import { viewerPreset, createViewerWorld } from '@gamedev/core/presets/viewer.js'
 import { adminRuntimePlugin as adminRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/admin.js'
 import { clientRuntimePlugin as clientRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/client.js'
 import { nodeClientRuntimePlugin as nodeClientRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/node-client.js'
 import { viewerRuntimePlugin as viewerRuntimeEntryPlugin } from '@gamedev/core/plugins/runtime/viewer.js'
-import { adminPreset } from '@gamedev/core/createAdminWorld.js'
-import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
 import { animationPlugin } from '@gamedev/core/plugins/animation.js'
 import { aiServerPlugin } from '@gamedev/core/plugins/ai/server.js'
@@ -43,7 +41,6 @@ import { networkAdminPlugin } from '@gamedev/core/plugins/network/admin.js'
 import { networkClientPlugin } from '@gamedev/core/plugins/network/client.js'
 import { networkServerPlugin } from '@gamedev/server/plugins/network/server.js'
 import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
-import { nodeClientPreset } from '@gamedev/core/createNodeClientWorld.js'
 import { particlesClientPlugin } from '@gamedev/core/plugins/particles/client.js'
 import { pointerClientPlugin } from '@gamedev/core/plugins/pointer/client.js'
 import { prefsClientPlugin } from '@gamedev/core/plugins/prefs/client.js'
@@ -55,11 +52,9 @@ import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
 import { viewPlugin } from '@gamedev/core/plugins/view.js'
-import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
 import { xrClientPlugin } from '@gamedev/core/plugins/xr/client.js'
-import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
-import { serverPreset as directServerPreset } from '@gamedev/server/presets/server.js'
+import { createServerWorld, serverPreset } from '@gamedev/server/presets/server.js'
 import { serverRuntimePlugin as serverRuntimeEntryPlugin } from '@gamedev/server/plugins/runtime/server.js'
 import { System } from '@gamedev/core/systems/System.js'
 
@@ -508,11 +503,11 @@ test('plugins validate script API descriptors at definition time', () => {
 })
 
 test('runtime factories are preset compositions', () => {
-  assert.equal(adminPreset, directAdminPreset)
-  assert.equal(clientPreset, directClientPreset)
-  assert.equal(nodeClientPreset, directNodeClientPreset)
-  assert.equal(viewerPreset, directViewerPreset)
-  assert.equal(serverPreset, directServerPreset)
+  assert.equal(typeof createAdminWorld, 'function')
+  assert.equal(typeof createClientWorld, 'function')
+  assert.equal(typeof createNodeClientWorld, 'function')
+  assert.equal(typeof createViewerWorld, 'function')
+  assert.equal(typeof createServerWorld, 'function')
 
   assert.equal(
     adminPreset.plugins.find(plugin => plugin.name === '@gamedev/admin/runtime'),

@@ -1,4 +1,5 @@
 import { definePreset } from '../plugins.js'
+import { createWorldFromPreset } from './createWorld.js'
 import { coreSystemsPlugin } from './core.js'
 import { animationPlugin } from '../plugins/animation.js'
 import { chatPlugin } from '../plugins/chat.js'
@@ -39,3 +40,7 @@ export const nodeClientPreset = definePreset({
     environmentNodeClientPlugin,
   ],
 })
+
+export function createNodeClientWorld(options = {}) {
+  return createWorldFromPreset(nodeClientPreset, options)
+}

@@ -782,7 +782,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
       import('./cleaner.js'),
       import('./db.js'),
       import('./Storage.js'),
-      import('./createServerWorld.js'),
+      import('./presets/server.js'),
     ])
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_modules_ready', {
       durationMs: Date.now() - startedAt,

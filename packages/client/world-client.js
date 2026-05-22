@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { css } from '@firebolt-dev/css'
 
-import { createClientWorld } from '@gamedev/core/createClientWorld.js'
+import { createClientWorld } from '@gamedev/core/presets/client.js'
 import { CoreUI } from './components/CoreUI.js'
 import { assetPath } from './utils.js'
 import { EditorLayout } from './components/editor/EditorLayout.js'
