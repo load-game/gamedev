@@ -125,9 +125,9 @@
     },
     "./plugins/actions/client": {
       "types": "./index.plugin-actions-client.d.ts",
-      "import": "./packages/core/plugins/actions/client.js",
-      "require": "./packages/core/plugins/actions/client.js",
-      "default": "./packages/core/plugins/actions/client.js"
+      "import": "./packages/plugins/actions/client.js",
+      "require": "./packages/plugins/actions/client.js",
+      "default": "./packages/plugins/actions/client.js"
     },
     "./plugins/admin/client": {
       "types": "./index.plugin-admin-client.d.ts",
@@ -365,15 +365,15 @@
     },
     "./plugins/particles/client": {
       "types": "./index.plugin-particles-client.d.ts",
-      "import": "./packages/core/plugins/particles/client.js",
-      "require": "./packages/core/plugins/particles/client.js",
-      "default": "./packages/core/plugins/particles/client.js"
+      "import": "./packages/plugins/particles/client.js",
+      "require": "./packages/plugins/particles/client.js",
+      "default": "./packages/plugins/particles/client.js"
     },
     "./plugins/pointer/client": {
       "types": "./index.plugin-pointer-client.d.ts",
-      "import": "./packages/core/plugins/pointer/client.js",
-      "require": "./packages/core/plugins/pointer/client.js",
-      "default": "./packages/core/plugins/pointer/client.js"
+      "import": "./packages/plugins/pointer/client.js",
+      "require": "./packages/plugins/pointer/client.js",
+      "default": "./packages/plugins/pointer/client.js"
     },
     "./plugins/prefs/client": {
       "types": "./index.plugin-prefs-client.d.ts",
@@ -449,9 +449,9 @@
     },
     "./plugins/ui/client": {
       "types": "./index.plugin-ui-client.d.ts",
-      "import": "./packages/core/plugins/ui/client.js",
-      "require": "./packages/core/plugins/ui/client.js",
-      "default": "./packages/core/plugins/ui/client.js"
+      "import": "./packages/plugins/ui/client.js",
+      "require": "./packages/plugins/ui/client.js",
+      "default": "./packages/plugins/ui/client.js"
     },
     "./plugins/view": {
       "types": "./index.plugin-view.d.ts",
@@ -473,9 +473,9 @@
     },
     "./plugins/xr/client": {
       "types": "./index.plugin-xr-client.d.ts",
-      "import": "./packages/core/plugins/xr/client.js",
-      "require": "./packages/core/plugins/xr/client.js",
-      "default": "./packages/core/plugins/xr/client.js"
+      "import": "./packages/plugins/xr/client.js",
+      "require": "./packages/plugins/xr/client.js",
+      "default": "./packages/plugins/xr/client.js"
     },
     "./presets/core": {
       "types": "./index.presets-core.d.ts",

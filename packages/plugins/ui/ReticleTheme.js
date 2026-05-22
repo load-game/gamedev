@@ -1,4 +1,4 @@
-import { clamp } from '../../math/scalar.js'
+import { clamp } from '../../core/math/scalar.js'
 
 const SHAPES = ['line', 'circle', 'dot', 'rect', 'arc']
 const COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/

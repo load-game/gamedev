@@ -1,7 +1,7 @@
-import * as THREE from '../../math/three.js'
-import { ControlPriorities } from '../../../plugins/controls/ControlPriorities.js'
+import * as THREE from '../../core/math/three.js'
+import { ControlPriorities } from '../controls/ControlPriorities.js'
 
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 const v1 = new THREE.Vector3()
 
