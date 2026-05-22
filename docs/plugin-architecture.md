@@ -153,6 +153,8 @@ The controls plugin owns input button maps and control priorities. Plugins or UI
 
 Client-only UI helpers such as file download, byte formatting, and curve editing live in the client package rather than root core extras.
 
+The UI plugin owns reticle theme validation because `world.ui.setReticle()` is available only when the selected preset installs UI support.
+
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
 Builder-owned `.hyp` import/export helpers live with the builder plugin rather than root core extras, so packaging and drag/drop tooling can move independently from the kernel.

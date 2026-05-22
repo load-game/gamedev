@@ -1,4 +1,4 @@
-import { clamp } from '../utils.js'
+import { clamp } from '../../utils.js'
 
 const SHAPES = ['line', 'circle', 'dot', 'rect', 'arc']
 const COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/
