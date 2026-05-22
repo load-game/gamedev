@@ -345,9 +345,9 @@
     },
     "./plugins/nodes": {
       "types": "./index.plugin-nodes.d.ts",
-      "import": "./packages/core/plugins/nodes.js",
-      "require": "./packages/core/plugins/nodes.js",
-      "default": "./packages/core/plugins/nodes.js"
+      "import": "./packages/plugins/nodes.js",
+      "require": "./packages/plugins/nodes.js",
+      "default": "./packages/plugins/nodes.js"
     },
     "./plugins/particles/client": {
       "types": "./index.plugin-particles-client.d.ts",

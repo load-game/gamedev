@@ -8,7 +8,7 @@ import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { appEntityPlugin } from 'gamedev/plugins/entities/app'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { loaderServerHandlersPlugin } from 'gamedev/plugins/loader/server-handlers'
-import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
+import { nodesPlugin } from 'gamedev/plugins/nodes'
 import { createTempDir, getRepoRoot, waitFor } from './helpers.js'
 
 test('app executes module scripts via scriptRef', async () => {

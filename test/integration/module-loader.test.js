@@ -7,7 +7,7 @@ import { World } from '@gamedev/core/World.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
 import { loaderServerHandlersPlugin } from 'gamedev/plugins/loader/server-handlers'
-import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
+import { nodesPlugin } from 'gamedev/plugins/nodes'
 import { createTempDir } from './helpers.js'
 
 test('module scripts load and execute on server runtime', async () => {

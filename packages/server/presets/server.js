@@ -14,7 +14,7 @@ import { loaderServerHandlersPlugin } from '../../plugins/loader/server-handlers
 import { livekitServerPlugin } from '../../plugins/livekit/server.js'
 import { logsPlugin } from '@gamedev/core/plugins/logs.js'
 import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
-import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
+import { nodesPlugin } from '../../plugins/nodes.js'
 import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { stagePlugin } from '@gamedev/core/plugins/stage.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
