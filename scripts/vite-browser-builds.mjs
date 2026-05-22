@@ -303,7 +303,7 @@ export async function buildViewer({ dev = false } = {}) {
     minify: false,
     sourcemap: 'inline',
     input: {
-      createViewerWorld: path.join(rootDir, 'packages/core/createViewerWorld.js'),
+      createViewerWorld: path.join(rootDir, 'packages/presets/viewer.js'),
     },
     external: ['three'],
     output: {
