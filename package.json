@@ -327,9 +327,9 @@
     },
     "./plugins/network/admin": {
       "types": "./index.plugin-network-admin.d.ts",
-      "import": "./packages/core/plugins/network/admin.js",
-      "require": "./packages/core/plugins/network/admin.js",
-      "default": "./packages/core/plugins/network/admin.js"
+      "import": "./packages/plugins/network/admin.js",
+      "require": "./packages/plugins/network/admin.js",
+      "default": "./packages/plugins/network/admin.js"
     },
     "./plugins/network/client": {
       "types": "./index.plugin-network-client.d.ts",
