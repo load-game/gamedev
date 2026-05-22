@@ -37,7 +37,7 @@ import { uiClientPlugin } from '../plugins/ui/client.js'
 import { viewPlugin } from '../plugins/view.js'
 import { windClientPlugin } from '../plugins/wind/client.js'
 import { xrClientPlugin } from '../plugins/xr/client.js'
-import { clientRuntimePlugin } from '../plugins/runtime/client.js'
+import { clientRuntimePlugin } from '../../plugins/runtime/client.js'
 
 export { clientRuntimePlugin }
 

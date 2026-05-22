@@ -35,7 +35,7 @@ import { uiClientPlugin } from '../plugins/ui/client.js'
 import { viewPlugin } from '../plugins/view.js'
 import { windClientPlugin } from '../plugins/wind/client.js'
 import { xrAdminPlugin } from '../../plugins/xr/admin.js'
-import { adminRuntimePlugin } from '../plugins/runtime/admin.js'
+import { adminRuntimePlugin } from '../../plugins/runtime/admin.js'
 
 export { adminRuntimePlugin }
 

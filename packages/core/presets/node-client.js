@@ -15,7 +15,7 @@ import { nodesPlugin } from '../plugins/nodes.js'
 import { spatialPlugin } from '../plugins/spatial.js'
 import { stagePlugin } from '../plugins/stage.js'
 import { viewPlugin } from '../plugins/view.js'
-import { nodeClientRuntimePlugin } from '../plugins/runtime/node-client.js'
+import { nodeClientRuntimePlugin } from '../../plugins/runtime/node-client.js'
 
 export { nodeClientRuntimePlugin }
 
