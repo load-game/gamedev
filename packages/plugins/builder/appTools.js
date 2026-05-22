@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es'
-import { hashFile } from '../../core/platform/browser/utils.js'
+import { hashFile } from '../browser/utils.js'
 import { buildLegacyBodyModuleSource } from '../../core/script-runtime/legacyBody.js'
 
 const imageExts = new Set(['png', 'jpg', 'jpeg', 'webp'])

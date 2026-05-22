@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { File } from 'node:buffer'
 import { test } from 'vite-plus/test'
 import { exportApp, importApp } from '../../packages/plugins/builder/appTools.js'
-import { hashFile } from '@gamedev/core/platform/browser/utils.js'
+import { hashFile } from '../../packages/plugins/browser/utils.js'
 
 if (!globalThis.File) {
   globalThis.File = File

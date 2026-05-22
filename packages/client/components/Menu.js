@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { css } from '@firebolt-dev/css'
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons.js'
 import { useUpdate } from './useUpdate.js'
-import { hashFile } from '@gamedev/core/platform/browser/utils.js'
+import { hashFile } from '../../plugins/browser/utils.js'
 import { LoaderIcon, XIcon } from 'lucide-react'
 import { downloadFile } from './downloadFile.js'
 import { CurvePreview } from './CurvePreview.js'

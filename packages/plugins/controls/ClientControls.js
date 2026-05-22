@@ -1,4 +1,4 @@
-import { isTouch } from '../../core/platform/browser/isTouch.js'
+import { isTouch } from '../browser/isTouch.js'
 import { bindRotations } from '../../core/math/bindRotations.js'
 import { buttons, codeToProp } from './buttons.js'
 import * as THREE from '../../core/math/three.js'

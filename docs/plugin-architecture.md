@@ -8,7 +8,7 @@ This migration moves the runtime away from implicit all-in-core construction and
 
 The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/presets/core`. It installs the kernel-level settings, app/script runtime, event, blueprint, and entity systems, and advertises the built-in script proxy methods such as `script:world.add` and `script:app.create`.
 
-The old root `extras` bucket has been removed. Shared primitives now live behind named kernel contracts: `math` for the patched Three.js facade and rotation/math helpers, `layers` for collision/camera layer masks, `permissions` for rank constants, and `diagnostics` for shared warnings. Browser and server-specific helpers live under `platform/browser` and `platform/server` instead of the kernel root.
+The old root `extras` bucket has been removed. Shared primitives now live behind named kernel contracts: `math` for the patched Three.js facade and rotation/math helpers, `layers` for collision/camera layer masks, `permissions` for rank constants, and `diagnostics` for shared warnings. Browser-only helpers live with the browser plugin support code, and server-specific runtime helpers live under `platform/server` instead of the kernel root.
 
 Blueprint validation/naming helpers live under `blueprints`, and app script module specifier plus legacy body wrapping support lives under `script-runtime`. These are app/script runtime contracts rather than world kernel root modules.
 

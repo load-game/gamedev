@@ -1,6 +1,6 @@
 import moment from 'moment'
 import { uuid } from '../../core/ids/uuid.js'
-import { syncLobbyProfilePatch } from '../../core/platform/browser/profileSync.js'
+import { syncLobbyProfilePatch } from '../browser/profileSync.js'
 import { System } from '../../core/systems/System.js'
 
 /**

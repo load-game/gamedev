@@ -15,7 +15,7 @@ import {
   MenuLine,
   MenuSection,
 } from './Menu.js'
-import { hashFile } from '@gamedev/core/platform/browser/utils.js'
+import { hashFile } from '../../plugins/browser/utils.js'
 import { isArray, isBoolean, isEqual, merge } from 'lodash-es'
 import { css } from '@firebolt-dev/css'
 import { RotateCcwIcon } from 'lucide-react'

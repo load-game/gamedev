@@ -13,7 +13,7 @@ import {
   resolveConnectionPolicy,
   navigateToServer,
   sanitizeWsUrl,
-} from '@gamedev/core/platform/browser/utils.js'
+} from '../../plugins/browser/utils.js'
 import { MouseLeftIcon } from './MouseLeftIcon.js'
 import { MouseRightIcon } from './MouseRightIcon.js'
 import { MouseWheelIcon } from './MouseWheelIcon.js'

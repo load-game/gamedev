@@ -1,7 +1,7 @@
 import { readPacket, writePacket } from '../network/packets.js'
 import { storage } from '../storage/local.js'
 import { uuid } from '../../core/ids/uuid.js'
-import { hashFile } from '../../core/platform/browser/utils.js'
+import { hashFile } from '../browser/utils.js'
 import { System } from '../../core/systems/System.js'
 
 function normalizeAdminUrl(url) {

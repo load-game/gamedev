@@ -2,7 +2,7 @@ import { isBoolean, isNumber } from 'lodash-es'
 
 import { System } from '../../core/systems/System.js'
 import { storage } from '../storage/local.js'
-import { isTouch } from '../../core/platform/browser/isTouch.js'
+import { isTouch } from '../browser/isTouch.js'
 
 /**
  * Client Prefs System

@@ -1,4 +1,4 @@
-import { syncLobbyProfilePatch } from '../../core/platform/browser/profileSync.js'
+import { syncLobbyProfilePatch } from '../browser/profileSync.js'
 import { clamp } from '../../core/math/scalar.js'
 import { warn } from '../../core/diagnostics/warn.js'
 

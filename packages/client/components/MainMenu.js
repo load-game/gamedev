@@ -14,13 +14,13 @@ import { sortBy } from 'lodash-es'
 import * as THREE from '@gamedev/core/math/three.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { storage } from '../../plugins/storage/local.js'
-import { syncLobbyProfilePatch } from '@gamedev/core/platform/browser/profileSync.js'
+import { syncLobbyProfilePatch } from '../../plugins/browser/profileSync.js'
 import {
   getPreferredServerUrl,
   resolveConnectionPolicy,
   navigateToServer,
   sanitizeWsUrl,
-} from '@gamedev/core/platform/browser/utils.js'
+} from '../../plugins/browser/utils.js'
 
 const shadowOptions = [
   { label: 'None', value: 'none' },
