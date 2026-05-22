@@ -274,3 +274,41 @@ test('remote blueprint sync does not duplicate extension for file prop names', a
     await assetServer.close()
   }
 })
+
+test('local blueprint asset resolution records assetMap entries for app.asset', async () => {
+  const rootDir = await createTempDir('hyperfy-asset-map-')
+  const spriteBytes = Buffer.from('sprite-bytes')
+  const filename = hashFilename(spriteBytes, 'png')
+  const server = new DirectAppServer({ worldUrl: 'http://example.com', rootDir })
+
+  try {
+    await fs.mkdir(path.join(rootDir, 'assets'), { recursive: true })
+    await fs.writeFile(path.join(rootDir, 'assets', 'sprite.png'), spriteBytes)
+
+    const resolved = await server._resolveLocalBlueprintToAssetUrls(
+      {
+        id: 'AssetMapApp',
+        model: 'assets/sprite.png',
+        assetMap: {
+          './assets/icon.png': 'assets/sprite.png',
+        },
+        props: {
+          preview: {
+            type: 'image',
+            url: 'assets/sprite.png',
+          },
+        },
+      },
+      { upload: false }
+    )
+
+    assert.equal(resolved.model, `asset://${filename}`)
+    assert.deepEqual(resolved.assetMap, {
+      'assets/icon.png': `asset://${filename}`,
+      'assets/sprite.png': `asset://${filename}`,
+    })
+    assert.equal(resolved.props.preview.url, `asset://${filename}`)
+  } finally {
+    await stopAppServer(server)
+  }
+})

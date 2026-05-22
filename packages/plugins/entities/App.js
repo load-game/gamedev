@@ -1,0 +1,597 @@
+import { isArray, merge } from 'lodash-es'
+
+import { Entity } from '../../core/entities/Entity.js'
+import { LerpVector3 } from '../../core/script-api/LerpVector3.js'
+import { LerpQuaternion } from '../../core/script-api/LerpQuaternion.js'
+import { createPlayerProxy } from './createPlayerProxy.js'
+import { serializeError } from './serializeError.js'
+import { getBlueprintAppName } from '../../core/blueprints/utils.js'
+
+const hotEventNames = ['fixedUpdate', 'update', 'animate', 'lateUpdate']
+
+const Modes = {
+  ACTIVE: 'active',
+  MOVING: 'moving',
+  LOADING: 'loading',
+  CRASHED: 'crashed',
+}
+
+let safeMode = false
+if (typeof window !== 'undefined') {
+  safeMode = new URLSearchParams(window.location.search).get('safemode')
+}
+
+function hasScriptFiles(blueprint) {
+  return blueprint?.scriptFiles && typeof blueprint.scriptFiles === 'object' && !isArray(blueprint.scriptFiles)
+}
+
+function resolveScriptRootBlueprint(blueprint, world) {
+  if (!blueprint) return null
+  const scriptRef = typeof blueprint.scriptRef === 'string' ? blueprint.scriptRef.trim() : ''
+  if (scriptRef) {
+    const scriptRoot = world.blueprints.get(scriptRef)
+    if (!scriptRoot) {
+      throw new Error(`script_ref_not_found:${scriptRef}`)
+    }
+    return scriptRoot
+  }
+  if (hasScriptFiles(blueprint)) return blueprint
+  const appName = getBlueprintAppName(blueprint.id)
+  if (appName && appName !== blueprint.id) {
+    const baseBlueprint = world.blueprints.get(appName)
+    if (hasScriptFiles(baseBlueprint)) return baseBlueprint
+  }
+  return null
+}
+
+export class App extends Entity {
+  constructor(world, data, local) {
+    super(world, data, local)
+    this.isApp = true
+    if (!this.data.props || typeof this.data.props !== 'object' || isArray(this.data.props)) {
+      this.data.props = {}
+    }
+    this.n = 0
+    this.worldNodes = new Set()
+    this.hotEvents = 0
+    this.worldListeners = new Map()
+    this.listeners = {}
+    this.eventQueue = []
+    this.snaps = []
+    this.root = world.createNode('group')
+    this.fields = []
+    this.effectiveProps = undefined
+    this.target = null
+    this.projectLimit = Infinity
+    this.resetOnMove = false
+    this.animateDelta = 0
+    this.animateRate = 0.001
+    this.playerProxies = new Map()
+    this.hitResultsPool = []
+    this.hitResults = []
+    this.deadHook = { dead: false }
+    this.build()
+  }
+
+  createNode(name, data) {
+    const node = this.world.createNode(name, data)
+    return node
+  }
+
+  computeEffectiveProps() {
+    const blueprintProps = this.blueprint?.props ?? null
+    const entityProps = this.data.props
+    const hasOverrides =
+      entityProps && typeof entityProps === 'object' && !isArray(entityProps) && Object.keys(entityProps).length > 0
+    if (hasOverrides) {
+      return merge({}, blueprintProps || {}, entityProps)
+    }
+    return blueprintProps
+  }
+
+  getEffectiveProps() {
+    if (this.effectiveProps === undefined) {
+      this.effectiveProps = this.computeEffectiveProps()
+    }
+    return this.effectiveProps
+  }
+
+  async build(crashed) {
+    this.building = true
+    const n = ++this.n
+    // fetch blueprint
+    const blueprint = this.world.blueprints.get(this.data.blueprint)
+
+    if (blueprint.disabled) {
+      this.unbuild()
+      this.blueprint = blueprint
+      this.building = false
+      return
+    }
+
+    let root
+    let script
+    // if someone else is uploading glb, show a loading indicator
+    if (this.data.uploader && this.data.uploader !== this.world.network.id) {
+      root = this.world.createNode('mesh')
+      root.type = 'box'
+      root.width = 1
+      root.height = 1
+      root.depth = 1
+    }
+    // otherwise we can load the model and script
+    else {
+      try {
+        const type = blueprint.model.endsWith('vrm') ? 'avatar' : 'model'
+        let glb = this.world.loader.get(type, blueprint.model)
+        if (!glb) glb = await this.world.loader.load(type, blueprint.model)
+        root = glb.toNodes()
+      } catch (err) {
+        this.world.logs?.add('app', 'error', [err])
+        crashed = true
+        // no model, will use crash block below
+      }
+      // fetch script (if any)
+      try {
+        const scriptRoot = resolveScriptRootBlueprint(blueprint, this.world)
+        if (hasScriptFiles(scriptRoot)) {
+          script = await this.world.scripts.loadModuleScript({ blueprint: scriptRoot })
+        } else if (blueprint.script) {
+          script = this.world.loader.get('script', blueprint.script)
+          if (!script) script = await this.world.loader.load('script', blueprint.script)
+        }
+      } catch (err) {
+        this.world.logs?.add('app', 'error', [err])
+        crashed = true
+      }
+    }
+    // if script crashed (or failed to load model), show crash-block
+    if (crashed) {
+      let glb = this.world.loader.get('model', 'asset://crash-block.glb')
+      if (!glb) glb = await this.world.loader.load('model', 'asset://crash-block.glb')
+      root = glb.toNodes()
+    }
+    // if a new build happened while we were fetching, stop here
+    if (this.n !== n) return
+    // unbuild any previous version
+    this.unbuild()
+    // mode
+    this.mode = Modes.ACTIVE
+    if (this.data.mover) this.mode = Modes.MOVING
+    if (this.data.uploader && this.data.uploader !== this.world.network.id) this.mode = Modes.LOADING
+    // setup
+    this.blueprint = blueprint
+    this.effectiveProps = this.computeEffectiveProps()
+    this.root = root
+    if (!blueprint.scene) {
+      this.root.position.fromArray(this.data.position)
+      this.root.quaternion.fromArray(this.data.quaternion)
+      this.root.scale.fromArray(this.data.scale)
+    }
+    // activate
+    this.root.activate({ world: this.world, entity: this, moving: !!this.data.mover })
+    // execute script
+    this.script = script
+    this.onScript?.(script)
+    const runScript =
+      script &&
+      !crashed &&
+      !safeMode &&
+      (this.mode === Modes.ACTIVE || (this.mode === Modes.MOVING && !this.resetOnMove))
+    // (this.mode === Modes.ACTIVE && script && !crashed) ||
+    // (this.mode === Modes.MOVING && !this.resetOnMove && !this.scriptError)
+    if (runScript) {
+      this.abortController = new AbortController()
+      try {
+        this.script.exec(this.getWorldProxy(), this.getAppProxy(), this.fetch, this.effectiveProps, this.setTimeout)
+        this.scriptError = null
+      } catch (err) {
+        this.scriptError = serializeError(err)
+        this.world.logs?.add('script', 'error', ['script crashed', err])
+        return this.crash()
+      }
+    }
+    // if moving we need updates
+    if (this.mode === Modes.MOVING) {
+      this.world.setHot(this, true)
+      // and we need a list of any snap points
+      this.snaps = []
+      this.root.traverse(node => {
+        if (node.name === 'snap') {
+          this.snaps.push(node.worldPosition)
+        }
+      })
+    }
+    // if remote is moving, set up to receive network updates
+    this.networkPos = new LerpVector3(root.position, this.world.networkRate)
+    this.networkQuat = new LerpQuaternion(root.quaternion, this.world.networkRate)
+    this.networkSca = new LerpVector3(root.scale, this.world.networkRate)
+    // execute any events we collected while building
+    while (this.eventQueue.length) {
+      const event = this.eventQueue[0]
+      if (event.version > this.blueprint.version) break // ignore future versions
+      this.eventQueue.shift()
+      this.emit(event.name, event.data, event.networkId)
+    }
+    // finished!
+    this.building = false
+  }
+
+  unbuild() {
+    // notify any running script
+    this.emit('destroy')
+    // cancel any control
+    this.control?.release()
+    this.control = null
+    // cancel any effects
+    this.playerProxies.forEach(player => {
+      player.$cleanup()
+    })
+    // deactivate local node
+    this.root?.deactivate()
+    // deactivate world nodes
+    for (const node of this.worldNodes) {
+      node.deactivate()
+    }
+    this.worldNodes.clear()
+    // clear script event listeners
+    this.clearEventListeners()
+    this.hotEvents = 0
+    // cancel update tracking
+    this.world.setHot(this, false)
+    // abort fetch's etc
+    this.abortController?.abort()
+    this.abortController = null
+    // mark dead and re-create hook (timers, async etc)
+    this.deadHook.dead = true
+    this.deadHook = { dead: false }
+    // clear fields
+    this.onFields?.([])
+  }
+
+  fixedUpdate(delta) {
+    // script fixedUpdate()
+    if (this.script) {
+      try {
+        this.emit('fixedUpdate', delta)
+      } catch (err) {
+        this.scriptError = serializeError(err)
+        this.world.logs?.add('script', 'error', ['script fixedUpdate crashed', err])
+        this.crash()
+        return
+      }
+    }
+  }
+
+  update(delta) {
+    // if someone else is moving the app, interpolate updates
+    if (
+      this.data.mover &&
+      this.data.mover !== this.world.network.id &&
+      this.networkPos &&
+      this.networkQuat &&
+      this.networkSca
+    ) {
+      this.networkPos.update(delta)
+      this.networkQuat.update(delta)
+      this.networkSca.update(delta)
+    }
+    // script update/animate
+    if (this.script) {
+      try {
+        // update
+        this.emit('update', delta)
+        // animate
+        this.animateDelta += delta
+        while (this.animateDelta >= this.animateRate) {
+          this.emit('animate', this.animateDelta)
+          this.animateDelta = 0
+        }
+      } catch (err) {
+        this.scriptError = serializeError(err)
+        this.world.logs?.add('script', 'error', ['script update() crashed', err])
+        this.crash()
+        return
+      }
+    }
+  }
+
+  lateUpdate(delta) {
+    if (this.script) {
+      try {
+        this.emit('lateUpdate', delta)
+      } catch (err) {
+        this.scriptError = serializeError(err)
+        this.world.logs?.add('script', 'error', ['script lateUpdate() crashed', err])
+        this.crash()
+        return
+      }
+    }
+  }
+
+  onUploaded() {
+    this.data.uploader = null
+    if (this.world.network.isClient && this.world.admin?.entityModify) {
+      this.world.admin.entityModify({ id: this.data.id, uploader: null }, { ignoreNetworkId: this.world.network.id })
+    } else {
+      this.world.network.send('entityModified', { id: this.data.id, uploader: null })
+    }
+  }
+
+  modify(data) {
+    let rebuild
+    if (data.hasOwnProperty('blueprint')) {
+      this.data.blueprint = data.blueprint
+      rebuild = true
+    }
+    if (data.hasOwnProperty('uploader')) {
+      this.data.uploader = data.uploader
+      rebuild = true
+    }
+    if (data.hasOwnProperty('mover')) {
+      this.data.mover = data.mover
+      rebuild = true
+    }
+    if (data.hasOwnProperty('position')) {
+      this.data.position = data.position
+      if (this.data.mover && this.networkPos) {
+        this.networkPos.pushArray(data.position)
+      } else {
+        rebuild = true
+      }
+    }
+    if (data.hasOwnProperty('quaternion')) {
+      this.data.quaternion = data.quaternion
+      if (this.data.mover && this.networkQuat) {
+        this.networkQuat.pushArray(data.quaternion)
+      } else {
+        rebuild = true
+      }
+    }
+    if (data.hasOwnProperty('scale')) {
+      this.data.scale = data.scale
+      if (this.data.mover && this.networkSca) {
+        this.networkSca.pushArray(data.scale)
+      } else {
+        rebuild = true
+      }
+    }
+    if (data.hasOwnProperty('pinned')) {
+      this.data.pinned = data.pinned
+    }
+    if (data.hasOwnProperty('state')) {
+      this.data.state = data.state
+      rebuild = true
+    }
+    if (data.hasOwnProperty('props')) {
+      if (data.props && typeof data.props === 'object' && !isArray(data.props)) {
+        this.data.props = data.props
+      } else {
+        this.data.props = {}
+      }
+      rebuild = true
+    }
+    if (rebuild) {
+      this.build()
+    }
+  }
+
+  crash() {
+    this.build(true)
+  }
+
+  destroy(local) {
+    if (this.destroyed) return
+    this.destroyed = true
+    // Invalidate any in-flight builds started before destruction
+    // so they early-exit when awaiting resources
+    this.n += 1
+
+    this.unbuild()
+
+    this.world.entities.remove(this.data.id)
+    // if removed locally we need to broadcast to server/clients
+    if (local) {
+      if (this.world.network.isClient && this.world.admin?.entityRemove) {
+        this.world.admin.entityRemove(this.data.id, { ignoreNetworkId: this.world.network.id })
+      } else {
+        this.world.network.send('entityRemoved', this.data.id)
+      }
+    }
+  }
+
+  on(name, callback) {
+    if (!this.listeners[name]) {
+      this.listeners[name] = new Set()
+    }
+    if (this.listeners[name].has(callback)) return
+    this.listeners[name].add(callback)
+    if (hotEventNames.includes(name)) {
+      this.hotEvents++
+      this.world.setHot(this, this.hotEvents > 0)
+    }
+  }
+
+  off(name, callback) {
+    if (!this.listeners[name]) return
+    if (!this.listeners[name].has(callback)) return
+    this.listeners[name].delete(callback)
+    if (hotEventNames.includes(name)) {
+      this.hotEvents--
+      this.world.setHot(this, this.hotEvents > 0)
+    }
+  }
+
+  emit(name, a1, a2) {
+    if (!this.listeners[name]) return
+    for (const callback of this.listeners[name]) {
+      callback(a1, a2)
+    }
+  }
+
+  onWorldEvent(name, callback) {
+    this.worldListeners.set(callback, name)
+    this.world.events.on(name, callback)
+  }
+
+  offWorldEvent(name, callback) {
+    this.worldListeners.delete(callback)
+    this.world.events.off(name, callback)
+  }
+
+  clearEventListeners() {
+    // local
+    this.listeners = {}
+    // world
+    for (const [callback, name] of this.worldListeners) {
+      this.world.events.off(name, callback)
+    }
+    this.worldListeners.clear()
+  }
+
+  onEvent(version, name, data, networkId) {
+    if (this.building || version > this.blueprint.version) {
+      this.eventQueue.push({ version, name, data, networkId })
+    } else {
+      this.emit(name, data, networkId)
+    }
+  }
+
+  fetch = async (url, options = {}) => {
+    try {
+      const resp = await fetch(url, {
+        ...options,
+        signal: this.abortController.signal,
+      })
+      const secureResp = {
+        ok: resp.ok,
+        status: resp.status,
+        statusText: resp.statusText,
+        headers: Object.fromEntries(resp.headers.entries()),
+        json: async () => await resp.json(),
+        text: async () => await resp.text(),
+        blob: async () => await resp.blob(),
+        arrayBuffer: async () => await resp.arrayBuffer(),
+      }
+      return secureResp
+    } catch (err) {
+      this.world.logs?.add('app', 'error', [err])
+      // this.crash()
+    }
+  }
+
+  setTimeout = (fn, ms) => {
+    const hook = this.getDeadHook()
+    const timerId = setTimeout(() => {
+      if (hook.dead) return
+      fn()
+    }, ms)
+    return timerId
+  }
+
+  getDeadHook = () => {
+    return this.deadHook
+  }
+
+  getNodes() {
+    // note: this is currently just used in the nodes tab in the app inspector
+    // to get a clean hierarchy
+    if (!this.blueprint) return
+    const type = this.blueprint.model.endsWith('vrm') ? 'avatar' : 'model'
+    let glb = this.world.loader.get(type, this.blueprint.model)
+    if (!glb) return
+    return glb.toNodes()
+  }
+
+  getPlayerProxy(playerId) {
+    if (playerId === undefined) playerId = this.world.entities.player?.data.id
+    let proxy = this.playerProxies.get(playerId)
+    if (!proxy || proxy.destroyed) {
+      const player = this.world.entities.getPlayer(playerId)
+      if (!player) return null
+      proxy = createPlayerProxy(this, player)
+      this.playerProxies.set(playerId, proxy)
+    }
+    return proxy
+  }
+
+  getWorldProxy() {
+    if (!this.worldProxy) {
+      const entity = this
+      const getters = this.world.apps.worldGetters
+      const setters = this.world.apps.worldSetters
+      const methods = this.world.apps.worldMethods
+      this.worldProxy = new Proxy(
+        {},
+        {
+          get: (target, prop) => {
+            // getters
+            if (prop in getters) {
+              return getters[prop](entity)
+            }
+            // methods
+            if (prop in methods) {
+              const method = methods[prop]
+              return (...args) => {
+                return method(entity, ...args)
+              }
+            }
+            return undefined
+          },
+          set: (target, prop, value) => {
+            // setters
+            if (prop in setters) {
+              setters[prop](entity, value)
+              return true
+            }
+            return true
+          },
+        }
+      )
+    }
+    return this.worldProxy
+  }
+
+  getAppProxy() {
+    if (!this.appProxy) {
+      const entity = this
+      const getters = this.world.apps.appGetters
+      const setters = this.world.apps.appSetters
+      const methods = this.world.apps.appMethods
+      this.appProxy = new Proxy(
+        {},
+        {
+          get: (target, prop) => {
+            // getters
+            if (prop in getters) {
+              return getters[prop](entity)
+            }
+            // methods
+            if (prop in methods) {
+              const method = methods[prop]
+              return (...args) => {
+                return method(entity, ...args)
+              }
+            }
+            // root node props
+            return entity.root.getProxy()[prop]
+          },
+          set: (target, prop, value) => {
+            // setters
+            if (prop in setters) {
+              setters[prop](entity, value)
+              return true
+            }
+            // root node props
+            if (prop in entity.root.getProxy()) {
+              entity.root.getProxy()[prop] = value
+              return true
+            }
+            return true
+          },
+        }
+      )
+    }
+    return this.appProxy
+  }
+}

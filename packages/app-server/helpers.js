@@ -5,11 +5,12 @@ import { isEqual } from 'lodash-es'
 import { parse as acornParse } from 'acorn'
 import { uuid } from './utils.js'
 import { parseBlueprintId } from './blueprintUtils.js'
-import { isValidScriptPath } from '../core/blueprintValidation.js'
+import { isValidScriptPath } from '../core/blueprints/validation.js'
 
 export const BLUEPRINT_FIELDS = [
   'model',
   'image',
+  'assetMap',
   'props',
   'preload',
   'public',

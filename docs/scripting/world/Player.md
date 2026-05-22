@@ -1,6 +1,6 @@
 # Player
 
-Represents a player. An instance of Player can be retrived via [World.getPlayer](/docs/scripting/world/World.md)
+Represents a player. An instance of Player can be retrieved via [World.getPlayer](/docs/scripting/world/World.md) when the player entities plugin or a preset that includes it is installed.
 
 ## Properties
 
@@ -20,13 +20,13 @@ Whether the player is local to this client.
 
 The player's replicated EVM wallet address, or `null`.
 
-This is injected by the EVM system and backed by replicated player state, so it works for local and remote players.
+This is injected by the EVM plugin and backed by replicated player state, so it works for local and remote players.
 
 ### `.evmChainId`: Number | null
 
 The player's replicated active EVM chain id, or `null`.
 
-This is injected by the EVM system and backed by replicated player state, so it works for local and remote players.
+This is injected by the EVM plugin and backed by replicated player state, so it works for local and remote players.
 
 ### `.admin`: Boolean
 
@@ -45,6 +45,8 @@ The players rotation in the world.
 The players rotation in the world.
 
 ## Methods
+
+Player movement, avatar, health, effect, and ragdoll methods require the player entities plugin or a preset that includes it.
 
 ### `.teleport(position, rotationY)`
 
@@ -180,6 +182,8 @@ All options are optional.
 
 ### `.screenshare(screenId)`
 
+Requires the LiveKit client plugin or a preset that includes it.
+
 Can only be called on a local player.
 
 Prompts the player to share their screen, and then casts it to all video nodes that have a matching `.screenId` property.
@@ -200,6 +204,8 @@ This change is synced across the network to all clients.
 
 
 ### `.setVoiceLevel(level)`
+
+Requires the LiveKit server plugin or a preset that includes it.
 
 Overrides the players voice chat level to `disabled`, `spatial` or `global`.
 

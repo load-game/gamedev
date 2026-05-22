@@ -11,12 +11,16 @@ import { theme } from './theme.js'
 import { HintContext, HintProvider } from './Hint.js'
 import { MicIcon, MicOffIcon, VRIcon } from './Icons.js'
 import { sortBy } from 'lodash-es'
-import * as THREE from '@gamedev/core/extras/three.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { storage } from '@gamedev/core/storage.js'
-import { syncLobbyProfilePatch } from '@gamedev/core/profileSync.js'
-import { sanitizeWsUrl } from '@gamedev/core/utils.js'
-import { getPreferredServerUrl, resolveConnectionPolicy, navigateToServer } from '@gamedev/core/utils-client.js'
+import * as THREE from '@gamedev/core/math/three.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
+import { storage } from '../../plugins/storage/local.js'
+import { syncLobbyProfilePatch } from '../../plugins/browser/profileSync.js'
+import {
+  getPreferredServerUrl,
+  resolveConnectionPolicy,
+  navigateToServer,
+  sanitizeWsUrl,
+} from '../../plugins/browser/utils.js'
 
 const shadowOptions = [
   { label: 'None', value: 'none' },
@@ -38,7 +42,7 @@ export function MainMenu({ world, open, onClose }) {
   const [sfx, setSFX] = useState(world.prefs.sfx)
   const [voice, setVoice] = useState(world.prefs.voice)
   const [ui, setUI] = useState(world.prefs.ui)
-  const [canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
+  const [_canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
   const [actions, setActions] = useState(world.prefs.actions)
   const [stats, setStats] = useState(world.prefs.stats)
   const [tab, setTab] = useState('settings')
@@ -230,8 +234,8 @@ export function MainMenu({ world, open, onClose }) {
               <img className='mainmenu-logo' src={assetPath('/logo.png')} />
               <div className='mainmenu-head-spacer' />
               <div className='mainmenu-actions'>
-                {world.xr.isSupported && (
-                  <div className='mainmenu-action' onClick={() => world.xr.start()}>
+                {world.xr?.supportsVR && (
+                  <div className='mainmenu-action' onClick={() => world.xr.enter()}>
                     <VRIcon size='1.125rem' />
                   </div>
                 )}
@@ -289,7 +293,7 @@ export function MainMenu({ world, open, onClose }) {
                 <FieldToggle
                   label='Stats'
                   hint='Show or hide performance stats'
-                  value={world.prefs.stats}
+                  value={stats}
                   onChange={stats => world.prefs.setStats(stats)}
                   trueLabel='Visible'
                   falseLabel='Hidden'

@@ -13,8 +13,8 @@ export const buildDir = path.join(rootDir, 'build')
 const clientPublicDir = path.join(rootDir, 'packages/client/public')
 const clientIndexHtmlSrc = path.join(clientPublicDir, 'index.html')
 const clientAdminHtmlSrc = path.join(clientPublicDir, 'admin.html')
-const worldAssetsDir = path.join(rootDir, 'packages/server/world/assets')
-const physxWasmSrc = path.join(rootDir, 'packages/core/physx-js-webidl.wasm')
+const worldAssetsDir = path.join(rootDir, 'packages/server/plugins/builtins/assets')
+const physxWasmSrc = path.join(rootDir, 'packages/plugins/spatial/physx/physx-js-webidl.wasm')
 
 const packageAliases = {
   '@gamedev/app-server': path.join(rootDir, 'packages/app-server'),
@@ -303,7 +303,7 @@ export async function buildViewer({ dev = false } = {}) {
     minify: false,
     sourcemap: 'inline',
     input: {
-      createViewerWorld: path.join(rootDir, 'packages/core/createViewerWorld.js'),
+      createViewerWorld: path.join(rootDir, 'packages/presets/viewer.js'),
     },
     external: ['three'],
     output: {

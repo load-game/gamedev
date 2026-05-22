@@ -1,14 +1,10 @@
 import moment from 'moment'
-import { isArray, isFunction, isNumber } from 'lodash-es'
-import * as THREE from '../extras/three.js'
+import { isArray, isFunction } from 'lodash-es'
+import * as THREE from '../math/three.js'
 
 import { System } from './System.js'
 import { getRef } from '../nodes/Node.js'
-import { Layers } from '../extras/Layers.js'
-import { ControlPriorities } from '../extras/ControlPriorities.js'
-import { warn } from '../extras/warn.js'
-
-const isBrowser = typeof window !== 'undefined'
+import { warn } from '../diagnostics/warn.js'
 
 const internalEvents = [
   'fixedUpdate',
@@ -21,149 +17,6 @@ const internalEvents = [
   'command',
   'health',
 ]
-
-async function copyTextToClipboard(value) {
-  const text = typeof value === 'string' ? value.trim() : String(value ?? '').trim()
-  if (!text) return false
-
-  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-    try {
-      await navigator.clipboard.writeText(text)
-      return true
-    } catch {
-      // fall through to legacy clipboard path
-    }
-  }
-
-  if (typeof document !== 'undefined' && typeof document.execCommand === 'function') {
-    try {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.setAttribute('readonly', '')
-      textarea.style.position = 'fixed'
-      textarea.style.top = '-9999px'
-      document.body.appendChild(textarea)
-      textarea.select()
-      const copied = document.execCommand('copy')
-      document.body.removeChild(textarea)
-      return copied
-    } catch {
-      return false
-    }
-  }
-
-  return false
-}
-
-function resolveClipboardImageUrl(world, value) {
-  if (typeof value === 'string' && value.trim()) {
-    const url = value.trim()
-    if (/^(data:|blob:|https?:\/\/|\/\/|\/)/i.test(url)) {
-      return url
-    }
-    return world.resolveURL(url)
-  }
-  if (value && typeof value === 'object' && typeof value.url === 'string' && value.url.trim()) {
-    const url = value.url.trim()
-    if (/^(data:|blob:|https?:\/\/|\/\/|\/)/i.test(url)) {
-      return url
-    }
-    return world.resolveURL(url)
-  }
-  return null
-}
-
-async function rasterizeClipboardImage(blob) {
-  if (!blob || !blob.type?.startsWith('image/')) return null
-  if (typeof document === 'undefined') return blob
-
-  let url = null
-  try {
-    url = URL.createObjectURL(blob)
-    const image = await new Promise((resolve, reject) => {
-      const nextImage = new Image()
-      nextImage.onload = () => resolve(nextImage)
-      nextImage.onerror = reject
-      nextImage.src = url
-    })
-
-    const width = Math.max(1, Math.round(image.naturalWidth || image.width || 0))
-    const height = Math.max(1, Math.round(image.naturalHeight || image.height || 0))
-    if (!width || !height) {
-      return blob
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    const context = canvas.getContext('2d')
-    if (!context) {
-      return blob
-    }
-    context.drawImage(image, 0, 0, width, height)
-
-    const pngBlob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/png')
-    })
-    return pngBlob || blob
-  } catch {
-    return blob
-  } finally {
-    if (url) {
-      URL.revokeObjectURL(url)
-    }
-  }
-}
-
-async function createClipboardImageItem(world, value) {
-  const url = resolveClipboardImageUrl(world, value)
-  if (!url || typeof fetch !== 'function' || typeof ClipboardItem === 'undefined') return null
-
-  try {
-    const response = await fetch(url)
-    if (!response.ok) return null
-    const blob = await response.blob()
-    const clipboardBlob = await rasterizeClipboardImage(blob)
-    const mimeType = clipboardBlob?.type || blob?.type || 'image/png'
-    if (!mimeType.startsWith('image/')) return null
-    return new ClipboardItem({
-      [mimeType]: clipboardBlob || blob,
-    })
-  } catch {
-    return null
-  }
-}
-
-async function copyImageToClipboard(world, value) {
-  if (typeof navigator === 'undefined' || !navigator.clipboard || typeof navigator.clipboard.write !== 'function') {
-    return false
-  }
-
-  const item = await createClipboardImageItem(world, value)
-  if (!item) return false
-
-  try {
-    await navigator.clipboard.write([item])
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function copyToClipboard(world, value, options = {}) {
-  const kind = String(options?.kind || options?.type || '')
-    .trim()
-    .toLowerCase()
-  const inferredImage =
-    !kind &&
-    ((typeof value === 'string' && /^data:image\//i.test(value.trim())) ||
-      (value && typeof value === 'object' && typeof value.url === 'string' && value.url.trim()))
-
-  if (kind === 'image' || inferredImage) {
-    return copyImageToClipboard(world, value)
-  }
-  return copyTextToClipboard(value)
-}
 
 /**
  * Apps System
@@ -180,23 +33,24 @@ export class Apps extends System {
     this.playerGetters = {}
     this.playerSetters = {}
     this.playerMethods = {}
+    this.playerProxyCleanups = []
+    this.scriptApiSources = {
+      world: new Map(),
+      app: new Map(),
+      player: new Map(),
+    }
+    this.scriptApiMetadata = {
+      world: new Map(),
+      app: new Map(),
+      player: new Map(),
+    }
+    this.recordScriptApiScope('world', 'core')
+    this.recordScriptApiScope('app', 'core')
   }
 
   initWorldHooks() {
-    const self = this
     const world = this.world
-    const allowLoaders = ['avatar', 'model', 'splat']
-    this.worldGetters = {
-      networkId(entity) {
-        return world.network.id
-      },
-      isServer(entity) {
-        return world.network.isServer
-      },
-      isClient(entity) {
-        return world.network.isClient
-      },
-    }
+    this.worldGetters = {}
     this.worldSetters = {
       // ...
     }
@@ -243,202 +97,14 @@ export class Apps extends System {
       },
       emit(entity, name, data) {
         if (internalEvents.includes(name)) {
-          return console.error(`apps cannot emit internal events (${name})`)
+          return warn(`apps cannot emit internal events (${name})`)
         }
         warn('world.emit() is deprecated, use app.emit() instead')
         world.events.emit(name, data)
       },
-      getTime(entity) {
-        return world.network.getTime()
-      },
       getTimestamp(entity, format) {
         if (!format) return moment().toISOString()
         return moment().format(format)
-      },
-      chat(entity, msg, broadcast) {
-        if (!msg) return
-        world.chat.add(msg, broadcast)
-      },
-      getPlayer(entity, playerId) {
-        return entity.getPlayerProxy(playerId)
-      },
-      getPlayers(entity) {
-        // tip: probably dont wanna call this every frame
-        const players = []
-        world.entities.players.forEach(player => {
-          players.push(entity.getPlayerProxy(player.data.id))
-        })
-        return players
-      },
-      createLayerMask(entity, ...groups) {
-        let mask = 0
-        for (const group of groups) {
-          if (!Layers[group]) throw new Error(`[createLayerMask] invalid group: ${group}`)
-          mask |= Layers[group].group
-        }
-        return mask
-      },
-      raycast(entity, origin, direction, maxDistance, layerMask, opts) {
-        if (!origin?.isVector3) throw new Error('[raycast] origin must be Vector3')
-        if (!direction?.isVector3) throw new Error('[raycast] direction must be Vector3')
-        if (maxDistance !== undefined && maxDistance !== null && !isNumber(maxDistance)) {
-          throw new Error('[raycast] maxDistance must be number')
-        }
-        if (layerMask !== undefined && layerMask !== null && !isNumber(layerMask)) {
-          throw new Error('[raycast] layerMask must be number')
-        }
-        const ignorePlayerId = opts?.ignoreLocalPlayer ? world.network.id : opts?.ignorePlayerId
-        const hit = world.physics.raycast(origin, direction, maxDistance, layerMask, ignorePlayerId)
-        if (!hit) return null
-        if (!self.raycastHit) {
-          self.raycastHit = {
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-            tag: null,
-            playerId: null,
-            bone: null,
-          }
-        }
-        self.raycastHit.point.copy(hit.point)
-        self.raycastHit.normal.copy(hit.normal)
-        self.raycastHit.distance = hit.distance
-        self.raycastHit.tag = hit.handle?.tag
-        self.raycastHit.playerId = hit.handle?.playerId
-        self.raycastHit.bone = hit.handle?.bone || null
-        return self.raycastHit
-      },
-      overlapSphere(entity, radius, origin, layerMask) {
-        const hits = world.physics.overlapSphere(radius, origin, layerMask)
-        return hits.map(hit => {
-          return hit.proxy
-        })
-      },
-      get(entity, key) {
-        return world.storage?.get(key)
-      },
-      async getFresh(entity, key) {
-        if (typeof world.storage?.getFresh !== 'function') {
-          return world.storage?.get(key)
-        }
-        return world.storage.getFresh(key)
-      },
-      async getFreshEntry(entity, key) {
-        if (typeof world.storage?.getFreshEntry !== 'function') {
-          return {
-            key: String(key),
-            exists: world.storage?.get(key) !== undefined,
-            value: world.storage?.get(key),
-            createdAt: null,
-            updatedAt: null,
-          }
-        }
-        return world.storage.getFreshEntry(key)
-      },
-      async getFreshEntriesByPrefix(entity, prefix = '') {
-        if (typeof world.storage?.getFreshEntriesByPrefix !== 'function') {
-          return []
-        }
-        return world.storage.getFreshEntriesByPrefix(prefix)
-      },
-      async listStorageKeys(entity, prefix = '') {
-        if (typeof world.storage?.listKeys !== 'function') {
-          return []
-        }
-        return world.storage.listKeys(prefix)
-      },
-      set(entity, key, value) {
-        world.storage?.set(key, value)
-      },
-      async setFresh(entity, key, value) {
-        if (typeof world.storage?.setFresh !== 'function') {
-          world.storage?.set(key, value)
-          return value
-        }
-        return world.storage.setFresh(key, value)
-      },
-      async commitStorage(entity, operations) {
-        if (typeof world.storage?.commit !== 'function') {
-          throw new Error('storage_commit_unavailable')
-        }
-        return world.storage.commit(operations)
-      },
-      open(entity, url, newWindow = false) {
-        if (!url) {
-          console.error('[world.open] URL is required')
-          return
-        }
-
-        if (world.network.isClient) {
-          try {
-            const resolvedUrl = world.resolveURL(url)
-
-            setTimeout(() => {
-              if (newWindow) {
-                window.open(resolvedUrl, '_blank')
-              } else {
-                window.location.href = resolvedUrl
-              }
-            }, 0)
-
-            console.log(`[world.open] Redirecting to: ${resolvedUrl} ${newWindow ? '(new window)' : ''}`)
-          } catch (e) {
-            console.error('[world.open] Failed to open URL:', e)
-          }
-        } else {
-          console.warn('[world.open] URL redirection only works on client side')
-        }
-      },
-      async copy(entity, value, options = {}) {
-        if (!world.network.isClient) {
-          console.warn('[world.copy] Clipboard access only works on client side')
-          return false
-        }
-        return copyToClipboard(world, value, options)
-      },
-      load(entity, type, url) {
-        return new Promise(async (resolve, reject) => {
-          const hook = entity.getDeadHook()
-          try {
-            if (!allowLoaders.includes(type)) {
-              return reject(new Error(`cannot load type: ${type}`))
-            }
-            let glb = world.loader.get(type, url)
-            if (!glb) glb = await world.loader.load(type, url)
-            if (hook.dead) return
-            const root = glb.toNodes()
-            resolve(type === 'avatar' ? root.children[0] : root)
-          } catch (err) {
-            if (hook.dead) return
-            reject(err)
-          }
-        })
-      },
-      getQueryParam(entity, key) {
-        if (!isBrowser) {
-          console.error('getQueryParam() must be called in the browser')
-          return null
-        }
-        const urlParams = new URLSearchParams(window.location.search)
-        return urlParams.get(key)
-      },
-      setReticle(entity, options) {
-        if (!world.ui) return
-        world.ui.setReticle(options)
-      },
-      setQueryParam(entity, key, value) {
-        if (!isBrowser) {
-          console.error('getQueryParam() must be called in the browser')
-          return null
-        }
-        const urlParams = new URLSearchParams(window.location.search)
-        if (value) {
-          urlParams.set(key, value)
-        } else {
-          urlParams.delete(key)
-        }
-        const newUrl = window.location.pathname + '?' + urlParams.toString()
-        window.history.replaceState({}, '', newUrl)
       },
     }
   }
@@ -487,46 +153,15 @@ export class Apps extends System {
       off(entity, name, callback) {
         entity.off(name, callback)
       },
-      send(entity, name, data, ignoreSocketId) {
-        if (internalEvents.includes(name)) {
-          return console.error(`apps cannot send internal events (${name})`)
-        }
-        // NOTE: on the client ignoreSocketId is a no-op because it can only send events to the server
-        const event = [entity.data.id, entity.blueprint.version, name, data]
-        world.network.send('entityEvent', event, ignoreSocketId)
-      },
-      sendTo(entity, playerId, name, data) {
-        if (internalEvents.includes(name)) {
-          return console.error(`apps cannot send internal events (${name})`)
-        }
-        if (!world.network.isServer) {
-          throw new Error('sendTo can only be called on the server')
-        }
-        const player = world.entities.get(playerId)
-        if (!player) return
-        const event = [entity.data.id, entity.blueprint.version, name, data]
-        world.network.sendTo(playerId, 'entityEvent', event)
-      },
       emit(entity, name, data) {
         if (internalEvents.includes(name)) {
-          return console.error(`apps cannot emit internal events (${name})`)
+          return warn(`apps cannot emit internal events (${name})`)
         }
         world.events.emit(name, data)
       },
       create(entity, name, data) {
         const node = entity.createNode(name, data)
         return node.getProxy()
-      },
-      control(entity, options) {
-        entity.control?.release()
-        // TODO: only allow on user interaction
-        // TODO: show UI with a button to release()
-        entity.control = world.controls.bind({
-          ...options,
-          priority: ControlPriorities.APP,
-          object: entity,
-        })
-        return entity.control
       },
       configure(entity, fnOrArray) {
         if (isArray(fnOrArray)) {
@@ -555,55 +190,158 @@ export class Apps extends System {
     }
   }
 
-  inject({ world, app, player }) {
-    if (world) {
-      for (const key in world) {
-        const value = world[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.worldMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.worldGetters[key] = value.get
-        }
-        if (value.set) {
-          this.worldSetters[key] = value.set
-        }
+  recordScriptApiScope(scope, source) {
+    const registry = this.scriptApiSources?.[scope]
+    if (!registry) return
+    const targets = this.getScriptApiTargets(scope)
+    for (const key of Object.keys(targets.getters)) this.recordScriptApiSlot(scope, key, source)
+    for (const key of Object.keys(targets.setters)) this.recordScriptApiSlot(scope, key, source)
+    for (const key of Object.keys(targets.methods)) this.recordScriptApiSlot(scope, key, source)
+  }
+
+  getScriptApiTargets(scope) {
+    if (scope === 'world') {
+      return {
+        getters: this.worldGetters,
+        setters: this.worldSetters,
+        methods: this.worldMethods,
       }
     }
-    if (app) {
-      for (const key in app) {
-        const value = app[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.appMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.appGetters[key] = value.get
-        }
-        if (value.set) {
-          this.appSetters[key] = value.set
-        }
+    if (scope === 'app') {
+      return {
+        getters: this.appGetters,
+        setters: this.appSetters,
+        methods: this.appMethods,
       }
     }
-    if (player) {
-      for (const key in player) {
-        const value = player[key]
-        const isFunction = typeof value === 'function'
-        if (isFunction) {
-          this.playerMethods[key] = value
-          continue
-        }
-        if (value.get) {
-          this.playerGetters[key] = value.get
-        }
-        if (value.set) {
-          this.playerSetters[key] = value.set
-        }
+    if (scope === 'player') {
+      return {
+        getters: this.playerGetters,
+        setters: this.playerSetters,
+        methods: this.playerMethods,
       }
     }
+    throw new Error(`script_api_invalid_scope:${scope}`)
+  }
+
+  assertScriptApiSlotAvailable(scope, key, source) {
+    const registry = this.scriptApiSources[scope]
+    const previousSource = registry.get(key)
+    if (previousSource && previousSource !== source) {
+      throw new Error(`script_api_collision:${scope}.${key}:${previousSource}:${source}`)
+    }
+  }
+
+  recordScriptApiSlot(scope, key, source, metadata = null) {
+    const sourceRegistry = this.scriptApiSources[scope]
+    const metadataRegistry = this.scriptApiMetadata[scope]
+    sourceRegistry.set(key, source)
+    metadataRegistry.set(
+      key,
+      Object.freeze({
+        ...metadata,
+        scope,
+        key,
+        capability: `script:${scope}.${key}`,
+        source,
+      })
+    )
+  }
+
+  claimScriptApiSlot(scope, key, source, metadata = null) {
+    this.assertScriptApiSlotAvailable(scope, key, source)
+    this.recordScriptApiSlot(scope, key, source, metadata)
+  }
+
+  assertScriptApiScopeAvailable(scope, api, source) {
+    if (!api) return
+    this.getScriptApiTargets(scope)
+    for (const key in api) {
+      this.assertScriptApiSlotAvailable(scope, key, source)
+    }
+  }
+
+  assertScriptApiAvailable({ world, app, player }, source = 'unknown') {
+    this.assertScriptApiScopeAvailable('world', world, source)
+    this.assertScriptApiScopeAvailable('app', app, source)
+    this.assertScriptApiScopeAvailable('player', player, source)
+  }
+
+  addPlayerProxyCleanup(cleanup, source = 'unknown') {
+    if (typeof cleanup !== 'function') {
+      throw new Error(`player_proxy_cleanup_invalid:${source}`)
+    }
+    this.playerProxyCleanups.push(Object.freeze({ cleanup, source }))
+  }
+
+  getScriptApiEntryMetadata(scope, key, value, metadata) {
+    const metadataFromContribution = metadata?.[scope]?.[key]
+    if (metadataFromContribution) return metadataFromContribution
+    return value?.meta || null
+  }
+
+  exposeScriptApiScope(scope, api, source, metadata) {
+    if (!api) return
+    const targets = this.getScriptApiTargets(scope)
+    for (const key in api) {
+      const value = api[key]
+      const entryMetadata = this.getScriptApiEntryMetadata(scope, key, value, metadata)
+      const isFn = typeof value === 'function'
+      if (isFn) {
+        this.claimScriptApiSlot(scope, key, source, entryMetadata)
+        targets.methods[key] = value
+        continue
+      }
+      if (!value || typeof value !== 'object') {
+        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+      }
+      const hasCall = Object.prototype.hasOwnProperty.call(value, 'call')
+      const hasMethod = Object.prototype.hasOwnProperty.call(value, 'method')
+      const hasGet = Object.prototype.hasOwnProperty.call(value, 'get')
+      const hasSet = Object.prototype.hasOwnProperty.call(value, 'set')
+      if (hasCall || hasMethod) {
+        if ((hasCall && hasMethod) || hasGet || hasSet) {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+        const method = hasCall ? value.call : value.method
+        if (typeof method !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+        this.claimScriptApiSlot(scope, key, source, entryMetadata)
+        targets.methods[key] = method
+        continue
+      }
+      if (hasGet) {
+        if (typeof value.get !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+      }
+      if (hasSet) {
+        if (typeof value.set !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+      }
+      if (!hasGet && !hasSet) {
+        throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+      }
+      this.claimScriptApiSlot(scope, key, source, entryMetadata)
+      if (hasGet) {
+        targets.getters[key] = value.get
+      }
+      if (hasSet) {
+        targets.setters[key] = value.set
+      }
+    }
+  }
+
+  exposeScriptApi({ world, app, player }, source = 'unknown', metadata = null) {
+    this.exposeScriptApiScope('world', world, source, metadata)
+    this.exposeScriptApiScope('app', app, source, metadata)
+    this.exposeScriptApiScope('player', player, source, metadata)
+  }
+
+  inject(api, metadata = null) {
+    this.exposeScriptApi(api, 'world.inject', metadata)
   }
 }
 

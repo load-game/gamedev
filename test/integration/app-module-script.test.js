@@ -4,7 +4,11 @@ import fs from 'fs/promises'
 import path from 'path'
 import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
-import { ServerLoader } from '@gamedev/core/systems/ServerLoader.js'
+import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
+import { appEntityPlugin } from 'gamedev/plugins/entities/app'
+import { loaderServerPlugin } from 'gamedev/plugins/loader/server'
+import { loaderServerHandlersPlugin } from 'gamedev/plugins/loader/server-handlers'
+import { nodesPlugin } from 'gamedev/plugins/nodes'
 import { createTempDir, getRepoRoot, waitFor } from './helpers.js'
 
 test('app executes module scripts via scriptRef', async () => {
@@ -12,7 +16,7 @@ test('app executes module scripts via scriptRef', async () => {
   const assetsDir = path.join(rootDir, 'assets')
   await fs.mkdir(path.join(assetsDir, 'helpers'), { recursive: true })
   await fs.copyFile(
-    path.join(getRepoRoot(), 'packages/server/world/assets/empty.glb'),
+    path.join(getRepoRoot(), 'packages/server/plugins/builtins/assets/empty.glb'),
     path.join(assetsDir, 'model.glb')
   )
   await fs.writeFile(
@@ -27,8 +31,9 @@ test('app executes module scripts via scriptRef', async () => {
   )
   await fs.writeFile(path.join(assetsDir, 'helpers', 'math.js'), 'export const add = (a, b) => a + b', 'utf8')
 
-  const world = new World()
-  world.register('loader', ServerLoader)
+  const world = new World({
+    plugins: [coreSystemsPlugin, nodesPlugin, loaderServerPlugin, loaderServerHandlersPlugin, appEntityPlugin],
+  })
   world.assetsDir = assetsDir
   world.environment = { csm: null }
   world.network = {

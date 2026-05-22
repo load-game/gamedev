@@ -1,6 +1,6 @@
-import { cloneDeep, debounce } from 'lodash-es'
+import { debounce } from 'lodash-es'
 import { useEffect } from 'react'
-import { storage } from '@gamedev/core/storage.js'
+import { storage } from '../../plugins/storage/local.js'
 
 const STORAGE_KEY = 'panes'
 
@@ -68,7 +68,7 @@ export function usePane(id, paneRef, headRef, resizable = false) {
     }
 
     let moving = false
-    const onHeadPointerDown = e => {
+    const onHeadPointerDown = () => {
       moving = true
     }
 
@@ -81,7 +81,7 @@ export function usePane(id, paneRef, headRef, resizable = false) {
       persist()
     }
 
-    const onPointerUp = e => {
+    const onPointerUp = () => {
       moving = false
     }
 

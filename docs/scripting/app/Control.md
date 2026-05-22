@@ -4,6 +4,8 @@
 
 The `app.control()` method gives you access to user inputs like keyboard and mouse and gives you control over the camera etc. It's the primary way to create interactive experiences.
 
+This API is contributed by the controls client plugin (`gamedev/plugins/controls/client`) and is available through the default client, admin, viewer, and node-client preset types.
+
 ```javascript
 // Get a control object
 const control = app.control()

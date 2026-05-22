@@ -6,9 +6,9 @@ import path from 'node:path'
 import { test } from 'vite-plus/test'
 import Database from 'better-sqlite3'
 
-import { readPacket } from '@gamedev/core/packets.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { buildRuntimeControlAuthorization } from '@gamedev/core/utils-server.js'
+import { readPacket } from '../../packages/plugins/network/packets.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
+import { buildRuntimeControlAuthorization } from '../../packages/server/platform/utils.js'
 import { buildRuntimeBootstrapAuthorization } from '@gamedev/server/runtimeBootstrap.js'
 import { createTempDir, getRepoRoot, startStandbyRuntimeServer, waitFor } from './helpers.js'
 

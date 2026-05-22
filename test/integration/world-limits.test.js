@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
-import { ServerNetwork } from '@gamedev/server/ServerNetwork.js'
+import { ServerNetwork } from '@gamedev/server/plugins/network/server.js'
 import { getMaxUploadSizeBytes, getMaxUploadSizeMb, getWorldMaxPlayers } from '@gamedev/server/worldLimits.js'
 
 function withEnv(overrides, run) {

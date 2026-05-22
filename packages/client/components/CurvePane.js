@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { css } from '@firebolt-dev/css'
 
-import { curveManager } from '@gamedev/core/extras/curveManager.js'
+import { curveManager } from './curveManager.js'
 import { usePane } from './usePane.js'
 
 export function CurvePane({ curve, title, xLabel, yLabel, yMin, yMax, onCommit, onCancel }) {

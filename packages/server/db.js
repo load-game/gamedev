@@ -1,10 +1,11 @@
 import Knex from 'knex'
 import moment from 'moment'
 import path from 'path'
-import { uuid } from '@gamedev/core/utils.js'
+import { uuid } from '@gamedev/core/ids/uuid.js'
 import { defaults } from 'lodash-es'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { getWorldMaxPlayers } from './worldLimits.js'
+import { createDefaultWorldSeedRecords } from './plugins/builtins/server.js'
 
 let db
 const WORLD_MAX_PLAYERS = getWorldMaxPlayers()
@@ -268,132 +269,13 @@ const migrations = [
     const now = moment().toISOString()
     const record = await db('config').where('key', 'settings').first()
     const settings = JSON.parse(record?.value || '{}')
-    // if using a settings model, we'll convert this to scene app
-    if (settings.model) {
-      // create blueprint and entity
-      const blueprintId = '$scene' // singleton
-      const blueprint = {
-        id: blueprintId,
-        data: JSON.stringify({
-          id: blueprintId,
-          version: 0,
-          name: 'Scene',
-          image: null,
-          author: null,
-          url: null,
-          desc: null,
-          model: settings.model.url,
-          script: null,
-          props: null,
-          preload: true,
-          public: false,
-          locked: false,
-          frozen: false,
-          unique: true,
-          scene: true,
-          disabled: false,
-          keep: true,
-        }),
-        createdAt: now,
-        updatedAt: now,
-      }
-      await db('blueprints').insert(blueprint)
-      const entityId = uuid()
-      const entity = {
-        id: entityId,
-        data: JSON.stringify({
-          id: entityId,
-          type: 'app',
-          blueprint: blueprint.id,
-          position: [0, 0, 0],
-          quaternion: [0, 0, 0, 1],
-          scale: [1, 1, 1],
-          mover: null,
-          uploader: null,
-          pinned: false,
-          props: {},
-          state: {},
-        }),
-        createdAt: now,
-        updatedAt: now,
-      }
-      await db('entities').insert(entity)
-      // clear settings.model
-      delete settings.model
+    const seed = createDefaultWorldSeedRecords({ settings, now, createId: uuid })
+    await db('blueprints').insert(seed.blueprint)
+    await db('entities').insert(seed.entity)
+    if (seed.settingsChanged) {
       await db('config')
         .where('key', 'settings')
-        .update({ value: JSON.stringify(settings) })
-    }
-    // otherwise create the default scene from built-in assets
-    else {
-      const blueprintId = '$scene'
-      const blueprint = {
-        id: blueprintId,
-        data: JSON.stringify({
-          id: blueprintId,
-          version: 0,
-          name: 'Scene',
-          image: null,
-          author: null,
-          url: null,
-          desc: null,
-          model: 'asset://Model.glb',
-          script: 'asset://scene.js',
-          scriptEntry: 'scene.js',
-          scriptFiles: {
-            'scene.js': 'asset://scene.js',
-          },
-          scriptFormat: 'module',
-          props: {
-            hour: 4,
-            period: 'pm',
-            intensity: 1,
-            sky: {
-              url: 'asset://sky.jpg',
-            },
-            hdr: {
-              url: 'asset://sky.hdr',
-            },
-            verticalRotation: 40,
-            horizontalRotation: 230,
-            rotationY: 0,
-            fogNear: 450,
-            fogFar: 1000,
-            fogColor: '#97b4d3',
-          },
-          preload: true,
-          public: false,
-          locked: false,
-          frozen: false,
-          unique: true,
-          scene: true,
-          disabled: false,
-          keep: true,
-        }),
-        createdAt: now,
-        updatedAt: now,
-      }
-      await db('blueprints').insert(blueprint)
-      const entityId = uuid()
-      const entity = {
-        id: entityId,
-        data: JSON.stringify({
-          id: entityId,
-          type: 'app',
-          blueprint: blueprint.id,
-          position: [0, 0, 0],
-          quaternion: [0, 0, 0, 1],
-          scale: [1, 1, 1],
-          mover: null,
-          uploader: null,
-          pinned: false,
-          props: {},
-          state: {},
-        }),
-        createdAt: now,
-        updatedAt: now,
-      }
-      await db('entities').insert(entity)
+        .update({ value: JSON.stringify(seed.settings) })
     }
   },
   // ensure settings exists with defaults AND default new voice setting to spatial

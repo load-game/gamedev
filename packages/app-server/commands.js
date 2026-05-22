@@ -11,7 +11,8 @@ import { uuid } from './utils.js'
 import { resolveBlueprintId, isBlueprintDenylist } from './blueprintUtils.js'
 import { applyTargetEnv, parseTargetArgs, resolveTarget } from './targets.js'
 import { isLocalWorldUrl } from './helpers.js'
-import { buildLegacyBodyModuleSource } from '../core/legacyBody.js'
+import { buildLegacyBodyModuleSource } from '../core/script-runtime/legacyBody.js'
+import { resolveBuiltinAssetPath as resolveServerBuiltinAssetPath } from '../server/plugins/builtins/server.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(__dirname, '..', '..')
@@ -29,11 +30,7 @@ function isValidAppName(name) {
 }
 
 function resolveBuiltinAssetPath(filename) {
-  const buildPath = path.join(repoRoot, 'build', 'world', 'assets', filename)
-  if (fs.existsSync(buildPath)) return buildPath
-  const srcPath = path.join(repoRoot, 'packages', 'server', 'world', 'assets', filename)
-  if (fs.existsSync(srcPath)) return srcPath
-  return null
+  return resolveServerBuiltinAssetPath(repoRoot, filename, fs.existsSync)
 }
 
 function readJson(filePath) {
@@ -363,7 +360,7 @@ export class HyperfyCLI {
     } catch (error) {
       const filename = String(error?.message || '').replace('missing_builtin_asset:', '')
       console.error(`❌ Missing builtin asset ${filename}`)
-      console.log(`💡 Expected ${filename} in build/world/assets or packages/server/world/assets`)
+      console.log(`💡 Expected ${filename} in build/world/assets or packages/server/plugins/builtins/assets`)
       return
     }
 

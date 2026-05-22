@@ -1,0 +1,13 @@
+import { definePlugin } from '../../core/plugins.js'
+import { ClientEnvironment } from './ClientEnvironment.js'
+import { installEnvironmentMaterialApi } from './material.js'
+
+export { ClientEnvironment }
+
+export const environmentClientPlugin = definePlugin({
+  name: '@gamedev/plugin-environment/client',
+  requires: ['core', 'prefs', 'graphics', 'loader', 'loader:hdr', 'loader:texture', 'stage'],
+  provides: ['@gamedev/plugin-environment', 'environment'],
+  systems: [['environment', ClientEnvironment]],
+  setup: installEnvironmentMaterialApi,
+})

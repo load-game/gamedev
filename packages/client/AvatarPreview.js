@@ -1,6 +1,5 @@
 import * as THREE from 'three'
-import { isString } from 'lodash'
-import { Emotes } from '@gamedev/core/extras/playerEmotes.js'
+import { Emotes } from '../plugins/entities/playerEmotes.js'
 
 const MAX_UPLOAD_SIZE = 1000000000000 // TODO
 const MAX_UPLOAD_SIZE_LABEL = '1LOLS'
@@ -10,25 +9,8 @@ const PLANE_ASPECT_RATIO = 16 / 9
 const HDR_URL = '/day2.hdr'
 
 const DEG2RAD = THREE.MathUtils.DEG2RAD
-const RAD2DEG = THREE.MathUtils.RAD2DEG
 
 const v1 = new THREE.Vector3()
-const v2 = new THREE.Vector3()
-const v3 = new THREE.Vector3()
-
-const materialSlots = [
-  'alphaMap',
-  'aoMap',
-  'bumpMap',
-  'displacementMap',
-  'emissiveMap',
-  'envMap',
-  'lightMap',
-  'map',
-  'metalnessMap',
-  'normalMap',
-  'roughnessMap',
-]
 
 let renderer = null // re-use one renderer for this
 function getRenderer() {
@@ -76,7 +58,6 @@ export class AvatarPreview {
   async load(file, url) {
     this.file = file
     this.url = url
-    console.log('file', this.file)
     if (this.file.size > MAX_UPLOAD_SIZE) {
       return { error: `Max file size ${MAX_UPLOAD_SIZE_LABEL}` }
     }
@@ -237,8 +218,6 @@ export class AvatarPreview {
   }
 
   resolveInfo() {
-    console.log(this.renderer.info)
-    console.log(this.renderer.info.render.triangles)
     const stats = {}
     // bounds
     const bbox = new THREE.Box3().setFromObject(this.node.instance.raw.scene)
@@ -315,7 +294,6 @@ export class AvatarPreview {
       rank,
       stats,
     }
-    console.log('info', this.info)
   }
 
   determineRank(fn) {

@@ -1,3 +1,5 @@
+import { DEFAULT_SCENE_TEMPLATE } from '../../server/plugins/builtins/server.js'
+
 export const BUILTIN_APP_TEMPLATES = [
   {
     appName: 'Model',
@@ -151,37 +153,21 @@ export const SCENE_TEMPLATE = {
   fileBase: '$scene',
   scriptAsset: 'scene.js',
   config: {
-    scriptFormat: 'module',
-    image: null,
-    author: null,
-    url: null,
-    desc: null,
-    model: 'asset://Model.glb',
-    props: {
-      hour: 4,
-      period: 'pm',
-      intensity: 1,
-      sky: {
-        url: 'asset://sky.jpg',
-      },
-      hdr: {
-        url: 'asset://sky.hdr',
-      },
-      verticalRotation: 40,
-      horizontalRotation: 230,
-      rotationY: 0,
-      fogNear: 450,
-      fogFar: 1000,
-      fogColor: '#97b4d3',
-    },
-    preload: true,
-    public: false,
-    locked: false,
-    frozen: false,
-    unique: true,
-    keep: true,
-    scene: true,
-    disabled: false,
+    scriptFormat: DEFAULT_SCENE_TEMPLATE.scriptFormat,
+    image: DEFAULT_SCENE_TEMPLATE.image,
+    author: DEFAULT_SCENE_TEMPLATE.author,
+    url: DEFAULT_SCENE_TEMPLATE.url,
+    desc: DEFAULT_SCENE_TEMPLATE.desc,
+    model: DEFAULT_SCENE_TEMPLATE.model,
+    props: DEFAULT_SCENE_TEMPLATE.props,
+    preload: DEFAULT_SCENE_TEMPLATE.preload,
+    public: DEFAULT_SCENE_TEMPLATE.public,
+    locked: DEFAULT_SCENE_TEMPLATE.locked,
+    frozen: DEFAULT_SCENE_TEMPLATE.frozen,
+    unique: DEFAULT_SCENE_TEMPLATE.unique,
+    keep: DEFAULT_SCENE_TEMPLATE.keep,
+    scene: DEFAULT_SCENE_TEMPLATE.scene,
+    disabled: DEFAULT_SCENE_TEMPLATE.disabled,
   },
 }
 

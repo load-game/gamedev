@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { css } from '@firebolt-dev/css'
 
-import { createAdminWorld } from '@gamedev/core/createAdminWorld.js'
+import { createAdminWorld } from '../presets/admin.js'
 import { CoreUI } from './components/CoreUI.js'
 import { assetPath } from './utils.js'
 

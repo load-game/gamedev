@@ -4,13 +4,19 @@ The global `world` variable is always available within the app scripting runtime
 
 ### `.networkId`: String
 
+Requires a network plugin (`gamedev/plugins/network/client`, `gamedev/plugins/network/server`, or `gamedev/plugins/network/admin`).
+
 A unique ID for the current server or client.
 
 ### `.isServer`: Boolean
 
+Requires a network plugin.
+
 Whether the script is currently executing on the server.
 
 ### `.isClient`: Boolean
+
+Requires a network plugin.
 
 Whether the script is currently executing on the client.
 
@@ -27,6 +33,8 @@ Removes a node from world-space, outside of the apps local hierarchy.
 Adds a node into world-space, maintaining its current world transform.
 
 ### `.load(type, url)`: Promise\<Node\>
+
+Requires a loader registry plugin (`gamedev/plugins/loader/client` or `gamedev/plugins/loader/server`) plus a handler plugin that provides the requested asset type, such as `gamedev/plugins/loader/client-handlers` or `gamedev/plugins/loader/server-handlers`.
 
 Asynchronously loads an asset and returns a node tree that can be added to the app or world.
 
@@ -84,6 +92,7 @@ Unsubscribes from world events.
 ### `.raycast(origin: Vector3, direction: Vector3, maxDistance: ?Number, layerMask: ?Number, opts: ?Object)`
 
 Raycasts the physics scene.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
 If `maxDistance` is not specified, max distance is infinite.
 If `layerMask` is not specified, it will hit anything.
 
@@ -94,17 +103,29 @@ If `layerMask` is not specified, it will hit anything.
 ### `.createLayerMask(...groups)`
 
 Creates a bitmask to be used in `world.raycast()`.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
 Currently the only groups available are `environment` and `player`.
 
+### `.overlapSphere(radius: Number, origin: Vector3, layerMask: ?Number)`
+
+Returns physics proxies overlapping a sphere.
+Requires the spatial plugin (`gamedev/plugins/spatial`).
+
 ### `.getPlayer(playerId)`: Player
+
+Requires the player entities plugin (`gamedev/plugins/entities/player`) or a preset that includes it.
 
 Returns a player. If no `playerId` is provided it returns the local player.
 
 ### `.getPlayers()`: [...Player]
 
+Requires the player entities plugin (`gamedev/plugins/entities/player`) or a preset that includes it.
+
 Returns an array of all players.
 
 ### `.get(key)`: Any
+
+Requires the storage plugin (`gamedev/plugins/storage`). The default server preset includes it.
 
 Gets the current cached value from world storage by key. Only available on the server.
 
@@ -165,18 +186,22 @@ This is the primitive to use when many instances may update the same shared reco
 ### `.getQueryParam(key)`
 
 Gets a query parameter value from the browsers url
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.setQueryParam(key, value)`
 
 Sets a query parameter in the browsers url
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.open(url: string, newTab: ?Boolean)`
 
 Opens a link, defaults to new tab.
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 ### `.copy(value, options?)`
 
 Copies content to the system clipboard on the client.
+Requires the browser client plugin (`gamedev/plugins/browser/client`).
 
 - Text: `await world.copy('0xabc...')`
 - Image: `await world.copy(props.image?.url, { kind: 'image' })`
@@ -184,6 +209,8 @@ Copies content to the system clipboard on the client.
 Returns `true` when the clipboard write succeeds, otherwise `false`.
 
 ### `.evm(chainId?)`
+
+Requires the EVM plugin (`gamedev/plugins/evm`).
 
 Returns the EVM helper API.
 
@@ -312,6 +339,8 @@ Returns:
 ```
 
 ### `.hyperliquid(address?)`
+
+Requires the Hyperliquid plugin (`gamedev/plugins/hyperliquid`).
 
 Returns the Hyperliquid helper API.
 
@@ -635,6 +664,8 @@ Notes:
 
 
 ### `.setReticle(options: ?Object)`
+
+Requires the UI plugin (`gamedev/plugins/ui/client`).
 
 Customizes the center-screen reticle. Pass `null` to reset to default.
 

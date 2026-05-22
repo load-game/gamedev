@@ -26,12 +26,12 @@ import {
   FieldToggle,
   FieldVec3,
 } from '../Fields.js'
-import { hashFile } from '@gamedev/core/utils-client.js'
-import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
-import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/extras/blueprintGroups.js'
-import { DEG2RAD, RAD2DEG } from '@gamedev/core/extras/general.js'
-import * as THREE from '@gamedev/core/extras/three.js'
-import { uuid } from '@gamedev/core/utils.js'
+import { hashFile } from '../../../plugins/browser/utils.js'
+import { downloadFile } from '../downloadFile.js'
+import { areBlueprintsTwinUnique, buildScriptGroups } from '../../../plugins/builder/blueprintGroups.js'
+import { DEG2RAD, RAD2DEG } from '@gamedev/core/math/general.js'
+import * as THREE from '@gamedev/core/math/three.js'
+import { uuid } from '@gamedev/core/ids/uuid.js'
 import { Pane } from './Pane.js'
 import { Group } from './Group.js'
 

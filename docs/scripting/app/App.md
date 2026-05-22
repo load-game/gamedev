@@ -41,6 +41,8 @@ IMPORTANT: Be sure to unsubscribe from update events when they are not needed. T
 
 ### `.send(name, data, skipNetworkId)`
 
+Requires a network plugin (`gamedev/plugins/network/client`, `gamedev/plugins/network/server`, or `gamedev/plugins/network/admin`).
+
 Sends an event across the network.
 If the caller is on the client, the event is sent to the server. The third argument `skipNetworkId` is a no-op here.
 If the caller is on the server, the event is sent to all clients, with the `skipNetworkId` argument allowing you to skip sending to one specific client.
@@ -62,10 +64,13 @@ NOTE: Blender GLTF exporter renames objects in some cases, eg by removing spaces
 ### `.create(nodeName)`: Node
 
 Creates and returns a node of the specified name.
+Requires the nodes plugin (`gamedev/plugins/nodes`) to register the built-in node constructors.
 
 ### `.asset(relativePath)`: String
 
-Resolves relative asset paths to absolute URLs that can be used to load app assets like images, models, or audio files.
+Requires the app entities plugin (`gamedev/plugins/entities/app`) or a preset that includes it.
+
+Resolves relative asset paths from the app blueprint `assetMap` to absolute URLs that can be used to load app assets like images, models, or audio files. Returns an empty string when the asset is not mapped.
 
 **Example:**
 ```javascript
@@ -76,7 +81,9 @@ app.add(image)
 
 ### `.control(options)`
 
-Gives you control to listen for inputs and modify things like camera position. See [Control(/docs/scripting/app/Control.md) for more info.
+Requires the controls client plugin (`gamedev/plugins/controls/client`).
+
+Gives you control to listen for inputs and modify things like camera position. See [Control](/docs/scripting/app/Control.md) for more info.
 
 #### `.configure(fields)`
 

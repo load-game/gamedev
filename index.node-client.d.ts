@@ -1,3 +1,3 @@
-export { createNodeClientWorld } from '@gamedev/core/createNodeClientWorld.js'
+export declare function createNodeClientWorld(options?: { plugins?: any }): any
 export declare class System {}
 export declare const storage: any

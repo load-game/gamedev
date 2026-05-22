@@ -1,0 +1,11 @@
+import { definePlugin } from '../../core/plugins.js'
+import { Particles } from './Particles.js'
+
+export { Particles }
+
+export const particlesClientPlugin = definePlugin({
+  name: '@gamedev/plugin-particles/client',
+  requires: ['core', 'client', 'loader', 'loader:texture', 'stage', 'view'],
+  provides: ['@gamedev/plugin-particles', 'particles'],
+  systems: [['particles', Particles]],
+})

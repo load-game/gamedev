@@ -1,14 +1,10 @@
 import { css } from '@firebolt-dev/css'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronUpIcon, LoaderIcon, MessageSquareTextIcon, RefreshCwIcon, SendHorizonalIcon } from 'lucide-react'
-import moment from 'moment'
+import { useEffect, useRef, useState } from 'react'
+import { LoaderIcon, MessageSquareTextIcon, RefreshCwIcon, SendHorizonalIcon } from 'lucide-react'
 
 import { AvatarPane } from './AvatarPane.js'
-import { useElemSize } from './useElemSize.js'
 import { cls, isTouch } from '../utils.js'
-import { theme } from './theme.js'
-import { uuid } from '@gamedev/core/utils.js'
-import { ControlPriorities } from '@gamedev/core/extras/ControlPriorities.js'
+import { ControlPriorities } from '../../plugins/controls/ControlPriorities.js'
 // import { AppsPane } from './AppsPane.js'
 // import { MenuMain } from './MenuMain'
 // import { MenuApp } from './MenuApp.js'
@@ -18,15 +14,15 @@ import { MainMenu } from './MainMenu.js'
 export function CoreUI({ world, connectionStatus }) {
   const ref = useRef()
   const [ready, setReady] = useState(false)
-  const [player, setPlayer] = useState(() => world.entities.player)
+  const [, setPlayer] = useState(() => world.entities.player)
   const [ui, setUI] = useState(world.ui.state)
-  const [menu, setMenu] = useState(null)
+  const [, setMenu] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [prompt, setPrompt] = useState(null)
-  const [code, setCode] = useState(false)
+  const [, setCode] = useState(false)
   const [avatar, setAvatar] = useState(null)
   const [disconnected, setDisconnected] = useState(false)
-  const [apps, setApps] = useState(false)
+  const [, setApps] = useState(false)
   const [kicked, setKicked] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => {
@@ -503,7 +499,7 @@ function Chat({ world }) {
               send(e)
             }
           }}
-          onBlur={e => {
+          onBlur={() => {
             if (!isTouch) {
               setActive(false)
             }
@@ -542,8 +538,6 @@ function MiniMessages({ world }) {
   if (!msg) return null
   return <Message msg={msg} />
 }
-
-const MESSAGES_REFRESH_RATE = 30 // every x seconds
 
 function Messages({ world, active }) {
   const initRef = useRef()
@@ -624,7 +618,7 @@ function Messages({ world, active }) {
   )
 }
 
-function Message({ msg, now }) {
+function Message({ msg }) {
   // const timeAgo = useMemo(() => {
   //   const createdAt = moment(msg.createdAt)
   //   const age = now.diff(createdAt, 'seconds')
@@ -1435,7 +1429,7 @@ function Confirm({ options }) {
   )
 }
 
-function Prompt({ world, options }) {
+function Prompt({ options }) {
   const inputRef = useRef()
   const [value, setValue] = useState(options.defaultValue || '')
   const [error, setError] = useState(null)

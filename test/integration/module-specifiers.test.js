@@ -4,7 +4,7 @@ import {
   resolveRelativeModuleSpecifier,
   normalizeSharedRelPath,
   getSharedRelPathAlternate,
-} from '@gamedev/core/moduleSpecifiers.js'
+} from '@gamedev/core/script-runtime/moduleSpecifiers.js'
 
 test('resolveRelativeModuleSpecifier normalizes relative paths', () => {
   const referrer = 'app://demo@3/src/index.js'

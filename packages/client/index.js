@@ -9,8 +9,8 @@ import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth'
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
 import { arbitrum } from '@privy-io/chains'
 
-import { storage } from '@gamedev/core/storage.js'
-import { resolveConnectionPolicy } from '@gamedev/core/utils-client.js'
+import { storage } from '../plugins/storage/local.js'
+import { resolveConnectionPolicy } from '../plugins/browser/utils.js'
 import { Client } from './world-client.js'
 
 function buildWsUrl(baseUrl, token) {

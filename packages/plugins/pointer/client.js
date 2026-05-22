@@ -1,0 +1,11 @@
+import { definePlugin } from '../../core/plugins.js'
+import { ClientPointer } from './ClientPointer.js'
+
+export { ClientPointer }
+
+export const pointerClientPlugin = definePlugin({
+  name: '@gamedev/plugin-pointer/client',
+  requires: ['core', 'controls', 'stage'],
+  provides: ['@gamedev/plugin-pointer', 'pointer'],
+  systems: [['pointer', ClientPointer]],
+})

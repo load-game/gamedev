@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { File } from 'node:buffer'
 import { test } from 'vite-plus/test'
-import { exportApp, importApp } from '@gamedev/core/extras/appTools.js'
-import { hashFile } from '@gamedev/core/utils-client.js'
+import { exportApp, importApp } from '../../packages/plugins/builder/appTools.js'
+import { hashFile } from '../../packages/plugins/browser/utils.js'
 
 if (!globalThis.File) {
   globalThis.File = File
@@ -31,6 +31,7 @@ test('exportApp/importApp round-trips .hyp bundles', async () => {
   const skyUrl = 'asset://sky.hdr'
   const previewUrl = 'asset://preview.webp'
   const soundUrl = 'asset://sound.mp3'
+  const badgeUrl = 'asset://badge.png'
 
   addFile(modelUrl, new Uint8Array([1, 2, 3, 4]), 'model.glb', 'model/gltf-binary')
   addFile(scriptUrl, 'console.log("ok")', 'script.js', 'application/javascript')
@@ -39,6 +40,7 @@ test('exportApp/importApp round-trips .hyp bundles', async () => {
   addFile(skyUrl, new Uint8Array([8, 9]), 'sky.hdr', 'application/octet-stream')
   addFile(previewUrl, new Uint8Array([10, 11, 12]), 'preview.webp', 'image/webp')
   addFile(soundUrl, new Uint8Array([13, 14, 15, 16]), 'sound.mp3', 'audio/mpeg')
+  addFile(badgeUrl, new Uint8Array([17, 18, 19]), 'badge.png', 'image/png')
 
   const scriptRoot = {
     id: 'bp1__script',
@@ -61,6 +63,9 @@ test('exportApp/importApp round-trips .hyp bundles', async () => {
     model: modelUrl,
     script: scriptUrl,
     scriptRef: scriptRoot.id,
+    assetMap: {
+      'assets/badge.png': badgeUrl,
+    },
     props: {
       sky: { url: skyUrl, intensity: 1 },
       preview: { url: previewUrl },
@@ -95,6 +100,7 @@ test('exportApp/importApp round-trips .hyp bundles', async () => {
   assert.deepEqual(Object.keys(header.blueprint.scriptFiles).sort(), Object.keys(scriptRoot.scriptFiles).sort())
   assert.equal(header.blueprint.scriptFiles['index.js'], scriptUrl)
   assert.equal(header.blueprint.scriptFiles['helpers/math.js'], helperUrl)
+  assert.equal(header.blueprint.assetMap['assets/badge.png'], badgeUrl)
 
   const hdrAsset = header.assets.find(asset => asset.url === skyUrl)
   assert.equal(hdrAsset.type, 'hdr')
@@ -120,6 +126,7 @@ test('exportApp/importApp round-trips .hyp bundles', async () => {
   assert.deepEqual(Object.keys(imported.blueprint.scriptFiles).sort(), Object.keys(scriptRoot.scriptFiles).sort())
   assert.equal(imported.blueprint.scriptFiles['index.js'], expectedUrls.get(scriptUrl))
   assert.equal(imported.blueprint.scriptFiles['helpers/math.js'], expectedUrls.get(helperUrl))
+  assert.equal(imported.blueprint.assetMap['assets/badge.png'], expectedUrls.get(badgeUrl))
   assert.equal(imported.blueprint.props.sky.url, expectedUrls.get(skyUrl))
   assert.equal(imported.blueprint.props.sky.intensity, 1)
   assert.equal(imported.blueprint.props.preview.url, expectedUrls.get(previewUrl))

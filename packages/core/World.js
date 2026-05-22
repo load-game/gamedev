@@ -1,22 +1,9 @@
-import * as THREE from './extras/three.js'
 import EventEmitter from 'eventemitter3'
-
-import { Settings } from './systems/Settings.js'
-import { Apps } from './systems/Apps.js'
-import { Anchors } from './systems/Anchors.js'
-import { Avatars } from './systems/Avatars.js'
-import { Animation } from './systems/Animation.js'
-import { Events } from './systems/Events.js'
-import { Chat } from './systems/Chat.js'
-import { Blueprints } from './systems/Blueprints.js'
-import { Entities } from './systems/Entities.js'
-import { Physics } from './systems/Physics.js'
-import { Stage } from './systems/Stage.js'
-import { Scripts } from './systems/Scripts.js'
-import { Logs } from './systems/Logs.js'
+import { installWorldExtension } from './plugins.js'
+import { warn } from './diagnostics/warn.js'
 
 export class World extends EventEmitter {
-  constructor() {
+  constructor(options = {}) {
     super()
 
     this.maxDeltaTime = 1 / 30 // 0.33333
@@ -29,33 +16,89 @@ export class World extends EventEmitter {
     this.assetsUrl = null
     this.assetsDir = null
     this.hot = new Set()
+    this.plugins = []
+    this.pluginCapabilities = new Set()
+    this.pendingScriptApi = []
+    this.nodeTypes = new Map()
+    this.entityTypes = new Map()
 
-    this.rig = new THREE.Object3D()
-    // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
-    // this gives us minimal z-fighting without needing logarithmic depth buffers
-    this.camera = new THREE.PerspectiveCamera(70, 0, 0.2, 1200)
-    this.rig.add(this.camera)
-
-    this.register('settings', Settings)
-    this.register('apps', Apps)
-    this.register('anchors', Anchors)
-    this.register('avatars', Avatars)
-    this.register('animation', Animation)
-    this.register('events', Events)
-    this.register('scripts', Scripts)
-    this.register('chat', Chat)
-    this.register('blueprints', Blueprints)
-    this.register('entities', Entities)
-    this.register('physics', Physics)
-    this.register('stage', Stage)
-    this.register('logs', Logs)
+    if (options.plugins) {
+      this.install(options.plugins)
+    }
   }
 
-  register(key, System) {
+  install(extension) {
+    installWorldExtension(this, extension)
+    return this
+  }
+
+  register(key, System, options = {}) {
+    if (this[key]) {
+      throw new Error(`world_system_collision:${key}`)
+    }
     const system = new System(this)
+    system.plugin = options.plugin || null
     this.systems.push(system)
     this[key] = system
+    if (key === 'apps') {
+      this.flushPendingScriptApi()
+    }
     return system
+  }
+
+  registerNode(key, Node, options = {}) {
+    if (this.nodeTypes.has(key)) {
+      throw new Error(`world_node_collision:${key}`)
+    }
+    this.nodeTypes.set(key, { Node, plugin: options.plugin || null })
+  }
+
+  registerEntity(key, definition, options = {}) {
+    if (this.entityTypes.has(key)) {
+      throw new Error(`world_entity_collision:${key}`)
+    }
+    this.entityTypes.set(key, {
+      Entity: definition.Entity || null,
+      create: definition.create || null,
+      plugin: options.plugin || null,
+    })
+  }
+
+  createEntity(data, local) {
+    const type = data?.type
+    const entry = this.entityTypes.get(type)
+    if (!entry) {
+      throw new Error(`world_entity_missing:${type}`)
+    }
+    if (entry.create) {
+      return entry.create(this, data, local)
+    }
+    return new entry.Entity(this, data, local)
+  }
+
+  createNode(name, data) {
+    const entry = this.nodeTypes.get(name)
+    if (!entry) {
+      throw new Error(`world_node_missing:${name}`)
+    }
+    return new entry.Node(data)
+  }
+
+  exposeScripts(api, source = 'world', metadata = null) {
+    if (!api) return
+    if (this.apps?.exposeScriptApi) {
+      this.apps.exposeScriptApi(api, source, metadata)
+    } else {
+      this.pendingScriptApi.push({ api, source, metadata })
+    }
+  }
+
+  flushPendingScriptApi() {
+    if (!this.apps?.exposeScriptApi || !this.pendingScriptApi.length) return
+    const pending = this.pendingScriptApi.splice(0)
+    for (const entry of pending) {
+      this.apps.exposeScriptApi(entry.api, entry.source, entry.metadata)
+    }
   }
 
   async init(options) {
@@ -194,10 +237,6 @@ export class World extends EventEmitter {
     }
   }
 
-  setupMaterial = material => {
-    this.environment.csm?.setupMaterial(material)
-  }
-
   setHot(item, hot) {
     if (hot) {
       this.hot.add(item)
@@ -218,7 +257,7 @@ export class World extends EventEmitter {
       } else if (this.assetsUrl) {
         return url.replace('asset:/', this.assetsUrl)
       } else {
-        console.error('resolveURL: no assetsUrl or assetsDir defined')
+        warn('resolveURL: no assetsUrl or assetsDir defined')
         return url
       }
     }
@@ -234,8 +273,8 @@ export class World extends EventEmitter {
     return `https://${url}`
   }
 
-  inject(runtime) {
-    this.apps.inject(runtime)
+  inject(runtime, metadata = null) {
+    this.exposeScripts(runtime, 'world.inject', metadata)
   }
 
   destroy() {

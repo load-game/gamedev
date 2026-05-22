@@ -45,12 +45,8 @@ import {
   verifyRuntimeBootstrapAuthorization,
   usesHostedRuntimeBootstrap,
 } from './runtimeBootstrap.js'
-import {
-  buildRuntimeControlAuthorization,
-  createJWT,
-  verifyIdentityExchangeTokenWithLobby,
-} from '@gamedev/core/utils-server.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
+import { buildRuntimeControlAuthorization, createJWT, verifyIdentityExchangeTokenWithLobby } from './platform/utils.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
 
 function resolveRuntimeRootDir() {
   const candidates = [path.resolve(__dirname, '..'), path.resolve(__dirname, '../..'), process.cwd()]
@@ -782,7 +778,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
       import('./cleaner.js'),
       import('./db.js'),
       import('./Storage.js'),
-      import('./createServerWorld.js'),
+      import('./presets/server.js'),
     ])
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_modules_ready', {
       durationMs: Date.now() - startedAt,

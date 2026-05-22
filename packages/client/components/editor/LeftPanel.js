@@ -9,7 +9,7 @@ import { isTouch } from '../../utils.js'
 import { MouseLeftIcon } from '../MouseLeftIcon.js'
 import { MouseRightIcon } from '../MouseRightIcon.js'
 import { MouseWheelIcon } from '../MouseWheelIcon.js'
-import { buttons, propToLabel } from '@gamedev/core/extras/buttons.js'
+import { buttons, propToLabel } from '../../../plugins/controls/buttons.js'
 
 export function LeftPanel({ world }) {
   return (

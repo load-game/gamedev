@@ -1,9 +1,9 @@
 import crypto from 'crypto'
 import fs from 'fs'
 
-import { readPacket, writePacket } from '@gamedev/core/packets.js'
-import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/core/utils-server.js'
+import { readPacket, writePacket } from '../plugins/network/packets.js'
+import { Ranks } from '@gamedev/core/permissions/ranks.js'
+import { buildRuntimeControlAuthorization, readJWT } from './platform/utils.js'
 import { cleaner } from './cleaner.js'
 import { ADMIN_CREDENTIAL_COMMAND, handleRuntimeCredentialCommand } from './adminCredentials.js'
 import { ADMIN_SHUTDOWN_COMMAND, handleAdminShutdownCommand } from './adminShutdown.js'

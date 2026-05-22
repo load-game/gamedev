@@ -67,7 +67,7 @@ The header is a JSON object with the following structure:
   - Variants (`App__Variant`) should set `scriptRef` to the shared script-root blueprint to avoid duplicating `scriptFiles`.
 - `assetMap`: (Optional) Map of app-relative paths (e.g. `assets/foo.png`) to canonical `asset://...` URLs.
   - Used to make local app `.hyp` exports portable: runtime helpers like `app.asset('./assets/foo.png')` can return the bundled `asset://...` URL after import.
-  - When absent, `app.asset()` may resolve to `app://...` only for live local apps.
+  - When absent or missing a key, `app.asset()` returns an empty string for that relative path.
 - `props`: Object containing additional properties with associated assets
 - `frozen`: Boolean flag indicating if the app is locked/frozen
 

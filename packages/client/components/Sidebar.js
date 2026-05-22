@@ -4,16 +4,20 @@ import { HammerIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
 import { cls } from './cls.js'
 import { theme } from './theme.js'
 import { HintProvider } from './Hint.js'
-import { exportApp } from '@gamedev/core/extras/appTools.js'
+import { exportApp } from '../../plugins/builder/appTools.js'
 import { assetPath, isTouch } from '../utils.js'
-import { downloadFile } from '@gamedev/core/extras/downloadFile.js'
+import { downloadFile } from './downloadFile.js'
 import { useRank } from './useRank.js'
-import { sanitizeWsUrl } from '@gamedev/core/utils.js'
-import { getPreferredServerUrl, resolveConnectionPolicy, navigateToServer } from '@gamedev/core/utils-client.js'
+import {
+  getPreferredServerUrl,
+  resolveConnectionPolicy,
+  navigateToServer,
+  sanitizeWsUrl,
+} from '../../plugins/browser/utils.js'
 import { MouseLeftIcon } from './MouseLeftIcon.js'
 import { MouseRightIcon } from './MouseRightIcon.js'
 import { MouseWheelIcon } from './MouseWheelIcon.js'
-import { buttons, propToLabel } from '@gamedev/core/extras/buttons.js'
+import { buttons, propToLabel } from '../../plugins/controls/buttons.js'
 import { World } from './sidebar/World.js'
 import { Apps } from './sidebar/Apps.js'
 import { Add } from './sidebar/Add.js'
@@ -37,7 +41,7 @@ export function Sidebar({ world, ui, onOpenMenu, walletAuth, onConnectWallet, on
       const file = await exportApp(app.blueprint, world.loader.loadFile, id => world.blueprints.get(id))
       downloadFile(file)
     } catch (err) {
-      console.error(err)
+      world.logs?.add('client', 'error', ['Export failed', err])
       world.emit('toast', 'Export failed')
     }
   }

@@ -11,10 +11,13 @@ const packageJson = JSON.parse(fs.readFileSync(fromRoot('./package.json'), 'utf-
 const externalPackages = Object.keys(packageJson.dependencies ?? {}).filter(name => !name.startsWith('@gamedev/'))
 
 const runtimeCopy = [
-  { from: 'packages/core/physx-js-webidl.js', to: 'build' },
-  { from: 'packages/core/physx-js-webidl.wasm', to: 'build' },
+  { from: 'packages/plugins/spatial/physx/physx-js-webidl.js', to: 'build' },
+  { from: 'packages/plugins/spatial/physx/physx-js-webidl.wasm', to: 'build' },
 ]
-const serverRuntimeCopy = [...runtimeCopy, { from: 'packages/core/physx-js-webidl.wasm', to: 'build/server-chunks' }]
+const serverRuntimeCopy = [
+  ...runtimeCopy,
+  { from: 'packages/plugins/spatial/physx/physx-js-webidl.wasm', to: 'build/server-chunks' },
+]
 
 export default defineConfig({
   plugins: [
@@ -43,9 +46,12 @@ export default defineConfig({
       'build/**',
       '.codex-status/**',
       'node_modules/**',
-      'packages/core/libs/**',
-      'packages/core/physx-js-webidl.js',
-      'packages/core/physx-js-webidl.wasm',
+      'packages/plugins/environment/csm/**',
+      'packages/plugins/loader/gltfloader/**',
+      'packages/plugins/rendering/three-custom-shader-material/**',
+      'packages/plugins/stats/stats-gl/**',
+      'packages/plugins/spatial/physx/physx-js-webidl.js',
+      'packages/plugins/spatial/physx/physx-js-webidl.wasm',
     ],
     rules: {
       'no-console': 'warn',
@@ -58,9 +64,12 @@ export default defineConfig({
       'build/**',
       '.codex-status/**',
       'node_modules/**',
-      'packages/core/libs/**',
-      'packages/core/physx-js-webidl.js',
-      'packages/core/physx-js-webidl.wasm',
+      'packages/plugins/environment/csm/**',
+      'packages/plugins/loader/gltfloader/**',
+      'packages/plugins/rendering/three-custom-shader-material/**',
+      'packages/plugins/stats/stats-gl/**',
+      'packages/plugins/spatial/physx/physx-js-webidl.js',
+      'packages/plugins/spatial/physx/physx-js-webidl.wasm',
     ],
     semi: false,
     singleQuote: true,
@@ -108,7 +117,7 @@ export default defineConfig({
       copy: [
         ...serverRuntimeCopy,
         {
-          from: 'packages/server/world/assets',
+          from: 'packages/server/plugins/builtins/assets',
           to: 'build/world',
         },
       ],
