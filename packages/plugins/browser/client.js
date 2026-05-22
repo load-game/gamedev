@@ -1,5 +1,5 @@
-import { definePlugin } from '../../plugins.js'
-import { warn } from '../../diagnostics/warn.js'
+import { definePlugin } from '../../core/plugins.js'
+import { warn } from '../../core/diagnostics/warn.js'
 
 const isBrowser = typeof window !== 'undefined'
 

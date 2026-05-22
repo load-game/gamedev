@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ClientCSS } from './ClientCSS.js'
 
 export { ClientCSS }
