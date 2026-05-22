@@ -1,5 +1,5 @@
-import * as THREE from '../../math/three.js'
-import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
+import * as THREE from '../../core/math/three.js'
+import CustomShaderMaterial from '../../core/libs/three-custom-shader-material/index.js'
 
 const groupTypes = ['Scene', 'Group', 'Object3D']
 

@@ -1,11 +1,11 @@
-import * as THREE from '../../math/three.js'
+import * as THREE from '../../core/math/three.js'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 import { TextureLoader } from 'three'
 import Hls from 'hls.js/dist/hls.js'
 
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { createVRMFactory } from './createVRMFactory.js'
 import { glbToNodes } from './glbToNodes.js'
 import { createEmoteFactory } from './createEmoteFactory.js'

@@ -1,8 +1,8 @@
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { GLTFLoader } from '../../libs/gltfloader/GLTFLoader.js'
+import { GLTFLoader } from '../../core/libs/gltfloader/GLTFLoader.js'
 // import { VRMLoaderPlugin } from '@pixiv/three-vrm'
 
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { glbToNodes } from './glbToNodes.js'
 import { createEmoteFactory } from './createEmoteFactory.js'
 

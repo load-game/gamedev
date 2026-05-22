@@ -267,9 +267,9 @@
     },
     "./plugins/loader/client-handlers": {
       "types": "./index.plugin-loader-client-handlers.d.ts",
-      "import": "./packages/core/plugins/loader/client-handlers.js",
-      "require": "./packages/core/plugins/loader/client-handlers.js",
-      "default": "./packages/core/plugins/loader/client-handlers.js"
+      "import": "./packages/plugins/loader/client-handlers.js",
+      "require": "./packages/plugins/loader/client-handlers.js",
+      "default": "./packages/plugins/loader/client-handlers.js"
     },
     "./plugins/loader/server": {
       "types": "./index.plugin-loader-server.d.ts",
@@ -279,9 +279,9 @@
     },
     "./plugins/loader/server-handlers": {
       "types": "./index.plugin-loader-server-handlers.d.ts",
-      "import": "./packages/core/plugins/loader/server-handlers.js",
-      "require": "./packages/core/plugins/loader/server-handlers.js",
-      "default": "./packages/core/plugins/loader/server-handlers.js"
+      "import": "./packages/plugins/loader/server-handlers.js",
+      "require": "./packages/plugins/loader/server-handlers.js",
+      "default": "./packages/plugins/loader/server-handlers.js"
     },
     "./plugins/livekit/client": {
       "types": "./index.plugin-livekit-client.d.ts",

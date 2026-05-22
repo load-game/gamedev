@@ -1,10 +1,10 @@
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
-import * as THREE from '../../math/three.js'
-import { DEG2RAD } from '../../math/general.js'
-import { getTrianglesFromGeometry } from '../nodes/getTrianglesFromGeometry.js'
-import { getTextureBytesFromMaterial } from '../nodes/getTextureBytesFromMaterial.js'
-import { Emotes } from '../entities/playerEmotes.js'
+import * as THREE from '../../core/math/three.js'
+import { DEG2RAD } from '../../core/math/general.js'
+import { getTrianglesFromGeometry } from '../../core/plugins/nodes/getTrianglesFromGeometry.js'
+import { getTextureBytesFromMaterial } from '../../core/plugins/nodes/getTextureBytesFromMaterial.js'
+import { Emotes } from '../../core/plugins/entities/playerEmotes.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()

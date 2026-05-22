@@ -7,7 +7,7 @@ import { World } from '@gamedev/core/World.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
 import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
-import { loaderServerHandlersPlugin } from '@gamedev/core/plugins/loader/server-handlers.js'
+import { loaderServerHandlersPlugin } from 'gamedev/plugins/loader/server-handlers'
 import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { createTempDir, getRepoRoot, waitFor } from './helpers.js'
 

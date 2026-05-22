@@ -167,7 +167,7 @@ The default client and server presets include the first-party logs/diagnostics, 
 
 AI, EVM, Hyperliquid, and LiveKit are first-party feature plugins outside `@gamedev/core`. Their public entrypoints remain `gamedev/plugins/ai/client`, `gamedev/plugins/ai/server`, `gamedev/plugins/evm`, `gamedev/plugins/hyperliquid`, `gamedev/plugins/livekit/client`, `gamedev/plugins/livekit/admin`, and `gamedev/plugins/livekit/server`, but their implementations live under `packages/plugins` rather than the kernel package.
 
-The first-party loader handler plugins also own GLB-to-node conversion, VRM factory creation, and emote factory creation. These helpers are no longer root core extras because they are only needed when the selected build includes the first-party loader handlers.
+The first-party loader handler plugins also live outside `@gamedev/core` and own GLB-to-node conversion, VRM factory creation, and emote factory creation. These helpers are no longer root core extras because they are only needed when the selected build includes the first-party loader handlers.
 
 The controls plugin owns input button maps and control priorities. Plugins or UI surfaces that bind controls import those contracts from `gamedev/plugins/controls` support files instead of root core extras.
 
