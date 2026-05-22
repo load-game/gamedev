@@ -1,14 +1,16 @@
 import { definePlugin } from '../../plugins.js'
-import { AdminPlayerRemote } from '../../entities/AdminPlayerRemote.js'
 import { PlayerLocal } from '../../entities/PlayerLocal.js'
 import { PlayerRemote } from '../../entities/PlayerRemote.js'
 import { cleanupPlayerEntityProxy, playerEntityScriptApi } from './playerScriptApi.js'
 
-export { AdminPlayerRemote, PlayerLocal, PlayerRemote }
+export { PlayerLocal, PlayerRemote }
 export { cleanupPlayerEntityProxy, playerEntityScriptApi }
 
 function createPlayerEntity(world, data, local) {
-  const Entity = world.isAdminClient ? AdminPlayerRemote : data.owner === world.network.id ? PlayerLocal : PlayerRemote
+  if (world.playerEntityFactory) {
+    return world.playerEntityFactory(world, data, local)
+  }
+  const Entity = data.owner === world.network.id ? PlayerLocal : PlayerRemote
   return new Entity(world, data, local)
 }
 

@@ -2,10 +2,6 @@ import 'gamedev'
 import type { BaseNode, Matrix4, Player, Vector3, Vector3Like } from './index.d.ts'
 import type { WorldPlugin } from './index.plugins.d.ts'
 
-export declare class AdminPlayerRemote {
-  constructor(world: any, data: any, local?: boolean)
-}
-
 export declare class PlayerLocal {
   constructor(world: any, data: any, local?: boolean)
 }

@@ -9,6 +9,7 @@ import { browserClientPlugin } from '../plugins/browser/client.js'
 import { chatPlugin } from '../plugins/chat.js'
 import { controlsClientPlugin } from '../plugins/controls/client.js'
 import { cssClientPlugin } from '../plugins/css/client.js'
+import { adminPlayerEntitiesPlugin } from '../plugins/entities/admin-player.js'
 import { environmentClientPlugin } from '../plugins/environment/client.js'
 import { appEntityPlugin } from '../plugins/entities/app.js'
 import { playerEntitiesPlugin } from '../plugins/entities/player.js'
@@ -33,31 +34,12 @@ import { uiClientPlugin } from '../plugins/ui/client.js'
 import { viewPlugin } from '../plugins/view.js'
 import { windClientPlugin } from '../plugins/wind/client.js'
 import { xrAdminPlugin } from '../plugins/xr/admin.js'
-import { AdminLocalPlayer } from '../entities/AdminLocalPlayer.js'
-import { FreeCam } from '../entities/FreeCam.js'
 import { Client } from '../systems/Client.js'
-import { uuid } from '../utils.js'
 
 export const adminRuntimePlugin = definePlugin({
   name: '@gamedev/admin/runtime',
   requires: ['core', 'graphics', 'controls'],
   systems: [['client', Client]],
-  setup(world) {
-    world.isAdminClient = true
-
-    const adminPlayer = new AdminLocalPlayer(world, { id: world.network?.id || uuid() })
-    world.entities.player = adminPlayer
-    world.adminPlayer = adminPlayer
-    world.emit('player', adminPlayer)
-
-    const baseInit = world.init.bind(world)
-    world.init = async options => {
-      await baseInit(options)
-      if (!world.freeCam) {
-        world.freeCam = new FreeCam(world)
-      }
-    }
-  },
 })
 
 export const adminPreset = definePreset({
@@ -93,6 +75,7 @@ export const adminPreset = definePreset({
     loaderClientHandlersPlugin,
     appEntityPlugin,
     playerEntitiesPlugin,
+    adminPlayerEntitiesPlugin,
     environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,

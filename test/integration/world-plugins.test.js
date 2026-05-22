@@ -20,6 +20,7 @@ import { controlsClientPlugin } from '@gamedev/core/plugins/controls/client.js'
 import { cssClientPlugin } from '@gamedev/core/plugins/css/client.js'
 import { environmentClientPlugin } from '@gamedev/core/plugins/environment/client.js'
 import { environmentServerPlugin } from '@gamedev/core/plugins/environment/server.js'
+import { adminPlayerEntitiesPlugin } from '@gamedev/core/plugins/entities/admin-player.js'
 import { appEntityPlugin } from '@gamedev/core/plugins/entities/app.js'
 import { playerEntitiesPlugin } from '@gamedev/core/plugins/entities/player.js'
 import { evmServerPlugin } from '@gamedev/core/plugins/evm.js'
@@ -541,6 +542,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/plugin-loader-handlers/client',
       '@gamedev/plugin-entities/app',
       '@gamedev/plugin-entities/player',
+      '@gamedev/plugin-entities/admin-player',
       '@gamedev/plugin-environment/client',
       '@gamedev/plugin-particles/client',
       '@gamedev/plugin-admin/client',
@@ -950,7 +952,10 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:world.getPlayers'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.teleport'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.applyEffect'), true)
+  assert.equal(playerEntityWorld.pluginCapabilities.has('admin-player-entities'), false)
   assert.equal(playerEntityWorld.entityTypes.has('player'), true)
+  assert.equal(playerEntityWorld.isAdminClient, undefined)
+  assert.equal(playerEntityWorld.playerEntityFactory, undefined)
   assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayer, 'function')
   assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayers, 'function')
   assert.equal(typeof playerEntityWorld.apps.playerMethods.teleport, 'function')
@@ -1022,6 +1027,35 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(effectHandle.active, false)
   assert.equal(fakePlayerEntity.data.effect, null)
   assert.equal(effectEnded, true)
+
+  const adminPlayerRuntimeStub = definePlugin({
+    name: 'test-admin-player-runtime',
+    systems: [['client', TestSystem]],
+  })
+  const adminPlayerWorld = new World({
+    plugins: [
+      coreSystemsPlugin,
+      nodesPlugin,
+      viewPlugin,
+      spatialPlugin,
+      stagePlugin,
+      chatPlugin,
+      prefsClientPlugin,
+      controlsClientPlugin,
+      adminPlayerRuntimeStub,
+      networkAdminPlugin,
+      loaderClientPlugin,
+      loaderClientHandlersPlugin,
+      playerEntitiesPlugin,
+      adminPlayerEntitiesPlugin,
+    ],
+  })
+  assert.equal(adminPlayerWorld.pluginCapabilities.has('admin-player-entities'), true)
+  assert.equal(adminPlayerWorld.isAdminClient, true)
+  assert.equal(typeof adminPlayerWorld.playerEntityFactory, 'function')
+  assert.ok(adminPlayerWorld.adminPlayer)
+  assert.equal(adminPlayerWorld.entities.player, adminPlayerWorld.adminPlayer)
+  assert.equal(adminPlayerWorld.adminPlayer.data.id, adminPlayerWorld.network.id)
 
   const clientRuntimeStub = definePlugin({
     name: 'test-client-runtime',
@@ -1211,6 +1245,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   })
   assert.ok(adminNetworkWorld.network)
   assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
+  assert.equal(adminNetworkWorld.pluginCapabilities.has('admin-network'), true)
   assert.equal(adminNetworkWorld.adminNetwork, adminNetworkWorld.network)
 
   const livekitClientWorld = new World({
