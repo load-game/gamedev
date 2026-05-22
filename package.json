@@ -453,9 +453,9 @@
     },
     "./plugins/xr/admin": {
       "types": "./index.plugin-xr-admin.d.ts",
-      "import": "./packages/core/plugins/xr/admin.js",
-      "require": "./packages/core/plugins/xr/admin.js",
-      "default": "./packages/core/plugins/xr/admin.js"
+      "import": "./packages/plugins/xr/admin.js",
+      "require": "./packages/plugins/xr/admin.js",
+      "default": "./packages/plugins/xr/admin.js"
     },
     "./plugins/xr/client": {
       "types": "./index.plugin-xr-client.d.ts",
