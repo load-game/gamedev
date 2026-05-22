@@ -1,7 +1,7 @@
 import { AccessToken, TrackSource, RoomServiceClient } from 'livekit-server-sdk'
 
-import { System } from '../../systems/System.js'
-import { uuid } from '../../ids/uuid.js'
+import { System } from '../../core/systems/System.js'
+import { uuid } from '../../core/ids/uuid.js'
 
 const levels = ['disabled', 'spatial', 'global']
 const levelPriorities = {

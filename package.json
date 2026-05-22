@@ -285,21 +285,21 @@
     },
     "./plugins/livekit/client": {
       "types": "./index.plugin-livekit-client.d.ts",
-      "import": "./packages/core/plugins/livekit/client.js",
-      "require": "./packages/core/plugins/livekit/client.js",
-      "default": "./packages/core/plugins/livekit/client.js"
+      "import": "./packages/plugins/livekit/client.js",
+      "require": "./packages/plugins/livekit/client.js",
+      "default": "./packages/plugins/livekit/client.js"
     },
     "./plugins/livekit/admin": {
       "types": "./index.plugin-livekit-admin.d.ts",
-      "import": "./packages/core/plugins/livekit/admin.js",
-      "require": "./packages/core/plugins/livekit/admin.js",
-      "default": "./packages/core/plugins/livekit/admin.js"
+      "import": "./packages/plugins/livekit/admin.js",
+      "require": "./packages/plugins/livekit/admin.js",
+      "default": "./packages/plugins/livekit/admin.js"
     },
     "./plugins/livekit/server": {
       "types": "./index.plugin-livekit-server.d.ts",
-      "import": "./packages/core/plugins/livekit/server.js",
-      "require": "./packages/core/plugins/livekit/server.js",
-      "default": "./packages/core/plugins/livekit/server.js"
+      "import": "./packages/plugins/livekit/server.js",
+      "require": "./packages/plugins/livekit/server.js",
+      "default": "./packages/plugins/livekit/server.js"
     },
     "./plugins/logs": {
       "types": "./index.plugin-logs.d.ts",

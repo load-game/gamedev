@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ClientLiveKit } from './ClientLiveKit.js'
 import { livekitClientScriptApi } from './scriptApi.js'
 

@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ServerLiveKit } from './ServerLiveKit.js'
 import { cleanupLiveKitPlayerProxy, livekitServerScriptApi } from './scriptApi.js'
 
