@@ -132,7 +132,7 @@ export function createJWT(data, { worldId } = {}) {
 }
 
 export function readJWT(token, { worldId } = {}) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const issuer = resolveRuntimeSessionIssuer()
     jwt.verify(
       token,

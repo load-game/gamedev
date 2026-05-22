@@ -6,7 +6,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { System } from '../../systems/System.js'
 import { isValidScriptPath } from '../../blueprintValidation.js'
 import { buildScriptGroups, getScriptGroupMain } from '../builder/blueprintGroups.js'
-import { hashFile } from '../../utils-server.js'
+import { hashFile } from '../../platform/server/utils.js'
 import { getBlueprintAppName } from '../../blueprintUtils.js'
 
 function hasScriptFiles(blueprint) {

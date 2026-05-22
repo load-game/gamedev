@@ -8,7 +8,7 @@ This migration moves the runtime away from implicit all-in-core construction and
 
 The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/presets/core`. It installs the kernel-level settings, app/script runtime, event, blueprint, and entity systems, and advertises the built-in script proxy methods such as `script:world.add` and `script:app.create`.
 
-The old root `extras` bucket has been removed. Shared primitives now live behind named kernel contracts: `math` for the patched Three.js facade and rotation/math helpers, `layers` for collision/camera layer masks, `permissions` for rank constants, and `diagnostics` for shared warnings.
+The old root `extras` bucket has been removed. Shared primitives now live behind named kernel contracts: `math` for the patched Three.js facade and rotation/math helpers, `layers` for collision/camera layer masks, `permissions` for rank constants, and `diagnostics` for shared warnings. Browser and server-specific helpers live under `platform/browser` and `platform/server` instead of the kernel root.
 
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions. The core kernel keeps the base node contract; first-party concrete node classes live with the node plugin that installs them.
 

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 import { System } from '../../systems/System.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
-import { isTouch } from '../../isTouch.js'
+import { isTouch } from '../../platform/browser/isTouch.js'
 import { clamp } from '../../utils.js'
 
 const BATCH_SIZE = 500

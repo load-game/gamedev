@@ -8,7 +8,7 @@ import Database from 'better-sqlite3'
 
 import { readPacket } from '@gamedev/core/packets.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
-import { buildRuntimeControlAuthorization } from '@gamedev/core/utils-server.js'
+import { buildRuntimeControlAuthorization } from '@gamedev/core/platform/server/utils.js'
 import { buildRuntimeBootstrapAuthorization } from '@gamedev/server/runtimeBootstrap.js'
 import { createTempDir, getRepoRoot, startStandbyRuntimeServer, waitFor } from './helpers.js'
 

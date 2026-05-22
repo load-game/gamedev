@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-s3'
 import fs from 'fs-extra'
 import path from 'path'
-import { hashFile } from '@gamedev/core/utils-server.js'
+import { hashFile } from '@gamedev/core/platform/server/utils.js'
 import { usesHostedRuntimeBootstrap } from './runtimeBootstrap.js'
 import { getBuiltinAssetSourceDirs } from './plugins/builtins/server.js'
 

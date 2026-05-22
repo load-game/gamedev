@@ -1,6 +1,6 @@
 import { System } from '../../systems/System.js'
 import { uuid } from '../../utils.js'
-import { hashFile } from '../../utils-client.js'
+import { hashFile } from '../../platform/browser/utils.js'
 
 function buildPlaceholderScript({ blueprintId }) {
   return `export default (world, app, fetch, props, setTimeout) => {

@@ -26,7 +26,7 @@ import {
   FieldToggle,
   FieldVec3,
 } from '../Fields.js'
-import { hashFile } from '@gamedev/core/utils-client.js'
+import { hashFile } from '@gamedev/core/platform/browser/utils.js'
 import { downloadFile } from '../downloadFile.js'
 import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/plugins/builder/blueprintGroups.js'
 import { DEG2RAD, RAD2DEG } from '@gamedev/core/math/general.js'

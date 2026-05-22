@@ -5,13 +5,13 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 
 import { System } from '../../systems/System.js'
 
-import { hashFile } from '../../utils-client.js'
+import { hashFile } from '../../platform/browser/utils.js'
 import { uuid } from '../../utils.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD, RAD2DEG } from '../../math/general.js'
 import { importApp } from './appTools.js'
 import { buildScriptGroups, getScriptGroupMain } from './blueprintGroups.js'
-import { syncLobbyProfilePatch } from '../../profileSync.js'
+import { syncLobbyProfilePatch } from '../../platform/browser/profileSync.js'
 import { BUILTIN_APP_TEMPLATES } from './builtinApps.js'
 
 const FORWARD = new THREE.Vector3(0, 0, -1)

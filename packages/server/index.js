@@ -49,7 +49,7 @@ import {
   buildRuntimeControlAuthorization,
   createJWT,
   verifyIdentityExchangeTokenWithLobby,
-} from '@gamedev/core/utils-server.js'
+} from '@gamedev/core/platform/server/utils.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 
 function resolveRuntimeRootDir() {

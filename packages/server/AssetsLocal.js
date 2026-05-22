@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 import path from 'path'
-import { hashFile } from '@gamedev/core/utils-server.js'
+import { hashFile } from '@gamedev/core/platform/server/utils.js'
 import { getBuiltinAssetSourceDirs } from './plugins/builtins/server.js'
 
 export class AssetsLocal {

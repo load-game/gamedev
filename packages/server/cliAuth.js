@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 
-import { createJWT, readJWT } from '@gamedev/core/utils-server.js'
+import { createJWT, readJWT } from '@gamedev/core/platform/server/utils.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { uuid } from '@gamedev/core/utils.js'
 import { allowsOpenAdminAccess, hasSupportedAdminCode } from './runtimeBootstrap.js'
