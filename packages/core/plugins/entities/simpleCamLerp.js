@@ -1,5 +1,5 @@
-import * as THREE from './three.js'
-import { Layers } from './Layers.js'
+import * as THREE from '../../extras/three.js'
+import { Layers } from '../../extras/Layers.js'
 
 const BACKWARD = new THREE.Vector3(0, 0, 1)
 
@@ -8,21 +8,11 @@ const v1 = new THREE.Vector3()
 let sweepGeometry
 
 const smoothing = 20
-const MAX_CAM_DISTANCE = 0.4
 
 export function simpleCamLerp(world, camera, target, delta) {
   // interpolate camera rotation
   const alpha = 1.0 - Math.exp(-smoothing * delta)
   camera.quaternion.slerp(target.quaternion, alpha)
-
-  // interpolate camera position
-  // camera.position.lerp(target.position, alpha)
-  // const distToTarget = camera.position.distanceTo(target.position)
-  // if (distToTarget > MAX_CAM_DISTANCE) {
-  //   // Pull the camera closer so it's exactly MAX_CAM_DISTANCE away
-  //   const direction = v1.copy(camera.position).sub(target.position).normalize()
-  //   camera.position.copy(target.position).addScaledVector(direction, MAX_CAM_DISTANCE)
-  // }
 
   // EXPERIMENTAL: snap camera position instead
   camera.position.copy(target.position)

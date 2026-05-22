@@ -5,11 +5,11 @@ import { XRControllerModelFactory } from 'three/addons'
 import { Layers } from '../../extras/Layers.js'
 import { DEG2RAD, RAD2DEG } from '../../extras/general.js'
 import { bindRotations } from '../../extras/bindRotations.js'
-import { simpleCamLerp } from '../../extras/simpleCamLerp.js'
+import { simpleCamLerp } from './simpleCamLerp.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { isBoolean, isNumber } from 'lodash-es'
 import { hasRank, Ranks } from '../../extras/ranks.js'
-import { Ragdoll } from '../../extras/Ragdoll.js'
+import { Ragdoll } from './Ragdoll.js'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)

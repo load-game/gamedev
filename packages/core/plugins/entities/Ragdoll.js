@@ -1,6 +1,7 @@
-import * as THREE from './three.js'
-import { Layers } from './Layers.js'
-import { DEG2RAD } from './general.js'
+import * as THREE from '../../extras/three.js'
+import { Layers } from '../../extras/Layers.js'
+import { DEG2RAD } from '../../extras/general.js'
+import { warn } from '../../extras/warn.js'
 
 export const State = {
   OFF: -1,
@@ -317,7 +318,7 @@ export class Ragdoll {
     for (const segment of BODY_SEGMENTS) {
       const bone = this.vrm.findBone(segment.bone)
       if (!bone) {
-        console.warn(`[Ragdoll] bone not found: ${segment.bone}`)
+        warn(`[Ragdoll] bone not found: ${segment.bone}`)
         continue
       }
 
@@ -405,7 +406,10 @@ export class Ragdoll {
 
   pushBone(boneName, force, point) {
     const body = this.bodies.get(boneName)
-    if (!body) return console.log('[pushBone] no body for', boneName)
+    if (!body) {
+      warn(`[pushBone] no body for ${boneName}`)
+      return
+    }
     body.actor.wakeUp()
     if (point) {
       const pxForce = force.toPxVec3(this._pv1)
@@ -424,7 +428,7 @@ export class Ragdoll {
       const parentBody = this.bodies.get(def.parent)
       const childBody = this.bodies.get(def.child)
       if (!parentBody || !childBody) {
-        console.warn(`[Ragdoll] joint missing body: ${def.parent} -> ${def.child}`)
+        warn(`[Ragdoll] joint missing body: ${def.parent} -> ${def.child}`)
         continue
       }
 
@@ -578,7 +582,7 @@ export class Ragdoll {
   }
 
   _syncAllBodiesToPose() {
-    for (const [name, body] of this.bodies) {
+    for (const body of this.bodies.values()) {
       this._syncBonePoseToBody(body)
       const pose = body.actor.getGlobalPose()
       _v1.toPxTransform(pose)
@@ -774,7 +778,7 @@ export class Ragdoll {
       leg: this.muscleMultiplier,
     }
 
-    for (const [i, entry] of this.jointDrives) {
+    for (const entry of this.jointDrives.values()) {
       const groupMod = groupFadeMultipliers[entry.group] || this.muscleMultiplier
 
       const newStiffness = entry.baseDriveStiffness * groupMod * this.stiffnessScale
@@ -870,7 +874,7 @@ export class Ragdoll {
     skeleton.update()
   }
 
-  fixedUpdate(delta) {
+  fixedUpdate(_delta) {
     if (this.state !== State.KINEMATIC) return
 
     for (const [, body] of this.bodies) {

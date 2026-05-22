@@ -3,7 +3,7 @@ import { Entity } from '../../entities/Entity.js'
 import { hasRank, Ranks } from '../../extras/ranks.js'
 import { BufferedLerpVector3 } from '../../extras/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../../extras/BufferedLerpQuaternion.js'
-import { Ragdoll } from '../../extras/Ragdoll.js'
+import { Ragdoll } from './Ragdoll.js'
 
 let capsuleGeometry
 {
