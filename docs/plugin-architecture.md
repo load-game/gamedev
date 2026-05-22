@@ -14,6 +14,8 @@ Concrete entity constructors are plugin-owned. The default runtime presets regis
 
 The default Three.js view rig and camera are plugin-owned. A bare kernel world has no `world.rig` or `world.camera`; `viewPlugin` from `gamedev/plugins/view` creates those objects for presets and plugins that need a camera-facing runtime.
 
+App script player proxies and script error serialization are owned by the app entity plugin because they are part of concrete app entity execution rather than the kernel.
+
 ## Plugins
 
 Plugins declare what they install and what they need:

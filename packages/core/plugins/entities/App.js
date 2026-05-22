@@ -3,8 +3,8 @@ import { isArray, merge } from 'lodash-es'
 import { Entity } from '../../entities/Entity.js'
 import { LerpVector3 } from '../../extras/LerpVector3.js'
 import { LerpQuaternion } from '../../extras/LerpQuaternion.js'
-import { createPlayerProxy } from '../../extras/createPlayerProxy.js'
-import { serializeError } from '../../extras/serializeError.js'
+import { createPlayerProxy } from './createPlayerProxy.js'
+import { serializeError } from './serializeError.js'
 import { getBlueprintAppName } from '../../blueprintUtils.js'
 
 const hotEventNames = ['fixedUpdate', 'update', 'animate', 'lateUpdate']
