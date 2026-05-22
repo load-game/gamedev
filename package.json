@@ -492,27 +492,27 @@
     },
     "./presets/client": {
       "types": "./index.presets-client.d.ts",
-      "import": "./packages/core/presets/client.js",
-      "require": "./packages/core/presets/client.js",
-      "default": "./packages/core/presets/client.js"
+      "import": "./packages/presets/client.js",
+      "require": "./packages/presets/client.js",
+      "default": "./packages/presets/client.js"
     },
     "./presets/admin": {
       "types": "./index.presets-admin.d.ts",
-      "import": "./packages/core/presets/admin.js",
-      "require": "./packages/core/presets/admin.js",
-      "default": "./packages/core/presets/admin.js"
+      "import": "./packages/presets/admin.js",
+      "require": "./packages/presets/admin.js",
+      "default": "./packages/presets/admin.js"
     },
     "./presets/viewer": {
       "types": "./index.presets-viewer.d.ts",
-      "import": "./packages/core/presets/viewer.js",
-      "require": "./packages/core/presets/viewer.js",
-      "default": "./packages/core/presets/viewer.js"
+      "import": "./packages/presets/viewer.js",
+      "require": "./packages/presets/viewer.js",
+      "default": "./packages/presets/viewer.js"
     },
     "./presets/node-client": {
       "types": "./index.presets-node-client.d.ts",
-      "import": "./packages/core/presets/node-client.js",
-      "require": "./packages/core/presets/node-client.js",
-      "default": "./packages/core/presets/node-client.js"
+      "import": "./packages/presets/node-client.js",
+      "require": "./packages/presets/node-client.js",
+      "default": "./packages/presets/node-client.js"
     },
     "./presets/server": {
       "types": "./index.presets-server.d.ts",
