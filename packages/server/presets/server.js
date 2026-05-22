@@ -14,6 +14,7 @@ import { monitorServerPlugin } from '@gamedev/core/plugins/monitor/server.js'
 import { nodesPlugin } from '@gamedev/core/plugins/nodes.js'
 import { spatialPlugin } from '@gamedev/core/plugins/spatial.js'
 import { storagePlugin } from '@gamedev/core/plugins/storage.js'
+import { viewPlugin } from '@gamedev/core/plugins/view.js'
 import { Server } from '@gamedev/core/systems/Server.js'
 import { networkServerPlugin } from '../plugins/network/server.js'
 
@@ -29,6 +30,7 @@ export const serverPreset = definePreset({
     coreSystemsPlugin,
     logsPlugin,
     nodesPlugin,
+    viewPlugin,
     spatialPlugin,
     storagePlugin,
     chatPlugin,

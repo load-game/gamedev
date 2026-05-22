@@ -69,7 +69,7 @@ export const spatialScriptApi = {
 
 export const spatialPlugin = definePlugin({
   name: '@gamedev/plugin-spatial',
-  requires: ['core', 'apps', 'entities'],
+  requires: ['core', 'apps', 'entities', 'view'],
   provides: ['spatial'],
   systems: [
     ['anchors', Anchors],

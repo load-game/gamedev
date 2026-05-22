@@ -44,6 +44,7 @@ import { storagePlugin } from '@gamedev/core/plugins/storage.js'
 import { statsClientPlugin } from '@gamedev/core/plugins/stats/client.js'
 import { targetClientPlugin } from '@gamedev/core/plugins/target/client.js'
 import { uiClientPlugin } from '@gamedev/core/plugins/ui/client.js'
+import { viewPlugin } from '@gamedev/core/plugins/view.js'
 import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
 import { xrClientPlugin } from '@gamedev/core/plugins/xr/client.js'
@@ -85,6 +86,8 @@ class TestEntity {
 test('World starts as a kernel and installs systems through plugins', () => {
   const emptyWorld = new World()
   assert.deepEqual(emptyWorld.systems, [])
+  assert.equal(emptyWorld.rig, undefined)
+  assert.equal(emptyWorld.camera, undefined)
 
   const testPlugin = definePlugin({
     name: 'test-plugin',
@@ -506,6 +509,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
@@ -543,6 +547,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-prefs/client',
@@ -583,6 +588,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-chat',
       '@gamedev/plugin-controls/client',
@@ -601,6 +607,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-prefs/client',
       '@gamedev/plugin-graphics/client',
@@ -619,6 +626,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
@@ -642,6 +650,7 @@ test('runtime factories are preset compositions', () => {
       '@gamedev/core/systems',
       '@gamedev/plugin-logs',
       '@gamedev/plugin-nodes',
+      '@gamedev/plugin-view',
       '@gamedev/plugin-spatial',
       '@gamedev/plugin-storage',
       '@gamedev/plugin-chat',
@@ -752,6 +761,8 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.admin, undefined)
   assert.equal(coreWorld.builder, undefined)
   assert.equal(coreWorld.drafts, undefined)
+  assert.equal(coreWorld.rig, undefined)
+  assert.equal(coreWorld.camera, undefined)
   assert.equal(coreWorld.anchors, undefined)
   assert.equal(coreWorld.avatars, undefined)
   assert.equal(coreWorld.animation, undefined)
@@ -788,8 +799,22 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.playerMethods.screenshare, undefined)
   assert.equal(coreWorld.apps.playerMethods.setVoiceLevel, undefined)
 
+  const viewWorld = new World({
+    plugins: [coreSystemsPlugin, viewPlugin],
+  })
+  assert.ok(viewWorld.rig)
+  assert.ok(viewWorld.camera)
+  assert.equal(viewWorld.camera.parent, viewWorld.rig)
+  assert.equal(viewWorld.pluginCapabilities.has('view'), true)
+  assert.equal(viewWorld.pluginCapabilities.has('camera'), true)
+
+  assert.throws(
+    () => new World({ plugins: [coreSystemsPlugin, spatialPlugin] }),
+    /plugin_missing_requirement:@gamedev\/plugin-spatial:view/
+  )
+
   const spatialWorld = new World({
-    plugins: [coreSystemsPlugin, spatialPlugin],
+    plugins: [coreSystemsPlugin, viewPlugin, spatialPlugin],
   })
   assert.ok(spatialWorld.anchors)
   assert.ok(spatialWorld.avatars)
@@ -860,6 +885,7 @@ test('feature APIs only appear when their plugins are selected', () => {
     plugins: [
       coreSystemsPlugin,
       nodesPlugin,
+      viewPlugin,
       spatialPlugin,
       chatPlugin,
       serverRuntimeStub,
@@ -969,7 +995,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof browserWorld.apps.worldMethods.setQueryParam, 'function')
 
   const clientLoaderWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, clientOnlyRuntimeStub, loaderClientPlugin],
+    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, clientOnlyRuntimeStub, loaderClientPlugin],
   })
   assert.ok(clientLoaderWorld.loader)
   assert.equal(clientLoaderWorld.pluginCapabilities.has('loader:model'), true)
@@ -994,7 +1020,9 @@ test('feature APIs only appear when their plugins are selected', () => {
 
   assert.throws(
     () =>
-      new World({ plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, loaderServerPlugin, playerEntitiesPlugin] }),
+      new World({
+        plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, loaderServerPlugin, playerEntitiesPlugin],
+      }),
     /plugin_missing_requirement:@gamedev\/plugin-entities\/player:network/
   )
 
@@ -1064,7 +1092,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(storageWorld.storage.values.get('next'), 42)
 
   const networkWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
+    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, chatPlugin, clientOnlyRuntimeStub, networkClientPlugin],
   })
   assert.ok(networkWorld.network)
   assert.equal(networkWorld.network.plugin, '@gamedev/plugin-network/client')
@@ -1073,7 +1101,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof networkWorld.apps.appMethods.send, 'function')
 
   const adminNetworkWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, spatialPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
+    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
   })
   assert.ok(adminNetworkWorld.network)
   assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
@@ -1122,7 +1150,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   )
 
   const actionsWorld = new World({
-    plugins: [coreSystemsPlugin, spatialPlugin, clientRuntimeStub, actionsClientPlugin],
+    plugins: [coreSystemsPlugin, viewPlugin, spatialPlugin, clientRuntimeStub, actionsClientPlugin],
   })
   assert.ok(actionsWorld.actions)
   assert.equal(actionsWorld.actions.plugin, '@gamedev/plugin-actions/client')
@@ -1134,7 +1162,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(statsWorld.stats.plugin, '@gamedev/plugin-stats/client')
 
   const graphicsWorld = new World({
-    plugins: [coreSystemsPlugin, spatialPlugin, prefsClientPlugin, graphicsClientPlugin],
+    plugins: [coreSystemsPlugin, viewPlugin, spatialPlugin, prefsClientPlugin, graphicsClientPlugin],
   })
   assert.ok(graphicsWorld.graphics)
   assert.equal(graphicsWorld.graphics.plugin, '@gamedev/plugin-graphics/client')
@@ -1176,6 +1204,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   const uiWorld = new World({
     plugins: [
       coreSystemsPlugin,
+      viewPlugin,
       spatialPlugin,
       chatPlugin,
       prefsClientPlugin,
@@ -1200,6 +1229,7 @@ test('feature APIs only appear when their plugins are selected', () => {
     plugins: [
       coreSystemsPlugin,
       nodesPlugin,
+      viewPlugin,
       spatialPlugin,
       chatPlugin,
       serverRuntimeStub,

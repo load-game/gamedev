@@ -1,4 +1,3 @@
-import * as THREE from './extras/three.js'
 import EventEmitter from 'eventemitter3'
 import { installWorldExtension } from './plugins.js'
 import { warn } from './extras/warn.js'
@@ -22,12 +21,6 @@ export class World extends EventEmitter {
     this.pendingScriptApi = []
     this.nodeTypes = new Map()
     this.entityTypes = new Map()
-
-    this.rig = new THREE.Object3D()
-    // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
-    // this gives us minimal z-fighting without needing logarithmic depth buffers
-    this.camera = new THREE.PerspectiveCamera(70, 0, 0.2, 1200)
-    this.rig.add(this.camera)
 
     if (options.plugins) {
       this.install(options.plugins)

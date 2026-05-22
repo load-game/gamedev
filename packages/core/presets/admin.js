@@ -27,6 +27,7 @@ import { spatialPlugin } from '../plugins/spatial.js'
 import { statsClientPlugin } from '../plugins/stats/client.js'
 import { targetClientPlugin } from '../plugins/target/client.js'
 import { uiClientPlugin } from '../plugins/ui/client.js'
+import { viewPlugin } from '../plugins/view.js'
 import { windClientPlugin } from '../plugins/wind/client.js'
 import { xrAdminPlugin } from '../plugins/xr/admin.js'
 import { AdminLocalPlayer } from '../entities/AdminLocalPlayer.js'
@@ -62,6 +63,7 @@ export const adminPreset = definePreset({
     coreSystemsPlugin,
     logsPlugin,
     nodesPlugin,
+    viewPlugin,
     spatialPlugin,
     chatPlugin,
     prefsClientPlugin,

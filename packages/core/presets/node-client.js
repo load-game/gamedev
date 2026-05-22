@@ -10,6 +10,7 @@ import { logsPlugin } from '../plugins/logs.js'
 import { networkClientPlugin } from '../plugins/network/client.js'
 import { nodesPlugin } from '../plugins/nodes.js'
 import { spatialPlugin } from '../plugins/spatial.js'
+import { viewPlugin } from '../plugins/view.js'
 import { NodeClient } from '../systems/NodeClient.js'
 
 export const nodeClientRuntimePlugin = definePlugin({
@@ -24,6 +25,7 @@ export const nodeClientPreset = definePreset({
     coreSystemsPlugin,
     logsPlugin,
     nodesPlugin,
+    viewPlugin,
     spatialPlugin,
     chatPlugin,
     controlsClientPlugin,

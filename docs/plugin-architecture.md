@@ -12,6 +12,8 @@ Concrete node constructors are not part of the kernel. The first-party built-in 
 
 Concrete entity constructors are also plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. App-local asset resolution (`app.asset`) is contributed by the app entity plugin. Player lookup (`world.getPlayer`/`world.getPlayers`) and player movement, avatar, health, effect, and ragdoll script methods are contributed by the player entities plugin rather than the kernel.
 
+The default Three.js view rig and camera are plugin-owned. A bare kernel world has no `world.rig` or `world.camera`; `viewPlugin` from `gamedev/plugins/view` creates those objects for presets and plugins that need a camera-facing runtime.
+
 ## Plugins
 
 Plugins declare what they install and what they need:
@@ -85,6 +87,7 @@ import { spatialPlugin } from 'gamedev/plugins/spatial'
 import { statsClientPlugin } from 'gamedev/plugins/stats/client'
 import { targetClientPlugin } from 'gamedev/plugins/target/client'
 import { uiClientPlugin } from 'gamedev/plugins/ui/client'
+import { viewPlugin } from 'gamedev/plugins/view'
 import { windClientPlugin } from 'gamedev/plugins/wind/client'
 import { xrClientPlugin } from 'gamedev/plugins/xr/client'
 import { coreSystemsPlugin } from 'gamedev/presets/core'
@@ -95,6 +98,7 @@ export const clientPreset = definePreset({
     coreSystemsPlugin,
     logsPlugin,
     nodesPlugin,
+    viewPlugin,
     spatialPlugin,
     chatPlugin,
     prefsClientPlugin,
@@ -132,7 +136,7 @@ export const clientPreset = definePreset({
 
 The existing client, server, admin, viewer, and node-client world factories are now expressed as presets.
 
-The default client and server presets include the first-party logs/diagnostics, built-in nodes, app/player entities, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The entity plugins own concrete app and player entity construction. The loader plugins own concrete asset handlers such as `loader:model`, `loader:avatar`, `loader:script`, and client-only handlers such as `loader:video` and `loader:splat`. The spatial plugin owns anchors, avatars, animation, physics, stage, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, app/player entities, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, app entities, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, entity constructors, node constructors, loader types, and script APIs do not exist.
+The default client and server presets include the first-party logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, chat, network sync, loader, environment, LiveKit, AI, EVM, and Hyperliquid plugins. The logs plugin owns the runtime log buffer used by client/admin diagnostics and server log streaming. The nodes plugin owns built-in node constructors such as `group`, `mesh`, `avatar`, `ui`, `rigidbody`, and `collider`. The view plugin owns the default Three.js `world.rig` and `world.camera`. The entity plugins own concrete app and player entity construction. The loader plugins own concrete asset handlers such as `loader:model`, `loader:avatar`, `loader:script`, and client-only handlers such as `loader:video` and `loader:splat`. The spatial plugin owns anchors, avatars, animation, physics, stage, and script APIs such as `world.raycast`, `world.overlapSphere`, and `world.createLayerMask`. Server also includes the storage script API plugin and the monitor plugin for runtime stats. Client also includes browser helpers, prefs, graphics, controls, network sync, pointer dispatch, XR, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, particles, the admin bridge, and builder/drafts plugins so build tools remain explicit capabilities. Admin includes logs/diagnostics, built-in nodes, view/camera, app/player entities, spatial/simulation, browser helpers, chat, prefs, graphics, controls, admin network sync, pointer dispatch, admin XR no-op, CSS3D, actions, audio, stats, target, LODs, snaps, wind, nametags, UI, the client loader, environment, particles, admin bridge, admin builder, and LiveKit admin no-op/moderation bridge. Viewer includes logs/diagnostics, built-in nodes, view/camera, app entities, spatial/simulation, browser helpers, prefs, graphics, controls, the client loader, and environment. A custom build can omit those plugins, and then the corresponding systems, entity constructors, node constructors, loader types, and script APIs do not exist.
 
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 

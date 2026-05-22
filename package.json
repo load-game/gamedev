@@ -76,6 +76,7 @@
     "index.plugin-stats-client.d.ts",
     "index.plugin-target-client.d.ts",
     "index.plugin-ui-client.d.ts",
+    "index.plugin-view.d.ts",
     "index.plugin-wind-client.d.ts",
     "index.plugin-xr-admin.d.ts",
     "index.plugin-xr-client.d.ts",
@@ -367,6 +368,12 @@
       "import": "./packages/core/plugins/ui/client.js",
       "require": "./packages/core/plugins/ui/client.js",
       "default": "./packages/core/plugins/ui/client.js"
+    },
+    "./plugins/view": {
+      "types": "./index.plugin-view.d.ts",
+      "import": "./packages/core/plugins/view.js",
+      "require": "./packages/core/plugins/view.js",
+      "default": "./packages/core/plugins/view.js"
     },
     "./plugins/wind/client": {
       "types": "./index.plugin-wind-client.d.ts",
