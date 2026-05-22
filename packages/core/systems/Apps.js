@@ -38,6 +38,11 @@ export class Apps extends System {
       app: new Map(),
       player: new Map(),
     }
+    this.scriptApiMetadata = {
+      world: new Map(),
+      app: new Map(),
+      player: new Map(),
+    }
     this.recordScriptApiScope('world', 'core')
     this.recordScriptApiScope('app', 'core')
   }
@@ -199,9 +204,9 @@ export class Apps extends System {
     const registry = this.scriptApiSources?.[scope]
     if (!registry) return
     const targets = this.getScriptApiTargets(scope)
-    for (const key of Object.keys(targets.getters)) registry.set(key, source)
-    for (const key of Object.keys(targets.setters)) registry.set(key, source)
-    for (const key of Object.keys(targets.methods)) registry.set(key, source)
+    for (const key of Object.keys(targets.getters)) this.recordScriptApiSlot(scope, key, source)
+    for (const key of Object.keys(targets.setters)) this.recordScriptApiSlot(scope, key, source)
+    for (const key of Object.keys(targets.methods)) this.recordScriptApiSlot(scope, key, source)
   }
 
   getScriptApiTargets(scope) {
@@ -237,10 +242,25 @@ export class Apps extends System {
     }
   }
 
-  claimScriptApiSlot(scope, key, source) {
+  recordScriptApiSlot(scope, key, source, metadata = null) {
+    const sourceRegistry = this.scriptApiSources[scope]
+    const metadataRegistry = this.scriptApiMetadata[scope]
+    sourceRegistry.set(key, source)
+    metadataRegistry.set(
+      key,
+      Object.freeze({
+        ...metadata,
+        scope,
+        key,
+        capability: `script:${scope}.${key}`,
+        source,
+      })
+    )
+  }
+
+  claimScriptApiSlot(scope, key, source, metadata = null) {
     this.assertScriptApiSlotAvailable(scope, key, source)
-    const registry = this.scriptApiSources[scope]
-    registry.set(key, source)
+    this.recordScriptApiSlot(scope, key, source, metadata)
   }
 
   assertScriptApiScopeAvailable(scope, api, source) {
@@ -257,22 +277,43 @@ export class Apps extends System {
     this.assertScriptApiScopeAvailable('player', player, source)
   }
 
-  exposeScriptApiScope(scope, api, source) {
+  getScriptApiEntryMetadata(scope, key, value, metadata) {
+    const metadataFromContribution = metadata?.[scope]?.[key]
+    if (metadataFromContribution) return metadataFromContribution
+    return value?.meta || null
+  }
+
+  exposeScriptApiScope(scope, api, source, metadata) {
     if (!api) return
     const targets = this.getScriptApiTargets(scope)
     for (const key in api) {
       const value = api[key]
+      const entryMetadata = this.getScriptApiEntryMetadata(scope, key, value, metadata)
       const isFn = typeof value === 'function'
       if (isFn) {
-        this.claimScriptApiSlot(scope, key, source)
+        this.claimScriptApiSlot(scope, key, source, entryMetadata)
         targets.methods[key] = value
         continue
       }
       if (!value || typeof value !== 'object') {
         throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
       }
+      const hasCall = Object.prototype.hasOwnProperty.call(value, 'call')
+      const hasMethod = Object.prototype.hasOwnProperty.call(value, 'method')
       const hasGet = Object.prototype.hasOwnProperty.call(value, 'get')
       const hasSet = Object.prototype.hasOwnProperty.call(value, 'set')
+      if (hasCall || hasMethod) {
+        if ((hasCall && hasMethod) || hasGet || hasSet) {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+        const method = hasCall ? value.call : value.method
+        if (typeof method !== 'function') {
+          throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
+        }
+        this.claimScriptApiSlot(scope, key, source, entryMetadata)
+        targets.methods[key] = method
+        continue
+      }
       if (hasGet) {
         if (typeof value.get !== 'function') {
           throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
@@ -286,7 +327,7 @@ export class Apps extends System {
       if (!hasGet && !hasSet) {
         throw new Error(`script_api_invalid_descriptor:${scope}.${key}:${source}`)
       }
-      this.claimScriptApiSlot(scope, key, source)
+      this.claimScriptApiSlot(scope, key, source, entryMetadata)
       if (hasGet) {
         targets.getters[key] = value.get
       }
@@ -296,14 +337,14 @@ export class Apps extends System {
     }
   }
 
-  exposeScriptApi({ world, app, player }, source = 'unknown') {
-    this.exposeScriptApiScope('world', world, source)
-    this.exposeScriptApiScope('app', app, source)
-    this.exposeScriptApiScope('player', player, source)
+  exposeScriptApi({ world, app, player }, source = 'unknown', metadata = null) {
+    this.exposeScriptApiScope('world', world, source, metadata)
+    this.exposeScriptApiScope('app', app, source, metadata)
+    this.exposeScriptApiScope('player', player, source, metadata)
   }
 
-  inject(api) {
-    this.exposeScriptApi(api, 'world.inject')
+  inject(api, metadata = null) {
+    this.exposeScriptApi(api, 'world.inject', metadata)
   }
 }
 

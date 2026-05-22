@@ -141,23 +141,51 @@ function normalizeLoaderEntries(value, pluginName) {
   throw new Error(`plugin_invalid_loaders:${pluginName}`)
 }
 
+function normalizeScriptApiMetadata(meta, pluginName, scope, key) {
+  if (meta === undefined || meta === null) return null
+  if (typeof meta !== 'object' || Array.isArray(meta)) {
+    throw new Error(`plugin_invalid_script_meta:${pluginName}:${scope}.${key}`)
+  }
+  return Object.freeze({ ...meta })
+}
+
 function normalizeScriptApiEntry(entry, pluginName, scope, key) {
   if (typeof entry === 'function') {
-    return entry
+    return {
+      runtime: entry,
+      metadata: normalizeScriptApiMetadata(entry.meta, pluginName, scope, key),
+    }
   }
 
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
     throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
   }
 
+  const metadata = normalizeScriptApiMetadata(entry.meta, pluginName, scope, key)
+  const hasCall = Object.prototype.hasOwnProperty.call(entry, 'call')
+  const hasMethod = Object.prototype.hasOwnProperty.call(entry, 'method')
+  const hasGet = Object.prototype.hasOwnProperty.call(entry, 'get')
+  const hasSet = Object.prototype.hasOwnProperty.call(entry, 'set')
+
+  if (hasCall || hasMethod) {
+    if ((hasCall && hasMethod) || hasGet || hasSet) {
+      throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+    }
+    const method = hasCall ? entry.call : entry.method
+    if (typeof method !== 'function') {
+      throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
+    }
+    return { runtime: method, metadata }
+  }
+
   const descriptor = {}
-  if (Object.prototype.hasOwnProperty.call(entry, 'get')) {
+  if (hasGet) {
     if (typeof entry.get !== 'function') {
       throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
     }
     descriptor.get = entry.get
   }
-  if (Object.prototype.hasOwnProperty.call(entry, 'set')) {
+  if (hasSet) {
     if (typeof entry.set !== 'function') {
       throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
     }
@@ -166,7 +194,10 @@ function normalizeScriptApiEntry(entry, pluginName, scope, key) {
   if (!descriptor.get && !descriptor.set) {
     throw new Error(`plugin_invalid_script_descriptor:${pluginName}:${scope}.${key}`)
   }
-  return Object.freeze(descriptor)
+  return {
+    runtime: Object.freeze(descriptor),
+    metadata,
+  }
 }
 
 function normalizeScriptApiScope(value, pluginName, scope) {
@@ -176,13 +207,21 @@ function normalizeScriptApiScope(value, pluginName, scope) {
   }
 
   const entries = {}
+  const metadata = {}
   for (const [key, entry] of Object.entries(value)) {
     if (!key || typeof key !== 'string') {
       throw new Error(`plugin_invalid_script_key:${pluginName}:${scope}`)
     }
-    entries[key] = normalizeScriptApiEntry(entry, pluginName, scope, key)
+    const normalized = normalizeScriptApiEntry(entry, pluginName, scope, key)
+    entries[key] = normalized.runtime
+    if (normalized.metadata) {
+      metadata[key] = normalized.metadata
+    }
   }
-  return Object.freeze(entries)
+  return {
+    entries: Object.freeze(entries),
+    metadata: Object.keys(metadata).length ? Object.freeze(metadata) : null,
+  }
 }
 
 function normalizeScriptApiContribution(value, pluginName) {
@@ -198,13 +237,21 @@ function normalizeScriptApiContribution(value, pluginName) {
   }
 
   const contribution = {}
+  const metadata = {}
   for (const scope of scriptScopes) {
     const normalized = normalizeScriptApiScope(value[scope], pluginName, scope)
-    if (normalized && Object.keys(normalized).length) {
-      contribution[scope] = normalized
+    if (normalized && Object.keys(normalized.entries).length) {
+      contribution[scope] = normalized.entries
+      if (normalized.metadata) {
+        metadata[scope] = normalized.metadata
+      }
     }
   }
-  return Object.keys(contribution).length ? Object.freeze(contribution) : null
+  if (!Object.keys(contribution).length) return null
+  return Object.freeze({
+    scripts: Object.freeze(contribution),
+    metadata: Object.keys(metadata).length ? Object.freeze(metadata) : null,
+  })
 }
 
 export function definePlugin(definition) {
@@ -220,7 +267,7 @@ export function definePlugin(definition) {
   const nodes = normalizeNodeEntries(definition.nodes, name)
   const entities = normalizeEntityEntries(definition.entities, name)
   const loaders = normalizeLoaderEntries(definition.loaders, name)
-  const scripts = normalizeScriptApiContribution(definition.scripts || definition.scriptApi, name)
+  const scriptApi = normalizeScriptApiContribution(definition.scripts || definition.scriptApi, name)
 
   return Object.freeze({
     kind: 'plugin',
@@ -232,7 +279,8 @@ export function definePlugin(definition) {
     nodes: Object.freeze(nodes),
     entities: Object.freeze(entities),
     loaders: Object.freeze(loaders),
-    scripts,
+    scripts: scriptApi?.scripts || null,
+    scriptMetadata: scriptApi?.metadata || null,
     setup: typeof definition.setup === 'function' ? definition.setup : null,
   })
 }
@@ -331,7 +379,7 @@ function installPlugin(world, pluginDefinition) {
 
   plugin.setup?.(world)
   if (plugin.scripts) {
-    world.exposeScripts(plugin.scripts, source)
+    world.exposeScripts(plugin.scripts, source, plugin.scriptMetadata)
   }
 
   world.plugins.push(plugin)

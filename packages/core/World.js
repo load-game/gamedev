@@ -91,12 +91,12 @@ export class World extends EventEmitter {
     return new entry.Node(data)
   }
 
-  exposeScripts(api, source = 'world') {
+  exposeScripts(api, source = 'world', metadata = null) {
     if (!api) return
     if (this.apps?.exposeScriptApi) {
-      this.apps.exposeScriptApi(api, source)
+      this.apps.exposeScriptApi(api, source, metadata)
     } else {
-      this.pendingScriptApi.push({ api, source })
+      this.pendingScriptApi.push({ api, source, metadata })
     }
   }
 
@@ -104,7 +104,7 @@ export class World extends EventEmitter {
     if (!this.apps?.exposeScriptApi || !this.pendingScriptApi.length) return
     const pending = this.pendingScriptApi.splice(0)
     for (const entry of pending) {
-      this.apps.exposeScriptApi(entry.api, entry.source)
+      this.apps.exposeScriptApi(entry.api, entry.source, entry.metadata)
     }
   }
 
@@ -284,8 +284,8 @@ export class World extends EventEmitter {
     return `https://${url}`
   }
 
-  inject(runtime) {
-    this.exposeScripts(runtime, 'world.inject')
+  inject(runtime, metadata = null) {
+    this.exposeScripts(runtime, 'world.inject', metadata)
   }
 
   destroy() {

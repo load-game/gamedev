@@ -44,18 +44,48 @@ export type LoaderEntry<TLoader = any> =
       handle?: LoaderHandler<TLoader>
     }
 
+export interface ScriptApiMetadata {
+  summary?: string
+  description?: string
+  docs?: string
+  type?: string
+  environment?: 'client' | 'server' | 'shared' | string
+  deprecated?: boolean | string
+  [key: string]: unknown
+}
+
 export interface ScriptApiDescriptor<TOwner = any, TValue = any> {
   get?: (owner: TOwner) => TValue
   set?: (owner: TOwner, value: TValue) => void
+  meta?: ScriptApiMetadata
 }
 
-export type ScriptApiMethod<TOwner = any> = (owner: TOwner, ...args: any[]) => any
-export type ScriptApiEntry<TOwner = any> = ScriptApiMethod<TOwner> | ScriptApiDescriptor<TOwner>
+export interface ScriptApiMethod<TOwner = any> {
+  (owner: TOwner, ...args: any[]): any
+  meta?: ScriptApiMetadata
+}
+
+export interface ScriptApiMethodDescriptor<TOwner = any> {
+  call?: ScriptApiMethod<TOwner>
+  method?: ScriptApiMethod<TOwner>
+  meta?: ScriptApiMetadata
+}
+
+export type ScriptApiEntry<TOwner = any> =
+  | ScriptApiMethod<TOwner>
+  | ScriptApiDescriptor<TOwner>
+  | ScriptApiMethodDescriptor<TOwner>
 
 export interface ScriptApiContribution {
   world?: Record<string, ScriptApiEntry>
   app?: Record<string, ScriptApiEntry>
   player?: Record<string, ScriptApiEntry>
+}
+
+export interface ScriptApiMetadataContribution {
+  world?: Record<string, ScriptApiMetadata>
+  app?: Record<string, ScriptApiMetadata>
+  player?: Record<string, ScriptApiMetadata>
 }
 
 export interface PluginDefinition<TWorld = any> {
@@ -87,6 +117,7 @@ export interface WorldPlugin<TWorld = any> {
   }[]
   loaders: readonly { type: string; load: LoaderHandler }[]
   scripts: ScriptApiContribution | null
+  scriptMetadata: ScriptApiMetadataContribution | null
   setup: ((world: TWorld) => void) | null
 }
 

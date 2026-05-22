@@ -335,6 +335,63 @@ test('plugins reject system and script API collisions', () => {
 })
 
 test('plugins validate script API descriptors at definition time', () => {
+  const documentedAppMethod = Object.assign(entity => entity.data.id, {
+    meta: {
+      summary: 'Returns the app id',
+      docs: '/docs/app-id',
+    },
+  })
+  const documentedPlugin = definePlugin({
+    name: 'documented-script-api',
+    scripts: {
+      world: {
+        documentedMethod: {
+          call: (entity, value) => value,
+          meta: {
+            summary: 'Documented world method',
+            docs: '/docs/world-method',
+            type: '(value: string) => string',
+          },
+        },
+        documentedGetter: {
+          get: entity => entity.data.value,
+          meta: {
+            summary: 'Documented world getter',
+            type: 'string',
+          },
+        },
+      },
+      app: {
+        documentedAppMethod,
+      },
+    },
+  })
+
+  assert.equal(typeof documentedPlugin.scripts.world.documentedMethod, 'function')
+  assert.equal(documentedPlugin.scriptMetadata.world.documentedMethod.summary, 'Documented world method')
+  assert.equal(documentedPlugin.scriptMetadata.world.documentedGetter.type, 'string')
+  assert.equal(documentedPlugin.scriptMetadata.app.documentedAppMethod.docs, '/docs/app-id')
+  assert.equal(Object.isFrozen(documentedPlugin.scriptMetadata.world.documentedMethod), true)
+
+  const documentedWorld = new World({ plugins: [coreSystemsPlugin, documentedPlugin] })
+  assert.equal(documentedWorld.apps.worldMethods.documentedMethod({ data: {} }, 'ok'), 'ok')
+  assert.equal(documentedWorld.apps.worldGetters.documentedGetter({ data: { value: 'state' } }), 'state')
+  assert.equal(documentedWorld.apps.appMethods.documentedAppMethod({ data: { id: 'app-1' } }), 'app-1')
+  assert.deepEqual(
+    {
+      source: documentedWorld.apps.scriptApiMetadata.world.get('documentedMethod').source,
+      capability: documentedWorld.apps.scriptApiMetadata.world.get('documentedMethod').capability,
+      summary: documentedWorld.apps.scriptApiMetadata.world.get('documentedMethod').summary,
+      docs: documentedWorld.apps.scriptApiMetadata.world.get('documentedMethod').docs,
+    },
+    {
+      source: 'documented-script-api',
+      capability: 'script:world.documentedMethod',
+      summary: 'Documented world method',
+      docs: '/docs/world-method',
+    }
+  )
+
   assert.throws(
     () =>
       definePlugin({
@@ -374,6 +431,53 @@ test('plugins validate script API descriptors at definition time', () => {
         },
       }),
     /plugin_invalid_script_descriptor:bad-script-getter:world\.test/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-script-method',
+        scripts: {
+          world: {
+            test: {
+              call: 'nope',
+            },
+          },
+        },
+      }),
+    /plugin_invalid_script_descriptor:bad-script-method:world\.test/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'bad-script-meta',
+        scripts: {
+          world: {
+            test: {
+              get: () => null,
+              meta: 'nope',
+            },
+          },
+        },
+      }),
+    /plugin_invalid_script_meta:bad-script-meta:world\.test/
+  )
+
+  assert.throws(
+    () =>
+      definePlugin({
+        name: 'ambiguous-script-entry',
+        scripts: {
+          world: {
+            test: {
+              call: () => null,
+              get: () => null,
+            },
+          },
+        },
+      }),
+    /plugin_invalid_script_descriptor:ambiguous-script-entry:world\.test/
   )
 
   assert.throws(
