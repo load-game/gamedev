@@ -1,4 +1,4 @@
-import { readPacket, writePacket } from '../../core/packets.js'
+import { readPacket, writePacket } from '../network/packets.js'
 import { storage } from '../storage/local.js'
 import { uuid } from '../../core/ids/uuid.js'
 import { hashFile } from '../../core/platform/browser/utils.js'

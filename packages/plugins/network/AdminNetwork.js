@@ -1,4 +1,4 @@
-import { readPacket, writePacket } from '../../core/packets.js'
+import { readPacket, writePacket } from './packets.js'
 import { storage } from '../storage/local.js'
 import { uuid } from '../../core/ids/uuid.js'
 import { System } from '../../core/systems/System.js'

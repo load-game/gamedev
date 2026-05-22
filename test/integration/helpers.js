@@ -8,7 +8,7 @@ import { spawn } from 'child_process'
 import { EventEmitter } from 'events'
 import { fileURLToPath } from 'url'
 
-import { readPacket, writePacket } from '@gamedev/core/packets.js'
+import { readPacket, writePacket } from '../../packages/plugins/network/packets.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..', '..')

@@ -6,7 +6,7 @@ import path from 'node:path'
 import { test } from 'vite-plus/test'
 import Database from 'better-sqlite3'
 
-import { readPacket } from '@gamedev/core/packets.js'
+import { readPacket } from '../../packages/plugins/network/packets.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { buildRuntimeControlAuthorization } from '@gamedev/core/platform/server/utils.js'
 import { buildRuntimeBootstrapAuthorization } from '@gamedev/server/runtimeBootstrap.js'

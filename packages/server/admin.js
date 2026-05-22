@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import fs from 'fs'
 
-import { readPacket, writePacket } from '@gamedev/core/packets.js'
+import { readPacket, writePacket } from '../plugins/network/packets.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
 import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/core/platform/server/utils.js'
 import { cleaner } from './cleaner.js'

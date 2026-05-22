@@ -1,6 +1,6 @@
 import moment from 'moment'
-import { writePacket } from '@gamedev/core/packets.js'
-import { Socket } from '@gamedev/core/Socket.js'
+import { writePacket } from '../../../plugins/network/packets.js'
+import { Socket } from './Socket.js'
 import { uuid } from '@gamedev/core/ids/uuid.js'
 import { System } from '@gamedev/core/systems/System.js'
 import { createJWT, readJWT } from '@gamedev/core/platform/server/utils.js'

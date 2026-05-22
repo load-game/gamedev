@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
-import { writePacket } from '@gamedev/core/packets.js'
+import { writePacket } from '../../packages/plugins/network/packets.js'
 import { AdminClient, ADMIN_SHUTDOWN_COMMAND, RUNTIME_CREDENTIAL_COMMAND } from 'gamedev/plugins/admin/client'
 
 function createAdminClient() {

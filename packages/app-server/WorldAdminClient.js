@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 import { uuid } from './utils.js'
-import { readPacket, writePacket } from '../core/packets.js'
+import { readPacket, writePacket } from '../plugins/network/packets.js'
 import { normalizeWorldAdminBaseUrl, toWsUrl, joinUrl, normalizePacketData } from './helpers.js'
 import { debugLog, fetchWithTimeout, readTimeoutMs, summarizeToken } from './debug.js'
 
