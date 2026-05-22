@@ -1,5 +1,5 @@
 import * as THREE from '../../math/three.js'
-import { clamp } from '../../utils.js'
+import { clamp } from '../../math/scalar.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD } from '../../math/general.js'
 

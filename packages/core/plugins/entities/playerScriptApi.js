@@ -1,5 +1,5 @@
 import { syncLobbyProfilePatch } from '../../platform/browser/profileSync.js'
-import { clamp } from '../../utils.js'
+import { clamp } from '../../math/scalar.js'
 
 const HEALTH_MAX = 100
 const playerEffects = new WeakMap()

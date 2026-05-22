@@ -1,4 +1,4 @@
-import { clamp } from '../utils.js'
+import { clamp } from '../math/scalar.js'
 
 let ids = 0
 

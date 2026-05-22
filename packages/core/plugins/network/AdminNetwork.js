@@ -1,6 +1,6 @@
 import { readPacket, writePacket } from '../../packets.js'
 import { storage } from '../storage/local.js'
-import { uuid } from '../../utils.js'
+import { uuid } from '../../ids/uuid.js'
 import { System } from '../../systems/System.js'
 
 function normalizeAdminUrl(url) {

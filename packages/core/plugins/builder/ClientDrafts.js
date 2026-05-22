@@ -1,5 +1,5 @@
 import { System } from '../../systems/System.js'
-import { uuid } from '../../utils.js'
+import { uuid } from '../../ids/uuid.js'
 import { hashFile } from '../../platform/browser/utils.js'
 
 function buildPlaceholderScript({ blueprintId }) {

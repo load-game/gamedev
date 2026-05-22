@@ -17,7 +17,7 @@ import {
   JustifyContent,
 } from './yoga.js'
 import { borderRoundRect } from './borderRoundRect.js'
-import { clamp } from '../../utils.js'
+import { clamp } from '../../math/scalar.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()

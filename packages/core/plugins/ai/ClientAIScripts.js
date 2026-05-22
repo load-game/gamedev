@@ -1,5 +1,5 @@
 import { System } from '../../systems/System.js'
-import { uuid } from '../../utils.js'
+import { uuid } from '../../ids/uuid.js'
 import { isValidScriptPath } from '../../blueprints/validation.js'
 import { getBlueprintAppName } from '../../blueprints/utils.js'
 

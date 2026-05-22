@@ -6,7 +6,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { System } from '../../systems/System.js'
 
 import { hashFile } from '../../platform/browser/utils.js'
-import { uuid } from '../../utils.js'
+import { uuid } from '../../ids/uuid.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD, RAD2DEG } from '../../math/general.js'
 import { importApp } from './appTools.js'

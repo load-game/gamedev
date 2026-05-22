@@ -1,4 +1,4 @@
-import { uuid } from '@gamedev/core/utils.js'
+import { uuid } from '@gamedev/core/ids/uuid.js'
 import { isValidScriptPath } from '@gamedev/core/blueprints/validation.js'
 import { buildScriptGroups, getScriptGroupMain } from '@gamedev/core/plugins/builder/blueprintGroups.js'
 import { getBlueprintAppName } from '@gamedev/core/blueprints/utils.js'

@@ -2,7 +2,7 @@ import { System } from '../../systems/System.js'
 import * as THREE from '../../math/three.js'
 import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
 import { DEG2RAD } from '../../math/general.js'
-import { uuid } from '../../utils.js'
+import { uuid } from '../../ids/uuid.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()

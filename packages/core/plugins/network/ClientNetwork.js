@@ -2,8 +2,8 @@ import moment from 'moment'
 import { emoteUrls } from '../entities/playerEmotes.js'
 import { readPacket, writePacket } from '../../packets.js'
 import { storage } from '../storage/local.js'
-import { uuid, sanitizeWsUrl } from '../../utils.js'
-import { hashFile, navigateToServer } from '../../platform/browser/utils.js'
+import { uuid } from '../../ids/uuid.js'
+import { hashFile, navigateToServer, sanitizeWsUrl } from '../../platform/browser/utils.js'
 import { System } from '../../systems/System.js'
 
 function hasModuleScript(blueprint) {

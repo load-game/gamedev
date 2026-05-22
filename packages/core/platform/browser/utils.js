@@ -17,6 +17,16 @@ export async function hashFile(file) {
   return hash
 }
 
+export function sanitizeWsUrl(urlString) {
+  try {
+    const parsed = new URL(urlString)
+    if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') return null
+    return parsed.origin + parsed.pathname
+  } catch {
+    return null
+  }
+}
+
 export function isServerUrlOverrideAllowed() {
   return location.hostname === 'localhost' || env.PUBLIC_ALLOW_WS_OVERRIDE === 'true'
 }
@@ -28,14 +38,8 @@ export function resolveConnectionPolicy() {
   if (allowUrlOverride) {
     const connectUrl = searchParams.get('connect')
     if (connectUrl) {
-      try {
-        const parsed = new URL(connectUrl)
-        if (parsed.protocol === 'ws:' || parsed.protocol === 'wss:') {
-          return { allowUrlOverride, overrideWsUrl: parsed.origin + parsed.pathname }
-        }
-      } catch {
-        // ignore invalid URLs
-      }
+      const overrideWsUrl = sanitizeWsUrl(connectUrl)
+      if (overrideWsUrl) return { allowUrlOverride, overrideWsUrl }
     }
   }
   // No server configured — don't guess from window.location, just go offline

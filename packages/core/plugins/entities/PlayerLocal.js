@@ -1,5 +1,5 @@
 import { Entity } from '../../entities/Entity.js'
-import { clamp } from '../../utils.js'
+import { clamp } from '../../math/scalar.js'
 import * as THREE from '../../math/three.js'
 import { XRControllerModelFactory } from 'three/addons'
 import { Layers } from '../../layers/Layers.js'

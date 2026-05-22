@@ -31,7 +31,7 @@ import { downloadFile } from '../downloadFile.js'
 import { areBlueprintsTwinUnique, buildScriptGroups } from '@gamedev/core/plugins/builder/blueprintGroups.js'
 import { DEG2RAD, RAD2DEG } from '@gamedev/core/math/general.js'
 import * as THREE from '@gamedev/core/math/three.js'
-import { uuid } from '@gamedev/core/utils.js'
+import { uuid } from '@gamedev/core/ids/uuid.js'
 import { Pane } from './Pane.js'
 import { Group } from './Group.js'
 

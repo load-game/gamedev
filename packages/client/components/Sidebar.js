@@ -8,8 +8,12 @@ import { exportApp } from '@gamedev/core/plugins/builder/appTools.js'
 import { assetPath, isTouch } from '../utils.js'
 import { downloadFile } from './downloadFile.js'
 import { useRank } from './useRank.js'
-import { sanitizeWsUrl } from '@gamedev/core/utils.js'
-import { getPreferredServerUrl, resolveConnectionPolicy, navigateToServer } from '@gamedev/core/platform/browser/utils.js'
+import {
+  getPreferredServerUrl,
+  resolveConnectionPolicy,
+  navigateToServer,
+  sanitizeWsUrl,
+} from '@gamedev/core/platform/browser/utils.js'
 import { MouseLeftIcon } from './MouseLeftIcon.js'
 import { MouseRightIcon } from './MouseRightIcon.js'
 import { MouseWheelIcon } from './MouseWheelIcon.js'

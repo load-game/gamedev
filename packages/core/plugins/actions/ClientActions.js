@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { System } from '../../systems/System.js'
 import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { isTouch } from '../../platform/browser/isTouch.js'
-import { clamp } from '../../utils.js'
+import { clamp } from '../../math/scalar.js'
 
 const BATCH_SIZE = 500
 const FORWARD = new THREE.Vector3(0, 0, 1)
