@@ -79,7 +79,12 @@
     "index.plugin-wind-client.d.ts",
     "index.plugin-xr-admin.d.ts",
     "index.plugin-xr-client.d.ts",
+    "index.presets-admin.d.ts",
+    "index.presets-client.d.ts",
     "index.presets-core.d.ts",
+    "index.presets-node-client.d.ts",
+    "index.presets-server.d.ts",
+    "index.presets-viewer.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -386,6 +391,36 @@
       "import": "./packages/core/presets/core.js",
       "require": "./packages/core/presets/core.js",
       "default": "./packages/core/presets/core.js"
+    },
+    "./presets/client": {
+      "types": "./index.presets-client.d.ts",
+      "import": "./packages/core/presets/client.js",
+      "require": "./packages/core/presets/client.js",
+      "default": "./packages/core/presets/client.js"
+    },
+    "./presets/admin": {
+      "types": "./index.presets-admin.d.ts",
+      "import": "./packages/core/presets/admin.js",
+      "require": "./packages/core/presets/admin.js",
+      "default": "./packages/core/presets/admin.js"
+    },
+    "./presets/viewer": {
+      "types": "./index.presets-viewer.d.ts",
+      "import": "./packages/core/presets/viewer.js",
+      "require": "./packages/core/presets/viewer.js",
+      "default": "./packages/core/presets/viewer.js"
+    },
+    "./presets/node-client": {
+      "types": "./index.presets-node-client.d.ts",
+      "import": "./packages/core/presets/node-client.js",
+      "require": "./packages/core/presets/node-client.js",
+      "default": "./packages/core/presets/node-client.js"
+    },
+    "./presets/server": {
+      "types": "./index.presets-server.d.ts",
+      "import": "./packages/server/presets/server.js",
+      "require": "./packages/server/presets/server.js",
+      "default": "./packages/server/presets/server.js"
     }
   },
   "scripts": {

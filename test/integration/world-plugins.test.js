@@ -4,6 +4,10 @@ import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
+import { adminPreset as directAdminPreset } from '@gamedev/core/presets/admin.js'
+import { clientPreset as directClientPreset } from '@gamedev/core/presets/client.js'
+import { nodeClientPreset as directNodeClientPreset } from '@gamedev/core/presets/node-client.js'
+import { viewerPreset as directViewerPreset } from '@gamedev/core/presets/viewer.js'
 import { adminPreset } from '@gamedev/core/createAdminWorld.js'
 import { clientPreset } from '@gamedev/core/createClientWorld.js'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
@@ -43,6 +47,7 @@ import { viewerPreset } from '@gamedev/core/createViewerWorld.js'
 import { windClientPlugin } from '@gamedev/core/plugins/wind/client.js'
 import { xrClientPlugin } from '@gamedev/core/plugins/xr/client.js'
 import { createServerWorld, serverPreset } from '@gamedev/server/createServerWorld.js'
+import { serverPreset as directServerPreset } from '@gamedev/server/presets/server.js'
 import { System } from '@gamedev/core/systems/System.js'
 
 class TestSystem extends System {}
@@ -384,6 +389,12 @@ test('plugins validate script API descriptors at definition time', () => {
 })
 
 test('runtime factories are preset compositions', () => {
+  assert.equal(adminPreset, directAdminPreset)
+  assert.equal(clientPreset, directClientPreset)
+  assert.equal(nodeClientPreset, directNodeClientPreset)
+  assert.equal(viewerPreset, directViewerPreset)
+  assert.equal(serverPreset, directServerPreset)
+
   assert.deepEqual(
     adminPreset.plugins.map(plugin => plugin.name),
     [
