@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 /**
  * Server Loader System

@@ -1,4 +1,4 @@
-import { definePlugin } from '../../plugins.js'
+import { definePlugin } from '../../core/plugins.js'
 import { ClientLoader } from './ClientLoader.js'
 import { loaderScriptApi } from './scriptApi.js'
 
