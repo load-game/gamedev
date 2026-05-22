@@ -2,8 +2,8 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 import * as THREE from '../../extras/three.js'
 import { DEG2RAD } from '../../extras/general.js'
-import { getTrianglesFromGeometry } from '../../extras/getTrianglesFromGeometry.js'
-import { getTextureBytesFromMaterial } from '../../extras/getTextureBytesFromMaterial.js'
+import { getTrianglesFromGeometry } from '../nodes/getTrianglesFromGeometry.js'
+import { getTextureBytesFromMaterial } from '../nodes/getTextureBytesFromMaterial.js'
 import { Emotes } from '../entities/playerEmotes.js'
 
 const v1 = new THREE.Vector3()

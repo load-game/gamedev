@@ -2,8 +2,8 @@ import * as THREE from '../../extras/three.js'
 import { isBoolean, isNumber } from 'lodash-es'
 
 import { Node, secureRef } from '../../nodes/Node.js'
-import { getTrianglesFromGeometry } from '../../extras/getTrianglesFromGeometry.js'
-import { getTextureBytesFromMaterial } from '../../extras/getTextureBytesFromMaterial.js'
+import { getTrianglesFromGeometry } from './getTrianglesFromGeometry.js'
+import { getTextureBytesFromMaterial } from './getTextureBytesFromMaterial.js'
 
 const _v1 = new THREE.Vector3()
 const _v2 = new THREE.Vector3()

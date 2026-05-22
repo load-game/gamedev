@@ -10,6 +10,8 @@ The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/pr
 
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions. The core kernel keeps the base node contract; first-party concrete node classes live with the node plugin that installs them.
 
+Mesh statistics helpers such as triangle counting and texture byte estimation live with the nodes plugin support code. Loader plugins can reuse those helpers for VRM stats, but the kernel no longer owns mesh-analysis utilities.
+
 Concrete entity constructors are plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. The admin preset adds `gamedev/plugins/entities/admin-player` for the admin-only local player, free camera, and admin remote-player implementation. The core kernel keeps the base entity contract, while first-party concrete entity classes live with the plugins that install them. App-local asset resolution (`app.asset`) is contributed by the app entity plugin. Player lookup (`world.getPlayer`/`world.getPlayers`) and player movement, avatar, health, effect, and ragdoll script methods are contributed by the player entities plugin rather than the kernel.
 
 The default Three.js view rig and camera are plugin-owned. A bare kernel world has no `world.rig` or `world.camera`; `viewPlugin` from `gamedev/plugins/view` creates those objects for presets and plugins that need a camera-facing runtime.
