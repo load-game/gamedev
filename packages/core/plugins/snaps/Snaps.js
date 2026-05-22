@@ -1,5 +1,5 @@
 import * as THREE from '../../extras/three.js'
-import { SnapOctree } from '../../extras/SnapOctree.js'
+import { SnapOctree } from './SnapOctree.js'
 import { System } from '../../systems/System.js'
 
 /**

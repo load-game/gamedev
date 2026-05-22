@@ -1,4 +1,5 @@
-import * as THREE from './three.js'
+import * as THREE from '../../extras/three.js'
+import { warn } from '../../extras/warn.js'
 
 const _v1 = new THREE.Vector3()
 const _sphere = new THREE.Sphere()
@@ -37,7 +38,7 @@ export class SnapOctree {
     this.remove(point)
     const added = this.insert(point)
     if (!added) {
-      console.error('octree point moved but was not re-added. did it move outside octree bounds?')
+      warn('octree point moved but was not re-added. did it move outside octree bounds?')
       return false
     }
     // check if we can collapse the previous node
@@ -138,7 +139,7 @@ class SnapOctreeNode {
     }
 
     // If it doesn't fit in children, store it here
-    console.error('snap octree insert fail')
+    warn('snap octree insert fail')
     // this.points.push(point)
     // point._node = this
     // return true

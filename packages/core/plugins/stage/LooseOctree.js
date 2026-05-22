@@ -1,5 +1,6 @@
 import { isBoolean } from 'lodash-es'
-import * as THREE from './three.js'
+import * as THREE from '../../extras/three.js'
+import { warn } from '../../extras/warn.js'
 
 const _v1 = new THREE.Vector3()
 const _v2 = new THREE.Vector3()
@@ -50,7 +51,7 @@ export class LooseOctree {
     this.remove(item)
     const added = this.insert(item)
     if (!added) {
-      console.error('octree item moved but was not re-added. did it move outside octree bounds?')
+      warn('octree item moved but was not re-added. did it move outside octree bounds?')
     }
     // check if we can collapse the previous node
     prevNode.checkCollapse()
@@ -183,7 +184,7 @@ class LooseOctreeNode {
       }
     }
     // this should never happen
-    console.error('octree insert fail')
+    warn('octree insert fail')
     // this.items.push(item)
     // item._node = this
     return false
@@ -437,17 +438,7 @@ function createHelper(octree) {
       mesh.geometry.instanceCount--
     } else {
       if (!last) {
-        console.log(
-          'wtf',
-          item,
-          items.indexOf(item),
-          last,
-          items.length,
-          // items[items.length - 1]
-          mesh.geometry.instanceCount,
-          items
-        )
-        throw new Error('wtf')
+        throw new Error('octree helper item bookkeeping failed')
       }
       iMatrix.set(last.matrix.elements, item.idx * 16)
       last.idx = item.idx
