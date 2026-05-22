@@ -399,9 +399,9 @@
     },
     "./plugins/snaps/client": {
       "types": "./index.plugin-snaps-client.d.ts",
-      "import": "./packages/core/plugins/snaps/client.js",
-      "require": "./packages/core/plugins/snaps/client.js",
-      "default": "./packages/core/plugins/snaps/client.js"
+      "import": "./packages/plugins/snaps/client.js",
+      "require": "./packages/plugins/snaps/client.js",
+      "default": "./packages/plugins/snaps/client.js"
     },
     "./plugins/spatial": {
       "types": "./index.plugin-spatial.d.ts",
@@ -411,9 +411,9 @@
     },
     "./plugins/stage": {
       "types": "./index.plugin-stage.d.ts",
-      "import": "./packages/core/plugins/stage.js",
-      "require": "./packages/core/plugins/stage.js",
-      "default": "./packages/core/plugins/stage.js"
+      "import": "./packages/plugins/stage.js",
+      "require": "./packages/plugins/stage.js",
+      "default": "./packages/plugins/stage.js"
     },
     "./plugins/storage": {
       "types": "./index.plugin-storage.d.ts",

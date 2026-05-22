@@ -13,7 +13,7 @@ import { logsPlugin } from '../plugins/logs.js'
 import { networkClientPlugin } from '../../plugins/network/client.js'
 import { nodesPlugin } from '../../plugins/nodes.js'
 import { spatialPlugin } from '../plugins/spatial.js'
-import { stagePlugin } from '../plugins/stage.js'
+import { stagePlugin } from '../../plugins/stage.js'
 import { viewPlugin } from '../../plugins/view.js'
 import { nodeClientRuntimePlugin } from '../../plugins/runtime/node-client.js'
 

@@ -1,5 +1,5 @@
-import * as THREE from '../../math/three.js'
-import { warn } from '../../diagnostics/warn.js'
+import * as THREE from '../../core/math/three.js'
+import { warn } from '../../core/diagnostics/warn.js'
 
 const _v1 = new THREE.Vector3()
 const _sphere = new THREE.Sphere()

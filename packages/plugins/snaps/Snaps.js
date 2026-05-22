@@ -1,6 +1,6 @@
-import * as THREE from '../../math/three.js'
+import * as THREE from '../../core/math/three.js'
 import { SnapOctree } from './SnapOctree.js'
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 /**
  * Snaps System
