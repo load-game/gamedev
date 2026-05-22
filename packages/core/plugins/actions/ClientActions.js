@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 
 import { System } from '../../systems/System.js'
-import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { isTouch } from '../../isTouch.js'
 import { clamp } from '../../utils.js'
 

@@ -1,6 +1,6 @@
 import { isTouch } from '../../isTouch.js'
 import { bindRotations } from '../../extras/bindRotations.js'
-import { buttons, codeToProp } from '../../extras/buttons.js'
+import { buttons, codeToProp } from './buttons.js'
 import * as THREE from '../../extras/three.js'
 import { System } from '../../systems/System.js'
 

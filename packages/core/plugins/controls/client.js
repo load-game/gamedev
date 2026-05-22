@@ -1,5 +1,5 @@
 import { definePlugin } from '../../plugins.js'
-import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { ControlPriorities } from './ControlPriorities.js'
 import { ClientControls } from './ClientControls.js'
 
 export { ClientControls }

@@ -7,7 +7,7 @@ import { System } from '../../systems/System.js'
 
 import { hashFile } from '../../utils-client.js'
 import { uuid } from '../../utils.js'
-import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { DEG2RAD, RAD2DEG } from '../../extras/general.js'
 import { importApp } from './appTools.js'
 import { buildScriptGroups, getScriptGroupMain } from '../../extras/blueprintGroups.js'

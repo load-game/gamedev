@@ -1,5 +1,5 @@
 import { isBoolean } from 'lodash-es'
-import { ControlPriorities } from '../../extras/ControlPriorities.js'
+import { ControlPriorities } from '../controls/ControlPriorities.js'
 import { validateReticle } from '../../extras/ReticleTheme.js'
 import { System } from '../../systems/System.js'
 

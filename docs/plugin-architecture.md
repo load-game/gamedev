@@ -149,6 +149,8 @@ The default client and server presets include the first-party logs/diagnostics, 
 
 The first-party loader handler plugins also own GLB-to-node conversion, VRM factory creation, and emote factory creation. These helpers are no longer root core extras because they are only needed when the selected build includes the first-party loader handlers.
 
+The controls plugin owns input button maps and control priorities. Plugins or UI surfaces that bind controls import those contracts from `gamedev/plugins/controls` support files instead of root core extras.
+
 Builder-owned built-in app templates are exported from `gamedev/plugins/builder/builtins`. They are intentionally no longer part of the core kernel surface.
 
 Builder-owned `.hyp` import/export helpers live with the builder plugin rather than root core extras, so packaging and drag/drop tooling can move independently from the kernel.
