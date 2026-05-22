@@ -1,7 +1,7 @@
-import * as THREE from '../extras/three.js'
-import { every, isBoolean, isNumber, isString } from 'lodash-es'
+import * as THREE from '../../extras/three.js'
+import { isBoolean, isNumber, isString } from 'lodash-es'
 
-import { Node } from './Node.js'
+import { Node } from '../../nodes/Node.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
@@ -320,7 +320,7 @@ export class Audio extends Node {
       buffer = loader.get('audio', this._src)
       if (!buffer) buffer = await loader.load('audio', this._src)
     } catch (err) {
-      console.error(err)
+      this.ctx?.world?.logs?.add('audio', 'error', [err])
       return
     }
     if (n !== this.n) return

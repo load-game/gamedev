@@ -1,7 +1,7 @@
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
-import { Node } from './Node.js'
-import * as THREE from '../extras/three.js'
+import { Node } from '../../nodes/Node.js'
+import * as THREE from '../../extras/three.js'
 import { isBoolean } from 'lodash-es'
 
 const defaults = {
@@ -149,7 +149,10 @@ export class SkinnedMesh extends Node {
     this.action = this.actions[name]
     if (!this.action) {
       const clip = this.clips[name]
-      if (!clip) return console.warn(`[skinnedmesh] animation not found: ${name}`)
+      if (!clip) {
+        this.ctx?.world?.logs?.add('skinnedmesh', 'warn', [`animation not found: ${name}`])
+        return
+      }
       this.action = this.mixer.clipAction(clip)
       this.actions[name] = this.action
     }
@@ -177,7 +180,7 @@ export class SkinnedMesh extends Node {
     }
     const bone = this.bones[name]
     if (!bone) {
-      console.warn(`[skinnedmesh] bone not found: ${name}`)
+      this.ctx?.world?.logs?.add('skinnedmesh', 'warn', [`bone not found: ${name}`])
       return null
     }
     return bone

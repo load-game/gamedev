@@ -1,7 +1,7 @@
 import { isNumber, isString } from 'lodash-es'
-import { Node } from './Node.js'
-import * as THREE from '../extras/three.js'
-import { Reflector } from '../extras/Reflector.js'
+import { Node } from '../../nodes/Node.js'
+import * as THREE from '../../extras/three.js'
+import { Reflector } from '../../extras/Reflector.js'
 
 const defaults = {
   width: 2,
@@ -79,14 +79,14 @@ export class Mirror extends Node {
 
     // Handle first person mode - show avatar in mirror even when invisible
     const world = this.ctx.world
-    this.mesh.onBeforeRender2 = (renderer, scene, camera) => {
+    this.mesh.onBeforeRender2 = (_renderer, _scene, _camera) => {
       const localPlayer = world.entities?.player
       if (localPlayer && localPlayer.isLocal && localPlayer.firstPerson && localPlayer.avatar) {
         localPlayer.avatar.visible = true
       }
     }
 
-    this.mesh.onAfterRender2 = (renderer, scene, camera) => {
+    this.mesh.onAfterRender2 = (_renderer, _scene, _camera) => {
       const localPlayer = world.entities?.player
       if (localPlayer && localPlayer.isLocal && localPlayer.firstPerson && localPlayer.avatar) {
         localPlayer.avatar.visible = false

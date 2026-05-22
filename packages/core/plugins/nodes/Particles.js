@@ -1,7 +1,6 @@
-import * as THREE from '../extras/three.js'
-import { every, isArray, isBoolean, isFunction, isNumber, isString } from 'lodash-es'
+import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 
-import { Node } from './Node.js'
+import { Node } from '../../nodes/Node.js'
 
 const shapeTypes = ['point', 'sphere', 'hemisphere', 'cone', 'box', 'circle', 'rectangle']
 const spaces = ['local', 'world']

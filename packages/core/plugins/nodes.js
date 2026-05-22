@@ -1,5 +1,5 @@
 import { definePlugin } from '../plugins.js'
-import * as builtinNodes from '../nodes/index.js'
+import * as builtinNodes from './nodes/index.js'
 
 export { builtinNodes }
 

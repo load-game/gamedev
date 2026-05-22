@@ -1,9 +1,9 @@
 import { isBoolean, isNumber, isString } from 'lodash-es'
-import CustomShaderMaterial from '../libs/three-custom-shader-material/index.js'
-import * as THREE from '../extras/three.js'
+import CustomShaderMaterial from '../../libs/three-custom-shader-material/index.js'
+import * as THREE from '../../extras/three.js'
 
-import { getRef, Node, secureRef } from './Node.js'
-import { uuid } from '../utils.js'
+import { getRef, Node, secureRef } from '../../nodes/Node.js'
+import { uuid } from '../../utils.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()

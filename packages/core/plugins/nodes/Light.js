@@ -1,6 +1,6 @@
 import { isNumber, isString } from 'lodash-es'
-import * as THREE from '../extras/three.js'
-import { Node } from './Node.js'
+import * as THREE from '../../extras/three.js'
+import { Node } from '../../nodes/Node.js'
 
 const defaults = {
   type: 'point',

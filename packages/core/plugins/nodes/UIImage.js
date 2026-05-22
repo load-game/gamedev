@@ -1,8 +1,8 @@
 import Yoga from 'yoga-layout'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
-import { Node } from './Node.js'
-import { Display, isDisplay } from '../extras/yoga.js'
-import { fillRoundRect, imageRoundRect } from '../extras/roundRect.js'
+import { Node } from '../../nodes/Node.js'
+import { Display, isDisplay } from '../../extras/yoga.js'
+import { fillRoundRect, imageRoundRect } from '../../extras/roundRect.js'
 
 const objectFits = ['contain', 'cover', 'fill']
 
@@ -75,7 +75,10 @@ export class UIImage extends Node {
   mount() {
     if (this.ctx.world.network.isServer) return
     this.ui = this.parent?.ui
-    if (!this.ui) return console.error('uiimage: must be child of ui node')
+    if (!this.ui) {
+      this.ctx?.world?.logs?.add('ui', 'error', ['uiimage: must be child of ui node'])
+      return
+    }
     this.yogaNode = Yoga.Node.create()
     this.yogaNode.setDisplay(Display[this._display])
     this.yogaNode.setPositionType(this._absolute ? Yoga.POSITION_TYPE_ABSOLUTE : Yoga.POSITION_TYPE_RELATIVE)

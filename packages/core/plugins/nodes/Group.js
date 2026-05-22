@@ -1,4 +1,4 @@
-import { Node } from './Node.js'
+import { Node } from '../../nodes/Node.js'
 
 export class Group extends Node {
   constructor(data = {}) {

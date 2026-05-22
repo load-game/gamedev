@@ -8,7 +8,7 @@ This migration moves the runtime away from implicit all-in-core construction and
 
 The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/presets/core`. It installs the kernel-level settings, app/script runtime, event, blueprint, and entity systems, and advertises the built-in script proxy methods such as `script:world.add` and `script:app.create`.
 
-Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions.
+Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions. The core kernel keeps the base node contract; first-party concrete node classes live with the node plugin that installs them.
 
 Concrete entity constructors are plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. The admin preset adds `gamedev/plugins/entities/admin-player` for the admin-only local player, free camera, and admin remote-player implementation. The core kernel keeps the base entity contract, while first-party concrete entity classes live with the plugins that install them. App-local asset resolution (`app.asset`) is contributed by the app entity plugin. Player lookup (`world.getPlayer`/`world.getPlayers`) and player movement, avatar, health, effect, and ragdoll script methods are contributed by the player entities plugin rather than the kernel.
 

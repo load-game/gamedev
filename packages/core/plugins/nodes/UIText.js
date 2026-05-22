@@ -1,9 +1,9 @@
 import Yoga from 'yoga-layout'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 
-import { Node } from './Node.js'
-import { Display, isDisplay } from '../extras/yoga.js'
-import { fillRoundRect } from '../extras/roundRect.js'
+import { Node } from '../../nodes/Node.js'
+import { Display, isDisplay } from '../../extras/yoga.js'
+import { fillRoundRect } from '../../extras/roundRect.js'
 
 const textAligns = ['left', 'center', 'right']
 
@@ -112,7 +112,10 @@ export class UIText extends Node {
   mount() {
     if (!isBrowser) return
     this.ui = this.parent?.ui
-    if (!this.ui) return console.error('uitext: must be child of ui node')
+    if (!this.ui) {
+      this.ctx?.world?.logs?.add('ui', 'error', ['uitext: must be child of ui node'])
+      return
+    }
     this.yogaNode = Yoga.Node.create()
     this.yogaNode.setMeasureFunc(this.measureTextFunc())
     this.yogaNode.setDisplay(Display[this._display])
@@ -151,7 +154,7 @@ export class UIText extends Node {
     })
   }
 
-  commit(didMove) {
+  commit(_didMove) {
     // ...
   }
 
@@ -192,7 +195,7 @@ export class UIText extends Node {
 
   measureTextFunc() {
     const ctx = getOffscreenContext()
-    return (width, widthMode, height, heightMode) => {
+    return (width, widthMode, _height, _heightMode) => {
       ctx.font = `${this._fontWeight} ${this._fontSize * this.ui._res}px ${this._fontFamily}`
       ctx.textBaseline = 'alphabetic'
       let lines
@@ -205,7 +208,6 @@ export class UIText extends Node {
       let finalWidth = 0
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
-        const isFirst = i === 0
         const isLast = i === lines.length - 1
         const metrics = ctx.measureText(line)
         const ascent = metrics.actualBoundingBoxAscent
@@ -372,7 +374,7 @@ export class UIText extends Node {
     if (!isEdge(value)) {
       throw new Error(`[uitext] padding not a number or array of numbers`)
     }
-    if (this._padding === value) rturn
+    if (this._padding === value) return
     this._padding = value
     if (isArray(this._padding)) {
       const [top, right, bottom, left] = this._padding

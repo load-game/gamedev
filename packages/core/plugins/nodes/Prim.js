@@ -1,11 +1,9 @@
-import * as THREE from '../extras/three.js'
-import { isBoolean, isNumber, isString, isArray, isObject, isFunction, isEqual } from 'lodash-es'
+import * as THREE from '../../extras/three.js'
+import { isBoolean, isNumber, isString, isArray, isEqual } from 'lodash-es'
 
-import { Node, secureRef } from './Node.js'
-import { getTrianglesFromGeometry } from '../extras/getTrianglesFromGeometry.js'
-import { getTextureBytesFromMaterial } from '../extras/getTextureBytesFromMaterial.js'
-import { Layers } from '../extras/Layers.js'
-import { geometryToPxMesh } from '../extras/geometryToPxMesh.js'
+import { Node } from '../../nodes/Node.js'
+import { Layers } from '../../extras/Layers.js'
+import { geometryToPxMesh } from '../../extras/geometryToPxMesh.js'
 
 const defaults = {
   type: 'box',
@@ -346,7 +344,9 @@ export class Prim extends Node {
         this.pmesh = pmesh // Store for cleanup
       } else {
         // TODO: think we can remove this? why would this happen?
-        console.warn(`[prim] Failed to create convex mesh for ${this._type}, falling back to box`)
+        this.ctx?.world?.logs?.add('prim', 'warn', [
+          `failed to create convex mesh for ${this._type}, falling back to box`,
+        ])
         const boxSize = this.getColliderSize()
         pxGeometry = new PHYSX.PxBoxGeometry(boxSize[0] / 2, boxSize[1] / 2, boxSize[2] / 2)
       }
@@ -982,11 +982,10 @@ export class Prim extends Node {
           self.opacity = value
         },
         get transparent() {
-          // return self.transparent
+          return undefined
         },
-        set transparent(value) {
-          console.warn('prim.transparent deprecated')
-          // self.transparent = value
+        set transparent(_value) {
+          self.ctx?.world?.logs?.add('prim', 'warn', ['prim.transparent deprecated'])
         },
         get texture() {
           return self.texture

@@ -1,9 +1,8 @@
 import Yoga from 'yoga-layout'
-import * as THREE from '../extras/three.js'
 import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 
-import { Node } from './Node.js'
-import { fillRoundRect } from '../extras/roundRect.js'
+import { Node } from '../../nodes/Node.js'
+import { fillRoundRect } from '../../extras/roundRect.js'
 import {
   AlignItems,
   AlignContent,
@@ -17,8 +16,8 @@ import {
   isAlignItem,
   isAlignContent,
   isFlexWrap,
-} from '../extras/yoga.js'
-import { borderRoundRect } from '../extras/borderRoundRect.js'
+} from '../../extras/yoga.js'
+import { borderRoundRect } from '../../extras/borderRoundRect.js'
 
 const defaults = {
   display: 'flex',
@@ -116,7 +115,10 @@ export class UIView extends Node {
   mount() {
     if (this.ctx.world.network.isServer) return
     this.ui = this.parent?.ui
-    if (!this.ui) return console.error('uiview: must be child of ui node')
+    if (!this.ui) {
+      this.ctx?.world?.logs?.add('ui', 'error', ['uiview: must be child of ui node'])
+      return
+    }
     this.yogaNode = Yoga.Node.create()
     this.yogaNode.setDisplay(Display[this._display])
     this.yogaNode.setWidth(this._width === null ? undefined : this._width * this.ui._res)
@@ -158,7 +160,7 @@ export class UIView extends Node {
     this.ui?.redraw()
   }
 
-  commit(didMove) {
+  commit(_didMove) {
     // ...
   }
 

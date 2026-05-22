@@ -1,5 +1,5 @@
 import { isNumber, isString } from 'lodash-es'
-import { Node } from './Node.js'
+import { Node } from '../../nodes/Node.js'
 
 const defaults = {
   label: '...',

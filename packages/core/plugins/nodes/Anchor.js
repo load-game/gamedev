@@ -1,4 +1,4 @@
-import { Node } from './Node.js'
+import { Node } from '../../nodes/Node.js'
 
 export class Anchor extends Node {
   constructor(data = {}) {
