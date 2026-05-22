@@ -1,5 +1,5 @@
 import moment from 'moment'
-import { emoteUrls } from '../../extras/playerEmotes.js'
+import { emoteUrls } from '../entities/playerEmotes.js'
 import { readPacket, writePacket } from '../../packets.js'
 import { storage } from '../storage/local.js'
 import { uuid, sanitizeWsUrl } from '../../utils.js'

@@ -16,6 +16,8 @@ The default Three.js view rig and camera are plugin-owned. A bare kernel world h
 
 App script player proxies and script error serialization are owned by the app entity plugin because they are part of concrete app entity execution rather than the kernel.
 
+Default player locomotion emote URLs live with the player entity plugin support code. Loader and network plugins can still preload or apply those defaults, but the default player animation list is no longer a root core extra.
+
 ## Plugins
 
 Plugins declare what they install and what they need:
