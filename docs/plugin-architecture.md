@@ -146,7 +146,7 @@ A world only exposes APIs such as `world.copy`, `world.raycast`, `world.evm`, `w
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
 
-Plugin TypeScript declarations live with plugin entrypoints. For example, app code that uses browser helpers should reference `gamedev/plugins/browser/client`, app code that uses spatial APIs should reference `gamedev/plugins/spatial`, and app code that uses EVM APIs should reference `gamedev/plugins/evm` in addition to the base `gamedev` types.
+Plugin TypeScript declarations live with plugin entrypoints. For example, app code that uses browser helpers should reference `gamedev/plugins/browser/client`, app code that uses spatial APIs should reference `gamedev/plugins/spatial`, app code that uses `app.control()` should reference `gamedev/plugins/controls/client`, and app code that uses EVM APIs should reference `gamedev/plugins/evm` in addition to the base `gamedev` types. World projects using the default composition can reference `gamedev/presets/client` and `gamedev/presets/server` instead of listing every included plugin type individually.
 
 ## Reference World
 

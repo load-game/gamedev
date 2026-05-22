@@ -79,7 +79,9 @@ app.add(image)
 
 ### `.control(options)`
 
-Gives you control to listen for inputs and modify things like camera position. See [Control(/docs/scripting/app/Control.md) for more info.
+Requires the controls client plugin (`gamedev/plugins/controls/client`).
+
+Gives you control to listen for inputs and modify things like camera position. See [Control](/docs/scripting/app/Control.md) for more info.
 
 #### `.configure(fields)`
 
