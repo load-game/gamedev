@@ -1,5 +1,4 @@
 import crypto from 'crypto'
-import fs from 'fs'
 
 import { readPacket, writePacket } from '../plugins/network/packets.js'
 import { Ranks } from '@gamedev/core/permissions/ranks.js'
@@ -327,7 +326,6 @@ export async function admin(
   {
     world,
     assets,
-    adminHtmlPath,
     onConnectionCountChanged,
     agones = null,
     getAgones = null,
@@ -817,21 +815,7 @@ export async function admin(
   fastify.route({
     method: 'GET',
     url: '/admin',
-    handler: async (_req, reply) => {
-      if (!adminHtmlPath) {
-        return reply.code(404).send()
-      }
-      const title = world.settings.title || 'World'
-      const desc = world.settings.desc || ''
-      const image = world.resolveURL(world.settings.image?.url) || ''
-      const url = process.env.ASSETS_BASE_URL
-      let html = fs.readFileSync(adminHtmlPath, 'utf-8')
-      html = html.replaceAll('{url}', url)
-      html = html.replaceAll('{title}', title)
-      html = html.replaceAll('{desc}', desc)
-      html = html.replaceAll('{image}', image)
-      reply.type('text/html').send(html)
-    },
+    handler: async (_req, reply) => reply.code(404).send(),
     wsHandler: (ws, req) => {
       const receivedWs = ws
       ws = resolveWebSocketConnection(ws)

@@ -73,7 +73,6 @@ function resolveRuntimePublicDir(rootDir) {
 
 const rootDir = resolveRuntimeRootDir()
 const publicDir = resolveRuntimePublicDir(rootDir)
-const adminHtmlPath = path.join(publicDir, 'admin.html')
 const MIME_TYPES = {
   '.aac': 'audio/aac',
   '.bin': 'application/octet-stream',
@@ -1478,7 +1477,6 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
   app.register(admin, {
     world: worldProxy,
     assets: assetsProxy,
-    adminHtmlPath,
     getAgones: () => runtimeState.resources.agones,
     isRuntimeReady: () => isRuntimeReady(runtimeState),
     getRuntimeState: () => runtimeState.lifecycle.state,

@@ -185,13 +185,11 @@ test('plugin and preset type surfaces gate script APIs', async () => {
     await fs.writeFile(
       runtimePlugins,
       `
-        import { adminRuntimePlugin } from 'gamedev/plugins/runtime/admin'
         import { clientRuntimePlugin } from 'gamedev/plugins/runtime/client'
         import { nodeClientRuntimePlugin } from 'gamedev/plugins/runtime/node-client'
         import { serverRuntimePlugin } from 'gamedev/plugins/runtime/server'
         import { viewerRuntimePlugin } from 'gamedev/plugins/runtime/viewer'
 
-        adminRuntimePlugin.name
         clientRuntimePlugin.name
         nodeClientRuntimePlugin.name
         serverRuntimePlugin.name

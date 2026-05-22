@@ -40,7 +40,6 @@
     "index.plugin-audio-client.d.ts",
     "index.plugin-browser-client.d.ts",
     "index.plugin-builtins-server.d.ts",
-    "index.plugin-builder-admin.d.ts",
     "index.plugin-builder-builtins.d.ts",
     "index.plugin-builder-client.d.ts",
     "index.plugin-chat.d.ts",
@@ -48,7 +47,6 @@
     "index.plugin-controls-client.d.ts",
     "index.plugin-controls-priorities.d.ts",
     "index.plugin-css-client.d.ts",
-    "index.plugin-entities-admin-player.d.ts",
     "index.plugin-entities-app.d.ts",
     "index.plugin-entities-player.d.ts",
     "index.plugins.d.ts",
@@ -62,21 +60,18 @@
     "index.plugin-loader-client-handlers.d.ts",
     "index.plugin-loader-server.d.ts",
     "index.plugin-loader-server-handlers.d.ts",
-    "index.plugin-livekit-admin.d.ts",
     "index.plugin-livekit-client.d.ts",
     "index.plugin-livekit-server.d.ts",
     "index.plugin-lods-client.d.ts",
     "index.plugin-logs.d.ts",
     "index.plugin-monitor-server.d.ts",
     "index.plugin-nametags-client.d.ts",
-    "index.plugin-network-admin.d.ts",
     "index.plugin-network-client.d.ts",
     "index.plugin-network-server.d.ts",
     "index.plugin-nodes.d.ts",
     "index.plugin-particles-client.d.ts",
     "index.plugin-pointer-client.d.ts",
     "index.plugin-prefs-client.d.ts",
-    "index.plugin-runtime-admin.d.ts",
     "index.plugin-runtime-client.d.ts",
     "index.plugin-runtime-node-client.d.ts",
     "index.plugin-runtime-server.d.ts",
@@ -91,9 +86,7 @@
     "index.plugin-ui-client.d.ts",
     "index.plugin-view.d.ts",
     "index.plugin-wind-client.d.ts",
-    "index.plugin-xr-admin.d.ts",
     "index.plugin-xr-client.d.ts",
-    "index.presets-admin.d.ts",
     "index.presets-client.d.ts",
     "index.presets-core.d.ts",
     "index.presets-node-client.d.ts",
@@ -184,12 +177,6 @@
       "require": "./packages/plugins/hyperliquid/index.js",
       "default": "./packages/plugins/hyperliquid/index.js"
     },
-    "./plugins/builder/admin": {
-      "types": "./index.plugin-builder-admin.d.ts",
-      "import": "./packages/plugins/builder/admin.js",
-      "require": "./packages/plugins/builder/admin.js",
-      "default": "./packages/plugins/builder/admin.js"
-    },
     "./plugins/builder/client": {
       "types": "./index.plugin-builder-client.d.ts",
       "import": "./packages/plugins/builder/client.js",
@@ -250,12 +237,6 @@
       "require": "./packages/plugins/environment/server.js",
       "default": "./packages/plugins/environment/server.js"
     },
-    "./plugins/entities/admin-player": {
-      "types": "./index.plugin-entities-admin-player.d.ts",
-      "import": "./packages/plugins/entities/admin-player.js",
-      "require": "./packages/plugins/entities/admin-player.js",
-      "default": "./packages/plugins/entities/admin-player.js"
-    },
     "./plugins/entities/app": {
       "types": "./index.plugin-entities-app.d.ts",
       "import": "./packages/plugins/entities/app.js",
@@ -304,12 +285,6 @@
       "require": "./packages/plugins/livekit/client.js",
       "default": "./packages/plugins/livekit/client.js"
     },
-    "./plugins/livekit/admin": {
-      "types": "./index.plugin-livekit-admin.d.ts",
-      "import": "./packages/plugins/livekit/admin.js",
-      "require": "./packages/plugins/livekit/admin.js",
-      "default": "./packages/plugins/livekit/admin.js"
-    },
     "./plugins/livekit/server": {
       "types": "./index.plugin-livekit-server.d.ts",
       "import": "./packages/plugins/livekit/server.js",
@@ -339,12 +314,6 @@
       "import": "./packages/plugins/nametags/client.js",
       "require": "./packages/plugins/nametags/client.js",
       "default": "./packages/plugins/nametags/client.js"
-    },
-    "./plugins/network/admin": {
-      "types": "./index.plugin-network-admin.d.ts",
-      "import": "./packages/plugins/network/admin.js",
-      "require": "./packages/plugins/network/admin.js",
-      "default": "./packages/plugins/network/admin.js"
     },
     "./plugins/network/client": {
       "types": "./index.plugin-network-client.d.ts",
@@ -381,12 +350,6 @@
       "import": "./packages/plugins/prefs/client.js",
       "require": "./packages/plugins/prefs/client.js",
       "default": "./packages/plugins/prefs/client.js"
-    },
-    "./plugins/runtime/admin": {
-      "types": "./index.plugin-runtime-admin.d.ts",
-      "import": "./packages/plugins/runtime/admin.js",
-      "require": "./packages/plugins/runtime/admin.js",
-      "default": "./packages/plugins/runtime/admin.js"
     },
     "./plugins/runtime/client": {
       "types": "./index.plugin-runtime-client.d.ts",
@@ -472,12 +435,6 @@
       "require": "./packages/plugins/wind/client.js",
       "default": "./packages/plugins/wind/client.js"
     },
-    "./plugins/xr/admin": {
-      "types": "./index.plugin-xr-admin.d.ts",
-      "import": "./packages/plugins/xr/admin.js",
-      "require": "./packages/plugins/xr/admin.js",
-      "default": "./packages/plugins/xr/admin.js"
-    },
     "./plugins/xr/client": {
       "types": "./index.plugin-xr-client.d.ts",
       "import": "./packages/plugins/xr/client.js",
@@ -495,12 +452,6 @@
       "import": "./packages/presets/client.js",
       "require": "./packages/presets/client.js",
       "default": "./packages/presets/client.js"
-    },
-    "./presets/admin": {
-      "types": "./index.presets-admin.d.ts",
-      "import": "./packages/presets/admin.js",
-      "require": "./packages/presets/admin.js",
-      "default": "./packages/presets/admin.js"
     },
     "./presets/viewer": {
       "types": "./index.presets-viewer.d.ts",

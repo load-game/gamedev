@@ -26,7 +26,7 @@ Feature-owned vendor helpers are no longer kept under `@gamedev/core`. CSM lives
 
 Stage and snaps spatial indexes live with the plugins that own those systems. The stage plugin owns its loose octree for renderable scene entries, and the snaps plugin owns its point-query octree.
 
-Concrete entity constructors are plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. The admin preset adds `gamedev/plugins/entities/admin-player` for the admin-only local player, free camera, and admin remote-player implementation. Those first-party entity plugins live outside `@gamedev/core`. The core kernel keeps the base entity contract, while first-party concrete entity classes live with the plugins that install them. App-local asset resolution (`app.asset`) is contributed by the app entity plugin. Player lookup (`world.getPlayer`/`world.getPlayers`) and player movement, avatar, health, effect, ragdoll, and local camera helpers are contributed by the player entities plugin rather than the kernel.
+Concrete entity constructors are plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. Those first-party entity plugins live outside `@gamedev/core`. The core kernel keeps the base entity contract, while first-party concrete entity classes live with the plugins that install them. App-local asset resolution (`app.asset`) is contributed by the app entity plugin. Player lookup (`world.getPlayer`/`world.getPlayers`) and player movement, avatar, health, effect, ragdoll, and local camera helpers are contributed by the player entities plugin rather than the kernel.
 
 The default Three.js view rig and camera are plugin-owned. A bare kernel world has no `world.rig` or `world.camera`; `viewPlugin` from `gamedev/plugins/view` creates those objects for presets and plugins that need a camera-facing runtime.
 
@@ -73,7 +73,7 @@ System keys, node types, entity types, loader asset types, and script APIs are a
 
 Presets are ordered plugin compositions:
 
-Preset modules are exported directly as `gamedev/presets/client`, `gamedev/presets/admin`, `gamedev/presets/viewer`, `gamedev/presets/node-client`, and `gamedev/presets/server`. Runtime plugins are exported as `gamedev/plugins/runtime/client`, `gamedev/plugins/runtime/admin`, `gamedev/plugins/runtime/viewer`, `gamedev/plugins/runtime/node-client`, and `gamedev/plugins/runtime/server`; presets re-export them, but custom builds can import the runtime entrypoints directly. Those runtime plugin modules own the browser, node-client, and server tick-loop systems instead of keeping them in the core system namespace. Browser/admin/viewer/node-client runtime implementations live under `packages/plugins/runtime`, while server runtime remains owned by `packages/server`. The `create*World` helpers live on the preset modules as thin wrappers over those presets, so build tooling can compose from the preset modules without importing a root factory that hides the plugin list. Preset type declarations also import the plugin type augmentations included by that preset, while narrower custom builds can reference only the plugin declarations they actually include.
+Preset modules are exported directly as `gamedev/presets/client`, `gamedev/presets/viewer`, `gamedev/presets/node-client`, and `gamedev/presets/server`. Runtime plugins are exported as `gamedev/plugins/runtime/client`, `gamedev/plugins/runtime/viewer`, `gamedev/plugins/runtime/node-client`, and `gamedev/plugins/runtime/server`; presets re-export them, but custom builds can import the runtime entrypoints directly. Those runtime plugin modules own the browser, node-client, and server tick-loop systems instead of keeping them in the core system namespace. Browser/viewer/node-client runtime implementations live under `packages/plugins/runtime`, while server runtime remains owned by `packages/server`. The `create*World` helpers live on the preset modules as thin wrappers over those presets, so build tooling can compose from the preset modules without importing a root factory that hides the plugin list. Preset type declarations also import the plugin type augmentations included by that preset, while narrower custom builds can reference only the plugin declarations they actually include.
 
 ```js
 import { definePreset } from 'gamedev/plugins'
@@ -87,7 +87,6 @@ import { builderClientPlugin } from 'gamedev/plugins/builder/client'
 import { chatPlugin } from 'gamedev/plugins/chat'
 import { controlsClientPlugin } from 'gamedev/plugins/controls/client'
 import { cssClientPlugin } from 'gamedev/plugins/css/client'
-import { adminPlayerEntitiesPlugin } from 'gamedev/plugins/entities/admin-player'
 import { environmentClientPlugin } from 'gamedev/plugins/environment/client'
 import { appEntityPlugin } from 'gamedev/plugins/entities/app'
 import { playerEntitiesPlugin } from 'gamedev/plugins/entities/player'
@@ -150,7 +149,6 @@ export const clientPreset = definePreset({
     loaderClientHandlersPlugin,
     appEntityPlugin,
     playerEntitiesPlugin,
-    adminPlayerEntitiesPlugin,
     environmentClientPlugin,
     particlesClientPlugin,
     adminClientPlugin,

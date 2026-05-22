@@ -12,7 +12,6 @@ export const buildDir = path.join(rootDir, 'build')
 
 const clientPublicDir = path.join(rootDir, 'packages/client/public')
 const clientIndexHtmlSrc = path.join(clientPublicDir, 'index.html')
-const clientAdminHtmlSrc = path.join(clientPublicDir, 'admin.html')
 const worldAssetsDir = path.join(rootDir, 'packages/server/plugins/builtins/assets')
 const physxWasmSrc = path.join(rootDir, 'packages/plugins/spatial/physx/physx-js-webidl.wasm')
 
@@ -72,7 +71,7 @@ function captureEntriesPlugin({ onBundle }) {
     generateBundle(_options, bundle) {
       entries = {}
       for (const item of Object.values(bundle)) {
-        if (item.type === 'chunk' && item.isEntry) {
+        if (item.type === 'chunk' && (item.isEntry || item.facadeModuleId)) {
           entries[item.name] = item.fileName
         }
       }
@@ -160,7 +159,6 @@ export async function buildPlatformClient({ dev = false } = {}) {
     input: {
       index: path.join(rootDir, 'packages/client/index.js'),
       particles: path.join(rootDir, 'packages/client/particles.js'),
-      admin: path.join(rootDir, 'packages/client/admin.js'),
     },
     output: {
       entryFileNames: '[name]-[hash].js',
@@ -175,11 +173,9 @@ export async function buildPlatformClient({ dev = false } = {}) {
 
           const indexFile = requireEntry(entries, 'index')
           const particlesFile = requireEntry(entries, 'particles')
-          const adminFile = requireEntry(entries, 'admin')
 
           await fs.writeFile(path.join(outDir, 'index.js'), `import '${asRelativeImport(indexFile)}';\n`)
           await fs.writeFile(path.join(outDir, 'particles.js'), `import '${asRelativeImport(particlesFile)}';\n`)
-          await fs.writeFile(path.join(outDir, 'admin.js'), `import '${asRelativeImport(adminFile)}';\n`)
 
           const html = fillClientHtml(await fs.readFile(clientIndexHtmlSrc, 'utf-8'), {
             assetPrefix: '/',
@@ -188,16 +184,6 @@ export async function buildPlatformClient({ dev = false } = {}) {
             buildId,
           })
           await fs.writeFile(path.join(outDir, 'index.html'), html)
-
-          if (await fs.pathExists(clientAdminHtmlSrc)) {
-            const adminHtml = fillClientHtml(await fs.readFile(clientAdminHtmlSrc, 'utf-8'), {
-              assetPrefix: '/',
-              jsPath: asAbsolutePath(adminFile),
-              particlesPath: asAbsolutePath(particlesFile),
-              buildId,
-            })
-            await fs.writeFile(path.join(outDir, 'admin.html'), adminHtml)
-          }
 
           await fs.writeJson(
             path.join(buildDir, 'meta.json'),

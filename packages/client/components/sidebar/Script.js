@@ -50,11 +50,7 @@ export function Script({ world, hidden, viewMode = 'chat' }) {
   )
   const aiLocked = aiPending
   const canBuild = !!world.builder?.canBuild?.()
-  const aiAccessIssue = world.isAdminClient
-    ? 'AI requests are not available on admin connections.'
-    : !canBuild
-      ? 'Builder access required.'
-      : null
+  const aiAccessIssue = !canBuild ? 'Builder access required.' : null
   const aiCanUse = !!moduleRoot && !aiAccessIssue && !!aiController.requestEdit
   const aiCanSendEdit = aiCanUse && !aiLocked && !!aiPrompt.trim()
   const aiCanSendFix = aiCanUse && !aiLocked && !!scriptError
