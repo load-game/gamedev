@@ -181,8 +181,6 @@ export interface Player {
       onEnd?: () => void
     } | null
   ): void
-  screenshare(screenId: string): void
-  setVoiceLevel(level: 'disabled' | 'spatial' | 'global' | null): void
 }
 
 export interface WorldAPI {

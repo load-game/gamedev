@@ -33,6 +33,7 @@ export class Apps extends System {
     this.playerGetters = {}
     this.playerSetters = {}
     this.playerMethods = {}
+    this.playerProxyCleanups = []
     this.scriptApiSources = {
       world: new Map(),
       app: new Map(),
@@ -275,6 +276,13 @@ export class Apps extends System {
     this.assertScriptApiScopeAvailable('world', world, source)
     this.assertScriptApiScopeAvailable('app', app, source)
     this.assertScriptApiScopeAvailable('player', player, source)
+  }
+
+  addPlayerProxyCleanup(cleanup, source = 'unknown') {
+    if (typeof cleanup !== 'function') {
+      throw new Error(`player_proxy_cleanup_invalid:${source}`)
+    }
+    this.playerProxyCleanups.push(Object.freeze({ cleanup, source }))
   }
 
   getScriptApiEntryMetadata(scope, key, value, metadata) {

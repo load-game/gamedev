@@ -180,6 +180,8 @@ All options are optional.
 
 ### `.screenshare(screenId)`
 
+Requires the LiveKit client plugin or a preset that includes it.
+
 Can only be called on a local player.
 
 Prompts the player to share their screen, and then casts it to all video nodes that have a matching `.screenId` property.
@@ -200,6 +202,8 @@ This change is synced across the network to all clients.
 
 
 ### `.setVoiceLevel(level)`
+
+Requires the LiveKit server plugin or a preset that includes it.
 
 Overrides the players voice chat level to `disabled`, `spatial` or `global`.
 

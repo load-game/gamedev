@@ -1,5 +1,4 @@
-import { getRef } from '../nodes/Node.js'
-import { clamp, uuid } from '../utils.js'
+import { clamp } from '../utils.js'
 import { syncLobbyProfilePatch } from '../profileSync.js'
 import * as THREE from './three.js'
 
@@ -11,7 +10,6 @@ export function createPlayerProxy(entity, player) {
   const rotation = new THREE.Euler()
   const quaternion = new THREE.Quaternion()
   let activeEffectConfig = null
-  let voiceMod
 
   // Create the base proxy with default properties and methods
   const baseProxy = {
@@ -209,39 +207,10 @@ export function createPlayerProxy(entity, player) {
       }
       player.firstPerson(value)
     },
-    screenshare(targetId) {
-      if (!targetId) {
-        return console.error(`screenshare has invalid targetId: ${targetId}`)
-      }
-      if (player.data.owner !== world.network.id) {
-        return console.error('screenshare can only be called on local player')
-      }
-      world.livekit.setScreenShareTarget(targetId)
-    },
-    setVoiceLevel(level) {
-      if (!world.network.isServer) {
-        return console.error(`[setVoiceLevel] must be applied on the server`)
-      }
-      if (!level && !voiceMod) {
-        return // no modifiers to remove, this is a noop
-      }
-      if (!level && voiceMod) {
-        voiceMod = world.livekit.removeModifier(voiceMod)
-        return
-      }
-      if (level && !voiceMod) {
-        voiceMod = world.livekit.addModifier(player.data.id, level)
-        return
-      }
-      if (level && voiceMod) {
-        voiceMod = world.livekit.updateModifier(voiceMod, level)
-        return
-      }
-    },
     $cleanup() {
       activeEffectConfig?.onEnd()
-      if (voiceMod) {
-        voiceMod = world.livekit.removeModifier(voiceMod)
+      for (const entry of world.apps?.playerProxyCleanups || []) {
+        entry.cleanup(entity, player, baseProxy)
       }
     },
   }
@@ -263,7 +232,7 @@ export function createPlayerProxy(entity, player) {
       if (world.apps.playerMethods && prop in world.apps.playerMethods) {
         const method = world.apps.playerMethods[prop]
         return (...args) => {
-          return method(player, ...args)
+          return method.call(entity, player, ...args)
         }
       }
 

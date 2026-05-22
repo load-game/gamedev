@@ -25,6 +25,7 @@ import { graphicsClientPlugin } from '@gamedev/core/plugins/graphics/client.js'
 import { hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
 import { loaderClientPlugin } from '@gamedev/core/plugins/loader/client.js'
 import { loaderServerPlugin } from '@gamedev/core/plugins/loader/server.js'
+import { livekitClientPlugin } from '@gamedev/core/plugins/livekit/client.js'
 import { livekitServerPlugin } from '@gamedev/core/plugins/livekit/server.js'
 import { lodsClientPlugin } from '@gamedev/core/plugins/lods/client.js'
 import { logsPlugin } from '@gamedev/core/plugins/logs.js'
@@ -693,6 +694,7 @@ test('runtime factories are preset compositions', () => {
   assert.equal(serverWorld.aiScripts.plugin, '@gamedev/plugin-ai/server')
   assert.equal(serverWorld.evm.plugin, '@gamedev/plugin-evm/server')
   assert.equal(serverWorld.hyperliquid.plugin, '@gamedev/plugin-hyperliquid')
+  assert.equal(serverWorld.pluginCapabilities.has('script:player.setVoiceLevel'), true)
   assert.equal(typeof serverWorld.apps.worldGetters.isServer, 'function')
   assert.equal(typeof serverWorld.apps.worldGetters.networkId, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.getTime, 'function')
@@ -707,6 +709,7 @@ test('runtime factories are preset compositions', () => {
   assert.equal(typeof serverWorld.apps.worldMethods.chat, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.evm, 'function')
   assert.equal(typeof serverWorld.apps.worldMethods.hyperliquid, 'function')
+  assert.equal(typeof serverWorld.apps.playerMethods.setVoiceLevel, 'function')
   assert.equal(serverWorld.apps.worldMethods.open, undefined)
   assert.equal(serverWorld.apps.worldMethods.copy, undefined)
 })
@@ -775,6 +778,8 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.overlapSphere, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
+  assert.equal(coreWorld.apps.playerMethods.screenshare, undefined)
+  assert.equal(coreWorld.apps.playerMethods.setVoiceLevel, undefined)
 
   const spatialWorld = new World({
     plugins: [coreSystemsPlugin, spatialPlugin],
@@ -965,6 +970,33 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
   assert.equal(adminNetworkWorld.adminNetwork, adminNetworkWorld.network)
 
+  const livekitClientWorld = new World({
+    plugins: [
+      coreSystemsPlugin,
+      definePlugin({
+        name: 'test-livekit-client-prereqs',
+        provides: ['client', 'network', 'audio'],
+      }),
+      livekitClientPlugin,
+    ],
+  })
+  assert.equal(livekitClientWorld.pluginCapabilities.has('script:player.screenshare'), true)
+  assert.equal(typeof livekitClientWorld.apps.playerMethods.screenshare, 'function')
+  let screenTarget = null
+  const fakeClientPlayer = {
+    data: { id: 'player-1', owner: 'network-1' },
+    world: {
+      network: { id: 'network-1' },
+      livekit: {
+        setScreenShareTarget(targetId) {
+          screenTarget = targetId
+        },
+      },
+    },
+  }
+  livekitClientWorld.apps.playerMethods.screenshare(fakeClientPlayer, 'screen-a')
+  assert.equal(screenTarget, 'screen-a')
+
   assert.throws(
     () => new World({ plugins: [coreSystemsPlugin, xrClientPlugin] }),
     /plugin_missing_requirement:@gamedev\/plugin-xr\/client:graphics/
@@ -1089,4 +1121,16 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof featureWorld.apps.playerGetters.evm, 'function')
   assert.equal(typeof featureWorld.apps.playerGetters.evmChainId, 'function')
   assert.equal(typeof featureWorld.apps.worldMethods.hyperliquid, 'function')
+  assert.equal(featureWorld.pluginCapabilities.has('script:player.setVoiceLevel'), true)
+  assert.equal(typeof featureWorld.apps.playerMethods.setVoiceLevel, 'function')
+
+  const fakeEntity = { data: { id: 'app-1' } }
+  const fakeServerPlayer = { data: { id: 'player-1' }, world: featureWorld }
+  featureWorld.network.isServer = true
+  featureWorld.network.send = () => {}
+  featureWorld.apps.playerMethods.setVoiceLevel.call(fakeEntity, fakeServerPlayer, 'global')
+  assert.equal(featureWorld.livekit.levels['player-1'], 'global')
+  assert.equal(featureWorld.apps.playerProxyCleanups.length, 1)
+  featureWorld.apps.playerProxyCleanups[0].cleanup(fakeEntity, fakeServerPlayer)
+  assert.equal(featureWorld.livekit.levels['player-1'], null)
 })

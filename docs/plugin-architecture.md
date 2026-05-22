@@ -142,7 +142,7 @@ Server bootstrap built-ins are exported from `gamedev/plugins/builtins/server`. 
 
 Plugins can expose script-facing APIs through `scripts`. Contributions are validated when the plugin is defined. Collisions are rejected before the plugin mutates the world, and each contribution is also available as a capability such as `script:world.load`, `script:world.evm`, or `script:player.evm`. Other plugins can list those capability names in `requires`.
 
-A world only exposes APIs such as `world.copy`, `world.raycast`, `world.evm`, `world.hyperliquid`, `player.evm`, network helpers like `world.isServer`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
+A world only exposes APIs such as `world.copy`, `world.raycast`, `world.evm`, `world.hyperliquid`, `player.evm`, LiveKit player helpers like `player.screenshare` and `player.setVoiceLevel`, network helpers like `world.isServer`, or storage helpers like `world.get` when the selected preset includes the plugin that contributes them.
 
 Script methods receive the owning app entity as their first argument because app scripts access them through a proxy.
 

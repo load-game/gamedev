@@ -1,3 +1,4 @@
+import 'gamedev'
 import type { WorldPlugin } from './index.plugins.d.ts'
 
 export interface LiveKitStatus {
@@ -6,9 +7,11 @@ export interface LiveKitStatus {
   connecting?: boolean
   mic: boolean
   screenshare: string | null
-  level: 'disabled' | 'spatial' | 'global' | null
+  level: LiveKitVoiceLevel
   muted: boolean
 }
+
+export type LiveKitVoiceLevel = 'disabled' | 'spatial' | 'global' | null
 
 export declare class ClientLiveKit {
   constructor(world: any)
@@ -18,7 +21,7 @@ export declare class ClientLiveKit {
   disconnect(): void
   isMuted(playerId: string): boolean
   setMuted(playerId: string, muted: boolean): void
-  setLevel(playerId: string, level: LiveKitStatus['level']): void
+  setLevel(playerId: string, level: LiveKitVoiceLevel): void
   setMicrophoneEnabled(value?: boolean): Promise<void>
   setScreenShareTarget(targetId?: string | null): Promise<void>
   setToken(token: string): Promise<void>
@@ -26,4 +29,23 @@ export declare class ClientLiveKit {
   unregisterScreenNode(node: any): void
 }
 
+export declare const livekitClientScriptApi: {
+  player: {
+    screenshare: {
+      call(player: any, targetId: string): void
+      meta: {
+        summary: string
+        docs: string
+        environment: 'client'
+      }
+    }
+  }
+}
+
 export declare const livekitClientPlugin: WorldPlugin
+
+declare module 'gamedev' {
+  interface Player {
+    screenshare(screenId: string): void
+  }
+}
