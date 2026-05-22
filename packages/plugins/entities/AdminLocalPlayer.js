@@ -1,5 +1,5 @@
-import * as THREE from '../../math/three.js'
-import { Ranks, hasRank } from '../../permissions/ranks.js'
+import * as THREE from '../../core/math/three.js'
+import { Ranks, hasRank } from '../../core/permissions/ranks.js'
 
 const ZERO_POS = [0, 0, 0]
 const IDENTITY_QUAT = [0, 0, 0, 1]
