@@ -201,9 +201,9 @@
     },
     "./plugins/chat": {
       "types": "./index.plugin-chat.d.ts",
-      "import": "./packages/core/plugins/chat.js",
-      "require": "./packages/core/plugins/chat.js",
-      "default": "./packages/core/plugins/chat.js"
+      "import": "./packages/plugins/chat.js",
+      "require": "./packages/plugins/chat.js",
+      "default": "./packages/plugins/chat.js"
     },
     "./plugins/controls/client": {
       "types": "./index.plugin-controls-client.d.ts",
@@ -303,9 +303,9 @@
     },
     "./plugins/logs": {
       "types": "./index.plugin-logs.d.ts",
-      "import": "./packages/core/plugins/logs.js",
-      "require": "./packages/core/plugins/logs.js",
-      "default": "./packages/core/plugins/logs.js"
+      "import": "./packages/plugins/logs.js",
+      "require": "./packages/plugins/logs.js",
+      "default": "./packages/plugins/logs.js"
     },
     "./plugins/monitor/server": {
       "types": "./index.plugin-monitor-server.d.ts",
