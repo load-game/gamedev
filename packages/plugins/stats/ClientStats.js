@@ -1,7 +1,7 @@
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
-import StatsGL from '../../libs/stats-gl/index.js'
-import Panel from '../../libs/stats-gl/panel.js'
+import StatsGL from '../../core/libs/stats-gl/index.js'
+import Panel from '../../core/libs/stats-gl/panel.js'
 import { isBoolean } from 'lodash-es'
 
 const PING_RATE = 1 / 2

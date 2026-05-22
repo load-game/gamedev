@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 
 export class Wind extends System {
   constructor(world) {

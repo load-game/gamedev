@@ -329,9 +329,9 @@
     },
     "./plugins/lods/client": {
       "types": "./index.plugin-lods-client.d.ts",
-      "import": "./packages/core/plugins/lods/client.js",
-      "require": "./packages/core/plugins/lods/client.js",
-      "default": "./packages/core/plugins/lods/client.js"
+      "import": "./packages/plugins/lods/client.js",
+      "require": "./packages/plugins/lods/client.js",
+      "default": "./packages/plugins/lods/client.js"
     },
     "./plugins/nametags/client": {
       "types": "./index.plugin-nametags-client.d.ts",
@@ -437,15 +437,15 @@
     },
     "./plugins/stats/client": {
       "types": "./index.plugin-stats-client.d.ts",
-      "import": "./packages/core/plugins/stats/client.js",
-      "require": "./packages/core/plugins/stats/client.js",
-      "default": "./packages/core/plugins/stats/client.js"
+      "import": "./packages/plugins/stats/client.js",
+      "require": "./packages/plugins/stats/client.js",
+      "default": "./packages/plugins/stats/client.js"
     },
     "./plugins/target/client": {
       "types": "./index.plugin-target-client.d.ts",
-      "import": "./packages/core/plugins/target/client.js",
-      "require": "./packages/core/plugins/target/client.js",
-      "default": "./packages/core/plugins/target/client.js"
+      "import": "./packages/plugins/target/client.js",
+      "require": "./packages/plugins/target/client.js",
+      "default": "./packages/plugins/target/client.js"
     },
     "./plugins/ui/client": {
       "types": "./index.plugin-ui-client.d.ts",
@@ -461,9 +461,9 @@
     },
     "./plugins/wind/client": {
       "types": "./index.plugin-wind-client.d.ts",
-      "import": "./packages/core/plugins/wind/client.js",
-      "require": "./packages/core/plugins/wind/client.js",
-      "default": "./packages/core/plugins/wind/client.js"
+      "import": "./packages/plugins/wind/client.js",
+      "require": "./packages/plugins/wind/client.js",
+      "default": "./packages/plugins/wind/client.js"
     },
     "./plugins/xr/admin": {
       "types": "./index.plugin-xr-admin.d.ts",
