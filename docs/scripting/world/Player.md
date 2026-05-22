@@ -46,6 +46,8 @@ The players rotation in the world.
 
 ## Methods
 
+Player movement, avatar, health, effect, and ragdoll methods require the player entities plugin or a preset that includes it.
+
 ### `.teleport(position, rotationY)`
 
 Teleports the player instantly to the new position. The `rotationY` value is in radians, and if omitted the player will continue facing their current direction.

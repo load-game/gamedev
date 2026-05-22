@@ -778,6 +778,10 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(coreWorld.apps.worldMethods.overlapSphere, undefined)
   assert.equal(coreWorld.apps.worldMethods.evm, undefined)
   assert.equal(coreWorld.apps.worldMethods.hyperliquid, undefined)
+  assert.equal(coreWorld.apps.playerMethods.teleport, undefined)
+  assert.equal(coreWorld.apps.playerMethods.damage, undefined)
+  assert.equal(coreWorld.apps.playerMethods.applyEffect, undefined)
+  assert.equal(coreWorld.apps.playerMethods.ragdoll, undefined)
   assert.equal(coreWorld.apps.playerMethods.screenshare, undefined)
   assert.equal(coreWorld.apps.playerMethods.setVoiceLevel, undefined)
 
@@ -834,7 +838,68 @@ test('feature APIs only appear when their plugins are selected', () => {
     ],
   })
   assert.equal(playerEntityWorld.pluginCapabilities.has('entity:player'), true)
+  assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.teleport'), true)
+  assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.applyEffect'), true)
   assert.equal(playerEntityWorld.entityTypes.has('player'), true)
+  assert.equal(typeof playerEntityWorld.apps.playerMethods.teleport, 'function')
+  assert.equal(typeof playerEntityWorld.apps.playerMethods.damage, 'function')
+  assert.equal(typeof playerEntityWorld.apps.playerMethods.applyEffect, 'function')
+  assert.equal(typeof playerEntityWorld.apps.playerMethods.ragdoll, 'function')
+  assert.equal(playerEntityWorld.apps.playerProxyCleanups.length, 1)
+  playerEntityWorld.network.id = 'network-1'
+  playerEntityWorld.network.isServer = false
+  let teleportPayload = null
+  playerEntityWorld.network.enqueue = (name, payload) => {
+    teleportPayload = { name, payload }
+  }
+  const fakePlayerEntity = {
+    data: { id: 'player-1', owner: 'network-1', health: 100, effect: null },
+    world: playerEntityWorld,
+    avatar: {
+      getBoneTransform(boneName) {
+        return `bone:${boneName}`
+      },
+    },
+    modify(patch) {
+      Object.assign(this.data, patch)
+    },
+    setEffect(effect) {
+      this.data.effect = effect
+    },
+    setRagdoll(enable) {
+      this.ragdollEnabled = enable
+    },
+    push(force) {
+      this.pushed = force
+    },
+  }
+  const fakeAppEntity = { data: { id: 'app-1' } }
+  const fakeVector = {
+    toArray() {
+      return [1, 2, 3]
+    },
+  }
+  playerEntityWorld.apps.playerMethods.teleport(fakePlayerEntity, fakeVector, 1.5)
+  assert.deepEqual(teleportPayload, {
+    name: 'onPlayerTeleport',
+    payload: { position: [1, 2, 3], rotationY: 1.5 },
+  })
+  assert.equal(playerEntityWorld.apps.playerMethods.getBoneTransform(fakePlayerEntity, 'head'), 'bone:head')
+  playerEntityWorld.apps.playerMethods.damage(fakePlayerEntity, 25)
+  assert.equal(fakePlayerEntity.data.health, 75)
+  let effectEnded = false
+  const effectHandle = playerEntityWorld.apps.playerMethods.applyEffect.call(fakeAppEntity, fakePlayerEntity, {
+    freeze: true,
+    onEnd() {
+      effectEnded = true
+    },
+  })
+  assert.equal(effectHandle.active, true)
+  assert.deepEqual(fakePlayerEntity.data.effect, { freeze: true })
+  playerEntityWorld.apps.playerProxyCleanups[0].cleanup(fakeAppEntity, fakePlayerEntity)
+  assert.equal(effectHandle.active, false)
+  assert.equal(fakePlayerEntity.data.effect, null)
+  assert.equal(effectEnded, true)
 
   const clientRuntimeStub = definePlugin({
     name: 'test-client-runtime',
@@ -1130,7 +1195,10 @@ test('feature APIs only appear when their plugins are selected', () => {
   featureWorld.network.send = () => {}
   featureWorld.apps.playerMethods.setVoiceLevel.call(fakeEntity, fakeServerPlayer, 'global')
   assert.equal(featureWorld.livekit.levels['player-1'], 'global')
-  assert.equal(featureWorld.apps.playerProxyCleanups.length, 1)
-  featureWorld.apps.playerProxyCleanups[0].cleanup(fakeEntity, fakeServerPlayer)
+  const livekitCleanup = featureWorld.apps.playerProxyCleanups.find(
+    entry => entry.source === '@gamedev/plugin-livekit/server'
+  )
+  assert.ok(livekitCleanup)
+  livekitCleanup.cleanup(fakeEntity, fakeServerPlayer)
   assert.equal(featureWorld.livekit.levels['player-1'], null)
 })

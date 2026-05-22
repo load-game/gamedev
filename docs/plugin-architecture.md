@@ -10,7 +10,7 @@ The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/pr
 
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions.
 
-Concrete entity constructors are also plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`.
+Concrete entity constructors are also plugin-owned. The default runtime presets register app entities through `gamedev/plugins/entities/app` and player entities through `gamedev/plugins/entities/player`. Player movement, avatar, health, effect, and ragdoll script methods are contributed by the player entities plugin rather than the kernel.
 
 ## Plugins
 

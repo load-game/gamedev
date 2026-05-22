@@ -67,6 +67,12 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         // @ts-expect-error controls are provided by the controls client plugin
         app.control()
 
+        // @ts-expect-error concrete player methods are provided by the player entities plugin
+        player?.teleport([0, 1, 0])
+
+        // @ts-expect-error concrete player methods are provided by the player entities plugin
+        player?.damage(10)
+
         // @ts-expect-error screenshare is provided by the LiveKit client plugin
         player?.screenshare('monitor')
 
@@ -80,6 +86,7 @@ test('plugin and preset type surfaces gate script APIs', async () => {
       `
         import 'gamedev'
         import 'gamedev/plugins/controls/client'
+        import 'gamedev/plugins/entities/player'
         import 'gamedev/plugins/livekit/client'
         import 'gamedev/plugins/livekit/server'
         import 'gamedev/plugins/nodes'
@@ -91,6 +98,8 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         controls.keyW.down
         controls.release()
 
+        world.getPlayer()?.teleport([0, 1, 0])
+        world.getPlayer()?.damage(10)
         world.getPlayer()?.screenshare('monitor')
         world.getPlayer()?.setVoiceLevel('global')
 
@@ -139,6 +148,8 @@ test('plugin and preset type surfaces gate script APIs', async () => {
         world.get<number>('score')
         world.evm().isConnected()
         world.hyperliquid().getAvailableTickers()
+        world.getPlayer()?.teleport([0, 1, 0])
+        world.getPlayer()?.damage(10)
         world.getPlayer()?.screenshare('monitor')
         world.getPlayer()?.setVoiceLevel('spatial')
       `

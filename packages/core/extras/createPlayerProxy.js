@@ -1,15 +1,10 @@
-import { clamp } from '../utils.js'
-import { syncLobbyProfilePatch } from '../profileSync.js'
 import * as THREE from './three.js'
-
-const HEALTH_MAX = 100
 
 export function createPlayerProxy(entity, player) {
   const world = player.world
   const position = new THREE.Vector3()
   const rotation = new THREE.Euler()
   const quaternion = new THREE.Quaternion()
-  let activeEffectConfig = null
 
   // Create the base proxy with default properties and methods
   const baseProxy = {
@@ -58,157 +53,7 @@ export function createPlayerProxy(entity, player) {
     get destroyed() {
       return !!player.destroyed
     },
-    teleport(position, rotationY) {
-      if (player.data.owner === world.network.id) {
-        // if player is local we can set directly
-        world.network.enqueue('onPlayerTeleport', { position: position.toArray(), rotationY })
-      } else if (world.network.isClient) {
-        // if we're a client we need to notify server
-        world.network.send('playerTeleport', { networkId: player.data.owner, position: position.toArray(), rotationY })
-      } else {
-        // if we're the server we need to notify the player
-        world.network.sendTo(player.data.owner, 'playerTeleport', { position: position.toArray(), rotationY })
-      }
-    },
-    getBoneTransform(boneName) {
-      return player.avatar?.getBoneTransform?.(boneName)
-    },
-    async setAvatar(url) {
-      const avatar = url || null
-      if (world.network.isServer) {
-        world.network.applyEntityModified({ id: player.data.id, avatar, sessionAvatar: null })
-      } else if (player.data.owner === world.network.id) {
-        const result = await syncLobbyProfilePatch({ avatar })
-        if (!result.ok) {
-          world.emit('toast', result.error?.message || 'Unable to update profile')
-          return
-        }
-        player.modify({ avatar, sessionAvatar: null })
-        world.network.send('playerAvatar', { avatar })
-      } else {
-        console.error('setAvatar can only be called on the local player from client scripts')
-      }
-    },
-    setSessionAvatar(url) {
-      const avatar = url
-      if (player.data.owner === world.network.id) {
-        // if player is local we can set directly
-        world.network.enqueue('onPlayerSessionAvatar', { avatar })
-      } else if (world.network.isClient) {
-        // if we're a client we need to notify server
-        world.network.send('playerSessionAvatar', { networkId: player.data.owner, avatar })
-      } else {
-        // if we're the server we need to notify the player
-        world.network.sendTo(player.data.owner, 'playerSessionAvatar', { avatar })
-      }
-    },
-    damage(amount) {
-      const health = clamp(player.data.health - amount, 0, HEALTH_MAX)
-      if (player.data.health === health) return
-      if (world.network.isServer) {
-        world.network.send('entityModified', { id: player.data.id, health })
-      }
-      player.modify({ health })
-    },
-    heal(amount = HEALTH_MAX) {
-      const health = clamp(player.data.health + amount, 0, HEALTH_MAX)
-      if (player.data.health === health) return
-      if (world.network.isServer) {
-        world.network.send('entityModified', { id: player.data.id, health })
-      }
-      player.modify({ health })
-    },
-    hasEffect() {
-      return !!player.data.effect
-    },
-    applyEffect(opts) {
-      if (!opts) return
-      const effect = {}
-      // effect.id = uuid()
-      if (opts.anchor) effect.anchorId = opts.anchor.anchorId
-      if (opts.emote) effect.emote = opts.emote
-      if (opts.snare) effect.snare = opts.snare
-      if (opts.freeze) effect.freeze = opts.freeze
-      if (opts.turn) effect.turn = opts.turn
-      if (opts.duration) effect.duration = opts.duration
-      if (opts.cancellable) {
-        effect.cancellable = opts.cancellable
-        delete effect.freeze // overrides
-      }
-      const config = {
-        effect,
-        onEnd: () => {
-          if (activeEffectConfig !== config) return
-          activeEffectConfig = null
-          player.setEffect(null)
-          opts.onEnd?.()
-        },
-      }
-      activeEffectConfig = config
-      player.setEffect(config.effect, config.onEnd)
-      if (world.network.isServer) {
-        world.network.send('entityModified', { id: player.data.id, ef: config.effect })
-      }
-      return {
-        get active() {
-          return activeEffectConfig === config
-        },
-        cancel: () => {
-          config.onEnd()
-        },
-      }
-    },
-    cancelEffect() {
-      activeEffectConfig?.onEnd()
-    },
-    ragdoll(enable, force, opts) {
-      const forceArr = force?.toArray?.() || null
-      const msg = { id: player.data.id, r: enable ? 1 : 0 }
-      if (forceArr) msg.rf = forceArr
-      if (opts) msg.ro = opts
-      player.setRagdoll(enable, force || null, opts || null)
-      if (world.network.isServer) {
-        world.network.send('entityModified', msg)
-      }
-    },
-    push(force, opts) {
-      const bone = opts?.bone
-      const point = opts?.point
-      // Bone pushes always apply to the local ragdoll simulation directly
-      if (bone) {
-        player.pushBone(bone, force.toArray(), point ? point.toArray() : null)
-        return
-      }
-      // Non-bone push: route through network as before
-      const msg = { networkId: player.data.owner, force: force.toArray() }
-      if (player.data.owner === world.network.id) {
-        player.push(msg.force)
-      } else if (world.network.isClient) {
-        world.network.send('playerPush', msg)
-      } else {
-        world.network.sendTo(player.data.owner, 'playerPush', msg)
-      }
-    },
-    replaceAnimations(newEmotes, reset = false) {
-      if (!world.network.isClient) {
-        return console.error('replaceAnimations can only be called on the client')
-      }
-      if (player.data.owner !== world.network.id) {
-        return console.error('replaceAnimations can only be called on local player')
-      }
-      player.replaceAnimations?.(newEmotes, reset)
-    },
-    firstPerson(value = true) {
-      if (!world.network.isClient) {
-        return console.error('firstPerson can only be called on the client')
-      }
-      if (player.data.owner !== world.network.id) {
-        return console.error('firstPerson can only be called on local player')
-      }
-      player.firstPerson(value)
-    },
     $cleanup() {
-      activeEffectConfig?.onEnd()
       for (const entry of world.apps?.playerProxyCleanups || []) {
         entry.cleanup(entity, player, baseProxy)
       }

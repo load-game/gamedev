@@ -1,4 +1,5 @@
 import './index.plugin-chat.d.ts'
+import './index.plugin-entities-player.d.ts'
 import './index.plugin-evm.d.ts'
 import './index.plugin-hyperliquid.d.ts'
 import './index.plugin-loader-server.d.ts'

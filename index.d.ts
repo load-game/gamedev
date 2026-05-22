@@ -161,26 +161,6 @@ export interface Player {
   position: Vector3
   quaternion: Quaternion
   rotation: Euler
-
-  // methods
-  teleport(position: Vector3Like, rotationY?: number): void
-  replaceAnimations(newEmotes: Record<string, string>, reset?: boolean): void
-  firstPerson(value?: boolean): void
-  getBoneTransform(boneName: string): Matrix4 | null
-  damage(amount: number): void
-  heal(amount: number): void
-  applyEffect(
-    options: {
-      anchor?: BaseNode
-      emote?: string
-      snare?: number
-      freeze?: boolean
-      turn?: boolean
-      duration?: number
-      cancellable?: boolean
-      onEnd?: () => void
-    } | null
-  ): void
 }
 
 export interface WorldAPI {
