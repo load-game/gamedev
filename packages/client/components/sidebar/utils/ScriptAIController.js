@@ -80,10 +80,6 @@ export class ScriptAIController {
   }
 
   request = ({ mode = 'edit', prompt, error, app, scriptRootId, attachments } = {}) => {
-    if (this.world.isAdminClient) {
-      this.world.emit('toast', 'AI script requests are not available on admin connections.')
-      return null
-    }
     if (!this.world.network?.send) return null
     if (!this.world.builder?.canBuild?.()) {
       this.world.emit('toast', 'Builder access required.')

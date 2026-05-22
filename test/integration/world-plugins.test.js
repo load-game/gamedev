@@ -4,11 +4,9 @@ import { test } from 'vite-plus/test'
 import { World } from '@gamedev/core/World.js'
 import { definePlugin, definePreset } from '@gamedev/core/plugins.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
-import { adminPreset, createAdminWorld } from 'gamedev/presets/admin'
 import { clientPreset, createClientWorld } from 'gamedev/presets/client'
 import { nodeClientPreset, createNodeClientWorld } from 'gamedev/presets/node-client'
 import { viewerPreset, createViewerWorld } from 'gamedev/presets/viewer'
-import { adminRuntimePlugin as adminRuntimeEntryPlugin } from 'gamedev/plugins/runtime/admin'
 import { clientRuntimePlugin as clientRuntimeEntryPlugin } from 'gamedev/plugins/runtime/client'
 import { nodeClientRuntimePlugin as nodeClientRuntimeEntryPlugin } from 'gamedev/plugins/runtime/node-client'
 import { viewerRuntimePlugin as viewerRuntimeEntryPlugin } from 'gamedev/plugins/runtime/viewer'
@@ -22,7 +20,6 @@ import { controlsClientPlugin } from 'gamedev/plugins/controls/client'
 import { cssClientPlugin } from 'gamedev/plugins/css/client'
 import { environmentClientPlugin } from 'gamedev/plugins/environment/client'
 import { environmentServerPlugin } from 'gamedev/plugins/environment/server'
-import { adminPlayerEntitiesPlugin } from 'gamedev/plugins/entities/admin-player'
 import { appEntityPlugin } from 'gamedev/plugins/entities/app'
 import { playerEntitiesPlugin } from 'gamedev/plugins/entities/player'
 import { evmServerPlugin } from 'gamedev/plugins/evm'
@@ -37,7 +34,6 @@ import { livekitServerPlugin } from 'gamedev/plugins/livekit/server'
 import { lodsClientPlugin } from 'gamedev/plugins/lods/client'
 import { logsPlugin } from 'gamedev/plugins/logs'
 import { monitorServerPlugin } from 'gamedev/plugins/monitor/server'
-import { networkAdminPlugin } from 'gamedev/plugins/network/admin'
 import { networkClientPlugin } from 'gamedev/plugins/network/client'
 import { networkServerPlugin } from '@gamedev/server/plugins/network/server.js'
 import { nodesPlugin } from 'gamedev/plugins/nodes'
@@ -503,16 +499,11 @@ test('plugins validate script API descriptors at definition time', () => {
 })
 
 test('runtime factories are preset compositions', () => {
-  assert.equal(typeof createAdminWorld, 'function')
   assert.equal(typeof createClientWorld, 'function')
   assert.equal(typeof createNodeClientWorld, 'function')
   assert.equal(typeof createViewerWorld, 'function')
   assert.equal(typeof createServerWorld, 'function')
 
-  assert.equal(
-    adminPreset.plugins.find(plugin => plugin.name === '@gamedev/admin/runtime'),
-    adminRuntimeEntryPlugin
-  )
   assert.equal(
     clientPreset.plugins.find(plugin => plugin.name === '@gamedev/client/runtime'),
     clientRuntimeEntryPlugin
@@ -528,48 +519,6 @@ test('runtime factories are preset compositions', () => {
   assert.equal(
     serverPreset.plugins.find(plugin => plugin.name === '@gamedev/server/runtime'),
     serverRuntimeEntryPlugin
-  )
-
-  assert.deepEqual(
-    adminPreset.plugins.map(plugin => plugin.name),
-    [
-      '@gamedev/core/systems',
-      '@gamedev/plugin-logs',
-      '@gamedev/plugin-nodes',
-      '@gamedev/plugin-view',
-      '@gamedev/plugin-animation',
-      '@gamedev/plugin-spatial',
-      '@gamedev/plugin-stage',
-      '@gamedev/plugin-chat',
-      '@gamedev/plugin-prefs/client',
-      '@gamedev/plugin-graphics/client',
-      '@gamedev/plugin-controls/client',
-      '@gamedev/admin/runtime',
-      '@gamedev/plugin-browser/client',
-      '@gamedev/plugin-network/admin',
-      '@gamedev/plugin-pointer/client',
-      '@gamedev/plugin-xr/admin',
-      '@gamedev/plugin-css/client',
-      '@gamedev/plugin-actions/client',
-      '@gamedev/plugin-audio/client',
-      '@gamedev/plugin-stats/client',
-      '@gamedev/plugin-target/client',
-      '@gamedev/plugin-lods/client',
-      '@gamedev/plugin-snaps/client',
-      '@gamedev/plugin-wind/client',
-      '@gamedev/plugin-nametags/client',
-      '@gamedev/plugin-ui/client',
-      '@gamedev/plugin-loader/client',
-      '@gamedev/plugin-loader-handlers/client',
-      '@gamedev/plugin-entities/app',
-      '@gamedev/plugin-entities/player',
-      '@gamedev/plugin-entities/admin-player',
-      '@gamedev/plugin-environment/client',
-      '@gamedev/plugin-particles/client',
-      '@gamedev/plugin-admin/client',
-      '@gamedev/plugin-builder/admin',
-      '@gamedev/plugin-livekit/admin',
-    ]
   )
 
   assert.deepEqual(
@@ -973,9 +922,7 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:world.getPlayers'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.teleport'), true)
   assert.equal(playerEntityWorld.pluginCapabilities.has('script:player.applyEffect'), true)
-  assert.equal(playerEntityWorld.pluginCapabilities.has('admin-player-entities'), false)
   assert.equal(playerEntityWorld.entityTypes.has('player'), true)
-  assert.equal(playerEntityWorld.isAdminClient, undefined)
   assert.equal(playerEntityWorld.playerEntityFactory, undefined)
   assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayer, 'function')
   assert.equal(typeof playerEntityWorld.apps.worldMethods.getPlayers, 'function')
@@ -1048,35 +995,6 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(effectHandle.active, false)
   assert.equal(fakePlayerEntity.data.effect, null)
   assert.equal(effectEnded, true)
-
-  const adminPlayerRuntimeStub = definePlugin({
-    name: 'test-admin-player-runtime',
-    systems: [['client', TestSystem]],
-  })
-  const adminPlayerWorld = new World({
-    plugins: [
-      coreSystemsPlugin,
-      nodesPlugin,
-      viewPlugin,
-      spatialPlugin,
-      stagePlugin,
-      chatPlugin,
-      prefsClientPlugin,
-      controlsClientPlugin,
-      adminPlayerRuntimeStub,
-      networkAdminPlugin,
-      loaderClientPlugin,
-      loaderClientHandlersPlugin,
-      playerEntitiesPlugin,
-      adminPlayerEntitiesPlugin,
-    ],
-  })
-  assert.equal(adminPlayerWorld.pluginCapabilities.has('admin-player-entities'), true)
-  assert.equal(adminPlayerWorld.isAdminClient, true)
-  assert.equal(typeof adminPlayerWorld.playerEntityFactory, 'function')
-  assert.ok(adminPlayerWorld.adminPlayer)
-  assert.equal(adminPlayerWorld.entities.player, adminPlayerWorld.adminPlayer)
-  assert.equal(adminPlayerWorld.adminPlayer.data.id, adminPlayerWorld.network.id)
 
   const clientRuntimeStub = definePlugin({
     name: 'test-client-runtime',
@@ -1260,14 +1178,6 @@ test('feature APIs only appear when their plugins are selected', () => {
   assert.equal(typeof networkWorld.apps.worldGetters.isClient, 'function')
   assert.equal(typeof networkWorld.apps.worldMethods.getTime, 'function')
   assert.equal(typeof networkWorld.apps.appMethods.send, 'function')
-
-  const adminNetworkWorld = new World({
-    plugins: [coreSystemsPlugin, nodesPlugin, viewPlugin, spatialPlugin, clientOnlyRuntimeStub, networkAdminPlugin],
-  })
-  assert.ok(adminNetworkWorld.network)
-  assert.equal(adminNetworkWorld.network.plugin, '@gamedev/plugin-network/admin')
-  assert.equal(adminNetworkWorld.pluginCapabilities.has('admin-network'), true)
-  assert.equal(adminNetworkWorld.adminNetwork, adminNetworkWorld.network)
 
   const livekitClientWorld = new World({
     plugins: [

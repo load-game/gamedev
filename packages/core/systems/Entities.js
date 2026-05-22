@@ -24,9 +24,6 @@ export class Entities extends System {
   }
 
   getPlayer(entityId) {
-    if (this.world.isAdminClient && this.player?.data?.id === entityId) {
-      return this.player
-    }
     return this.players.get(entityId)
   }
 

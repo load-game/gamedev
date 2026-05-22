@@ -49,11 +49,9 @@ Current status: most listed cases have been converted to workspace package impor
 
 - `packages/cli/gamedev.mjs`: lines 9, 10, 11, 12, 13, 14
 
-### `@gamedev/client` -> `@gamedev/core` (64 imports, 30 files)
+### `@gamedev/client` -> `@gamedev/core` (61 imports, 28 files)
 
 - `packages/client/AvatarPreview.js`: lines 3
-- `packages/client/admin-client.js`: lines 5, 9
-- `packages/client/admin.js`: lines 2
 - `packages/client/components/AppsList.js`: lines 17
 - `packages/client/components/AppsPane.js`: lines 27, 28
 - `packages/client/components/CoreUI.js`: lines 10, 11
