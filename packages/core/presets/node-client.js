@@ -1,7 +1,7 @@
 import { definePreset } from '../plugins.js'
 import { createWorldFromPreset } from './createWorld.js'
 import { coreSystemsPlugin } from './core.js'
-import { animationPlugin } from '../plugins/animation.js'
+import { animationPlugin } from '../../plugins/animation.js'
 import { chatPlugin } from '../../plugins/chat.js'
 import { controlsClientPlugin } from '../plugins/controls/client.js'
 import { environmentNodeClientPlugin } from '../plugins/environment/node-client.js'

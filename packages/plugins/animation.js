@@ -1,4 +1,4 @@
-import { definePlugin } from '../plugins.js'
+import { definePlugin } from '../core/plugins.js'
 import { Animation } from './animation/Animation.js'
 
 export { Animation }

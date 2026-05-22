@@ -13,7 +13,7 @@ import { clientRuntimePlugin as clientRuntimeEntryPlugin } from 'gamedev/plugins
 import { nodeClientRuntimePlugin as nodeClientRuntimeEntryPlugin } from 'gamedev/plugins/runtime/node-client'
 import { viewerRuntimePlugin as viewerRuntimeEntryPlugin } from 'gamedev/plugins/runtime/viewer'
 import { actionsClientPlugin } from '@gamedev/core/plugins/actions/client.js'
-import { animationPlugin } from '@gamedev/core/plugins/animation.js'
+import { animationPlugin } from 'gamedev/plugins/animation'
 import { aiServerPlugin } from 'gamedev/plugins/ai/server'
 import { audioClientPlugin } from '@gamedev/core/plugins/audio/client.js'
 import { browserClientPlugin } from '@gamedev/core/plugins/browser/client.js'

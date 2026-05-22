@@ -135,9 +135,9 @@
     },
     "./plugins/animation": {
       "types": "./index.plugin-animation.d.ts",
-      "import": "./packages/core/plugins/animation.js",
-      "require": "./packages/core/plugins/animation.js",
-      "default": "./packages/core/plugins/animation.js"
+      "import": "./packages/plugins/animation.js",
+      "require": "./packages/plugins/animation.js",
+      "default": "./packages/plugins/animation.js"
     },
     "./plugins/ai/client": {
       "types": "./index.plugin-ai-client.d.ts",

@@ -1,7 +1,7 @@
 import { definePreset } from '@gamedev/core/plugins.js'
 import { createWorldFromPreset } from '@gamedev/core/presets/createWorld.js'
 import { coreSystemsPlugin } from '@gamedev/core/presets/core.js'
-import { animationPlugin } from '@gamedev/core/plugins/animation.js'
+import { animationPlugin } from '../../plugins/animation.js'
 import { chatPlugin } from '../../plugins/chat.js'
 import { environmentServerPlugin } from '@gamedev/core/plugins/environment/server.js'
 import { evmServerPlugin } from '../../plugins/evm/index.js'
