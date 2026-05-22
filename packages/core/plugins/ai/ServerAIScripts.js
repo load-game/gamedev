@@ -4,10 +4,10 @@ import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { System } from '../../systems/System.js'
-import { isValidScriptPath } from '../../blueprintValidation.js'
+import { isValidScriptPath } from '../../blueprints/validation.js'
 import { buildScriptGroups, getScriptGroupMain } from '../builder/blueprintGroups.js'
 import { hashFile } from '../../platform/server/utils.js'
-import { getBlueprintAppName } from '../../blueprintUtils.js'
+import { getBlueprintAppName } from '../../blueprints/utils.js'
 
 function hasScriptFiles(blueprint) {
   return blueprint?.scriptFiles && typeof blueprint.scriptFiles === 'object' && !Array.isArray(blueprint.scriptFiles)

@@ -5,8 +5,8 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { System } from '../../systems/System.js'
 import { hashFile } from '../../platform/server/utils.js'
-import { isValidScriptPath } from '../../blueprintValidation.js'
-import { getBlueprintAppName } from '../../blueprintUtils.js'
+import { isValidScriptPath } from '../../blueprints/validation.js'
+import { getBlueprintAppName } from '../../blueprints/utils.js'
 
 const aiDocs = loadAiDocs()
 const docsRoot = resolveDocsRoot()

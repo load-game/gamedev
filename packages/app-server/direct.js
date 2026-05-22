@@ -89,7 +89,7 @@ import {
   classifySyncDiff,
   formatNameList,
 } from './helpers.js'
-import { isValidScriptPath } from '../core/blueprintValidation.js'
+import { isValidScriptPath } from '../core/blueprints/validation.js'
 import { isEqual } from 'lodash-es'
 import { uuid } from './utils.js'
 import { ensureProjectAuth } from './cliAuth.js'

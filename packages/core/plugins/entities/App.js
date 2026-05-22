@@ -5,7 +5,7 @@ import { LerpVector3 } from '../../script-api/LerpVector3.js'
 import { LerpQuaternion } from '../../script-api/LerpQuaternion.js'
 import { createPlayerProxy } from './createPlayerProxy.js'
 import { serializeError } from './serializeError.js'
-import { getBlueprintAppName } from '../../blueprintUtils.js'
+import { getBlueprintAppName } from '../../blueprints/utils.js'
 
 const hotEventNames = ['fixedUpdate', 'update', 'animate', 'lateUpdate']
 

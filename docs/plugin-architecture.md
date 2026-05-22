@@ -10,6 +10,8 @@ The core runtime systems are represented by `coreSystemsPlugin` from `gamedev/pr
 
 The old root `extras` bucket has been removed. Shared primitives now live behind named kernel contracts: `math` for the patched Three.js facade and rotation/math helpers, `layers` for collision/camera layer masks, `permissions` for rank constants, and `diagnostics` for shared warnings. Browser and server-specific helpers live under `platform/browser` and `platform/server` instead of the kernel root.
 
+Blueprint validation/naming helpers live under `blueprints`, and app script module specifier plus legacy body wrapping support lives under `script-runtime`. These are app/script runtime contracts rather than world kernel root modules.
+
 Concrete node constructors are not part of the kernel. The first-party built-in node set is registered by `nodesPlugin` from `gamedev/plugins/nodes`, and custom builds can replace or extend node types through plugin `nodes` contributions. The core kernel keeps the base node contract; first-party concrete node classes live with the node plugin that installs them.
 
 Mesh statistics helpers such as triangle counting and texture byte estimation live with the nodes plugin support code. Loader plugins can reuse those helpers for VRM stats, but the kernel no longer owns mesh-analysis utilities.

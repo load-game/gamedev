@@ -1,4 +1,4 @@
-import { isValidScriptPath } from './blueprintValidation.js'
+import { isValidScriptPath } from '../blueprints/validation.js'
 
 const MODULE_PREFIX = 'app://'
 const SHARED_PREFIX = '@shared/'

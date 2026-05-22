@@ -10,8 +10,8 @@ import { Curve } from '../script-api/Curve.js'
 import { prng } from '../script-api/prng.js'
 import { BufferedLerpVector3 } from '../script-api/BufferedLerpVector3.js'
 import { BufferedLerpQuaternion } from '../script-api/BufferedLerpQuaternion.js'
-import { isValidScriptPath } from '../blueprintValidation.js'
-import { buildLegacyBodyModuleSource } from '../legacyBody.js'
+import { isValidScriptPath } from '../blueprints/validation.js'
+import { buildLegacyBodyModuleSource } from '../script-runtime/legacyBody.js'
 import {
   buildModuleSpecifier,
   parseModuleSpecifier,
@@ -19,7 +19,7 @@ import {
   isRelativeImport,
   normalizeSharedRelPath,
   getSharedRelPathAlternate,
-} from '../moduleSpecifiers.js'
+} from '../script-runtime/moduleSpecifiers.js'
 
 /**
  * Script System
