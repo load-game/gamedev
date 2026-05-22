@@ -7,8 +7,8 @@ import {
   EVMServer as ServerEVM,
   evmClientPlugin,
   evmServerPlugin,
-} from '@gamedev/core/plugins/evm.js'
-import { Hyperliquid, hyperliquidPlugin } from '@gamedev/core/plugins/hyperliquid.js'
+} from 'gamedev/plugins/evm'
+import { Hyperliquid, hyperliquidPlugin } from 'gamedev/plugins/hyperliquid'
 
 function createEvmScriptRuntime(evm, plugin = evmClientPlugin) {
   const entity = { world: { evm } }

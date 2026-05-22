@@ -1,4 +1,4 @@
-import { System } from '../../systems/System.js'
+import { System } from '../../core/systems/System.js'
 import { HttpTransport, InfoClient, ExchangeClient, WebSocketTransport, SubscriptionClient } from '@nktkas/hyperliquid'
 import { PrivateKeySigner } from '@nktkas/hyperliquid/signing'
 import { getAddress } from 'viem'

@@ -171,15 +171,15 @@
     },
     "./plugins/evm": {
       "types": "./index.plugin-evm.d.ts",
-      "import": "./packages/core/plugins/evm.js",
-      "require": "./packages/core/plugins/evm.js",
-      "default": "./packages/core/plugins/evm.js"
+      "import": "./packages/plugins/evm/index.js",
+      "require": "./packages/plugins/evm/index.js",
+      "default": "./packages/plugins/evm/index.js"
     },
     "./plugins/hyperliquid": {
       "types": "./index.plugin-hyperliquid.d.ts",
-      "import": "./packages/core/plugins/hyperliquid.js",
-      "require": "./packages/core/plugins/hyperliquid.js",
-      "default": "./packages/core/plugins/hyperliquid.js"
+      "import": "./packages/plugins/hyperliquid/index.js",
+      "require": "./packages/plugins/hyperliquid/index.js",
+      "default": "./packages/plugins/hyperliquid/index.js"
     },
     "./plugins/builder/admin": {
       "types": "./index.plugin-builder-admin.d.ts",

@@ -1,5 +1,5 @@
-import { definePlugin } from '../plugins.js'
-import { Hyperliquid as HyperliquidSystem } from './hyperliquid/Hyperliquid.js'
+import { definePlugin } from '../../core/plugins.js'
+import { Hyperliquid as HyperliquidSystem } from './Hyperliquid.js'
 
 export { HyperliquidSystem as Hyperliquid }
 

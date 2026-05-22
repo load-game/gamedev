@@ -1,6 +1,6 @@
-import { definePlugin } from '../plugins.js'
-import { EVM as EVMClientSystem } from './evm/EVMClient.js'
-import { EVM as EVMServerSystem } from './evm/EVMServer.js'
+import { definePlugin } from '../../core/plugins.js'
+import { EVM as EVMClientSystem } from './EVMClient.js'
+import { EVM as EVMServerSystem } from './EVMServer.js'
 
 export { EVMClientSystem as EVMClient, EVMServerSystem as EVMServer }
 
