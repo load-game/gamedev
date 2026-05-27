@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 
-import { completeRuntimeStartup } from '@gamedev/hosting/runtimeStartup.js'
+import { completeRuntimeStartup } from '@gamedev/runtime-adapters/hosting/runtimeStartup.js'
 
 function createLogger() {
   const messages = {

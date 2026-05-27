@@ -4,13 +4,13 @@ import { Hyperliquid } from './systems/Hyperliquid.js'
 
 export { ClientEVM, ServerEVM, Hyperliquid }
 
-export function registerClientCapabilities(world, { evm = true, hyperliquid = true } = {}) {
+export function registerClientExtraSystems(world, { evm = true, hyperliquid = true } = {}) {
   if (evm) world.register('evm', ClientEVM)
   if (hyperliquid) world.register('hyperliquid', Hyperliquid)
   return world
 }
 
-export function registerServerCapabilities(world, { evm = true, hyperliquid = true } = {}) {
+export function registerServerExtraSystems(world, { evm = true, hyperliquid = true } = {}) {
   if (evm) world.register('evm', ServerEVM)
   if (hyperliquid) world.register('hyperliquid', Hyperliquid)
   return world

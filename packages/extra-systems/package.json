@@ -1,5 +1,5 @@
 {
-  "name": "@gamedev/capabilities",
+  "name": "@gamedev/extra-systems",
   "version": "0.3.3",
   "private": true,
   "type": "module",

@@ -21,16 +21,19 @@ import {
   resolveCliAuthStatus,
 } from './cliAuth.js'
 import { createDeferredResource } from './deferredResource.js'
-import { createRuntimePlayerTracker } from '@gamedev/hosting/playerTracking.js'
-import { createAgonesHostingAdapter } from '@gamedev/hosting-agones'
+import { createRuntimePlayerTracker } from '@gamedev/runtime-adapters/hosting/playerTracking.js'
+import { createAgonesHostingAdapter } from '@gamedev/runtime-adapters/hosting-agones'
 import {
   createRuntimeIdleController,
   resolveRuntimeIdleShutdownTimeoutMs,
-} from '@gamedev/hosting/runtimeIdleShutdown.js'
-import { createNoopRuntimeIdleController, createNoopRuntimePlayerTracker } from '@gamedev/hosting/noop.js'
+} from '@gamedev/runtime-adapters/hosting/runtimeIdleShutdown.js'
+import {
+  createNoopRuntimeIdleController,
+  createNoopRuntimePlayerTracker,
+} from '@gamedev/runtime-adapters/hosting/noop.js'
 import { describeWebSocketConnection, resolveWebSocketConnection } from './websocketConnection.js'
 import { resolveAuthRuntimeConfig } from './authModes.js'
-import { completeRuntimeStartup } from '@gamedev/hosting/runtimeStartup.js'
+import { completeRuntimeStartup } from '@gamedev/runtime-adapters/hosting/runtimeStartup.js'
 import {
   applyHostedRuntimeBootstrapPayload,
   buildRuntimeBootstrapId,
@@ -49,7 +52,11 @@ import {
   verifyRuntimeBootstrapAuthorization,
   usesHostedRuntimeBootstrap,
 } from './runtimeBootstrap.js'
-import { buildRuntimeControlAuthorization, createJWT, verifyExternalIdentityExchangeToken } from '@gamedev/auth'
+import {
+  buildRuntimeControlAuthorization,
+  createJWT,
+  verifyExternalIdentityExchangeToken,
+} from '@gamedev/runtime-adapters/auth'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
 
 function resolveRuntimeRootDir() {

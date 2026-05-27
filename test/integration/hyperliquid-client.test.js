@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { getAddress } from 'viem'
 
-import { ClientEVM as EVM, ServerEVM, Hyperliquid } from '@gamedev/capabilities'
+import { ClientEVM as EVM, ServerEVM, Hyperliquid } from '@gamedev/extra-systems'
 
 test('EVM client tracks bound wallet state', () => {
   const evm = new EVM({})

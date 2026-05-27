@@ -18,13 +18,11 @@ const physxWasmSrc = path.join(rootDir, 'packages/core/physx-js-webidl.wasm')
 
 const packageAliases = {
   '@gamedev/app-server': path.join(rootDir, 'packages/app-server'),
-  '@gamedev/auth': path.join(rootDir, 'packages/auth'),
-  '@gamedev/capabilities': path.join(rootDir, 'packages/capabilities'),
+  '@gamedev/extra-systems': path.join(rootDir, 'packages/extra-systems'),
   '@gamedev/client': path.join(rootDir, 'packages/client'),
   '@gamedev/core': path.join(rootDir, 'packages/core'),
-  '@gamedev/hosting': path.join(rootDir, 'packages/hosting'),
-  '@gamedev/hosting-agones': path.join(rootDir, 'packages/hosting-agones'),
   '@gamedev/node-client': path.join(rootDir, 'packages/node-client'),
+  '@gamedev/runtime-adapters': path.join(rootDir, 'packages/runtime-adapters'),
   '@gamedev/server': path.join(rootDir, 'packages/server'),
   '@gamedev/world-project': path.join(rootDir, 'packages/world-project'),
   react: 'react',

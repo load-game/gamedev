@@ -4,4 +4,4 @@ export {
   createAgonesSdkHttp,
   isAgonesSdkHttpEnabled,
   resolveAgonesSdkHttpBaseUrl,
-} from '@gamedev/hosting-agones'
+} from '@gamedev/runtime-adapters/hosting-agones'

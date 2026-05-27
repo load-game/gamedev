@@ -1,5 +1,8 @@
-import { createRuntimePlayerTracker, resolveEffectivePlayerCapacity } from '@gamedev/hosting/playerTracking.js'
-import { createAgonesHostingAdapter } from '@gamedev/hosting-agones'
+import {
+  createRuntimePlayerTracker,
+  resolveEffectivePlayerCapacity,
+} from '@gamedev/runtime-adapters/hosting/playerTracking.js'
+import { createAgonesHostingAdapter } from '@gamedev/runtime-adapters/hosting-agones'
 
 function createAgonesCompatibilityAdapter(agones) {
   if (!agones) return null

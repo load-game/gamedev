@@ -1,4 +1,4 @@
-import { completeRuntimeStartup as completeGenericRuntimeStartup } from '@gamedev/hosting/runtimeStartup.js'
+import { completeRuntimeStartup as completeGenericRuntimeStartup } from '@gamedev/runtime-adapters/hosting/runtimeStartup.js'
 
 function normalizeAgonesTransport(agones) {
   if (!agones) return agones

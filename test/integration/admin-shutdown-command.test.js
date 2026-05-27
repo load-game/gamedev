@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 
-import { ADMIN_SHUTDOWN_COMMAND, handleRuntimeShutdownCommand } from '@gamedev/hosting/adminShutdown.js'
+import {
+  ADMIN_SHUTDOWN_COMMAND,
+  handleRuntimeShutdownCommand,
+} from '@gamedev/runtime-adapters/hosting/adminShutdown.js'
 import { resolveAgonesShutdownUrl } from '@gamedev/server/adminShutdown.js'
 
 test('command contract uses generic runtime_shutdown name', () => {

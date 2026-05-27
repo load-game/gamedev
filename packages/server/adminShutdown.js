@@ -3,8 +3,8 @@ import {
   LEGACY_AGONES_SHUTDOWN_COMMAND,
   RUNTIME_SHUTDOWN_COMMAND,
   handleRuntimeShutdownCommand,
-} from '@gamedev/hosting/adminShutdown.js'
-import { createAgonesHostingAdapter, resolveAgonesSdkHttpBaseUrl } from '@gamedev/hosting-agones'
+} from '@gamedev/runtime-adapters/hosting/adminShutdown.js'
+import { createAgonesHostingAdapter, resolveAgonesSdkHttpBaseUrl } from '@gamedev/runtime-adapters/hosting-agones'
 
 export {
   ADMIN_SHUTDOWN_COMMAND,

@@ -3,14 +3,14 @@ import fs from 'fs'
 
 import { readPacket, writePacket } from '@gamedev/core/packets.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/auth'
+import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/runtime-adapters/auth'
 import { cleaner } from './cleaner.js'
 import { ADMIN_CREDENTIAL_COMMAND, handleRuntimeCredentialCommand } from './adminCredentials.js'
 import {
   LEGACY_AGONES_SHUTDOWN_COMMAND,
   RUNTIME_SHUTDOWN_COMMAND,
   handleRuntimeShutdownCommand,
-} from '@gamedev/hosting/adminShutdown.js'
+} from '@gamedev/runtime-adapters/hosting/adminShutdown.js'
 import {
   allowsOpenAdminAccess,
   hasSupportedAdminCode,

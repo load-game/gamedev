@@ -7,7 +7,7 @@ import { ServerEnvironment } from '@gamedev/core/systems/ServerEnvironment.js'
 import { ServerMonitor } from '@gamedev/core/systems/ServerMonitor.js'
 import { ServerAIScripts } from '@gamedev/core/systems/ServerAIScripts.js'
 import { ServerAI } from '@gamedev/core/systems/ServerAI.js'
-import { registerServerCapabilities } from '@gamedev/capabilities'
+import { registerServerExtraSystems } from '@gamedev/extra-systems'
 import { ServerNetwork } from './ServerNetwork.js'
 
 export function createServerWorld() {
@@ -20,6 +20,6 @@ export function createServerWorld() {
   world.register('aiScripts', ServerAIScripts)
   world.register('environment', ServerEnvironment)
   world.register('monitor', ServerMonitor)
-  registerServerCapabilities(world)
+  registerServerExtraSystems(world)
   return world
 }
