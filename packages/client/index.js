@@ -559,7 +559,7 @@ async function exchangeForRuntimeSession(runtimeApiUrl, identityToken) {
 
 async function getConnectionUrl(onStatus) {
   const apiUrl = env.PUBLIC_API_URL || (typeof window === 'undefined' ? null : `${window.location.origin}/api`)
-  const usesLobbyIdentity = hasValue(env.PUBLIC_AUTH_URL)
+  const usesExternalIdentity = hasValue(env.PUBLIC_AUTH_URL)
 
   if (!apiUrl) {
     throw new Error('PUBLIC_API_URL is required')
@@ -585,7 +585,7 @@ async function getConnectionUrl(onStatus) {
     return buildWsUrl(baseWsUrl)
   }
 
-  if (usesLobbyIdentity) {
+  if (usesExternalIdentity) {
     const authBaseUrl = env.PUBLIC_AUTH_URL
     onStatus?.('auth', 'Authorizing...')
     let hasSession = false

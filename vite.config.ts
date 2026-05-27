@@ -26,10 +26,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@gamedev/app-server': fromRoot('./packages/app-server'),
+      '@gamedev/auth': fromRoot('./packages/auth'),
+      '@gamedev/capabilities': fromRoot('./packages/capabilities'),
       '@gamedev/client': fromRoot('./packages/client'),
       '@gamedev/core': fromRoot('./packages/core'),
+      '@gamedev/hosting': fromRoot('./packages/hosting'),
+      '@gamedev/hosting-agones': fromRoot('./packages/hosting-agones'),
       '@gamedev/node-client': fromRoot('./packages/node-client'),
       '@gamedev/server': fromRoot('./packages/server'),
+      '@gamedev/world-project': fromRoot('./packages/world-project'),
     },
   },
   test: {

@@ -2,5 +2,6 @@
   "name": "@gamedev/core",
   "version": "0.3.3",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "main": "index.js"
 }

@@ -3,7 +3,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { SCENE_TEMPLATE } from './templates/builtins.js'
-import { WorldManifest } from './WorldManifest.js'
+import { WorldManifest } from '@gamedev/world-project/WorldManifest.js'
 import { uuid } from './utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

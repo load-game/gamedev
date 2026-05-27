@@ -160,7 +160,7 @@ test('admin snapshot only requires code when admin-code auth is supported', () =
   assert.equal(client.requireCode, true)
 })
 
-test('admin shutdown API uses agones_shutdown command', async () => {
+test('admin shutdown API uses runtime shutdown command', async () => {
   const { client } = createAdminClient()
   let payload = null
   client.request = async requestPayload => {
@@ -168,7 +168,7 @@ test('admin shutdown API uses agones_shutdown command', async () => {
     return { ok: true }
   }
 
-  const response = await client.requestAgonesShutdown()
+  const response = await client.requestRuntimeShutdown()
 
   assert.deepEqual(payload, { type: ADMIN_SHUTDOWN_COMMAND })
   assert.deepEqual(response, { ok: true })

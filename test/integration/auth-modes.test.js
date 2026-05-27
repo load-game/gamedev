@@ -5,6 +5,7 @@ import { resolveAuthRuntimeConfig } from '@gamedev/server/authModes.js'
 
 test('standalone runtimes use local identity and local rank', () => {
   assert.deepEqual(resolveAuthRuntimeConfig({}), {
+    usesExternalIdentity: false,
     usesLobbyIdentity: false,
     usesLocalIdentity: true,
     usesControlPlaneRank: false,
@@ -12,13 +13,15 @@ test('standalone runtimes use local identity and local rank', () => {
   })
 })
 
-test('self-hosted runtimes can use lobby identity without control-plane rank sync', () => {
+test('self-hosted runtimes can use external identity without runtime-control rank sync', () => {
   assert.deepEqual(
     resolveAuthRuntimeConfig({
-      PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
+      RUNTIME_AUTH_PROVIDER: 'external',
+      RUNTIME_AUTH_URL: 'https://auth.example.test/api/identity',
       WORLD_ID: 'self-hosted-world',
     }),
     {
+      usesExternalIdentity: true,
       usesLobbyIdentity: true,
       usesLocalIdentity: false,
       usesControlPlaneRank: false,
@@ -27,13 +30,14 @@ test('self-hosted runtimes can use lobby identity without control-plane rank syn
   )
 })
 
-test('bootstrapped runtimes use control-plane rank sync', () => {
+test('bootstrapped runtimes use runtime-control rank sync', () => {
   assert.deepEqual(
     resolveAuthRuntimeConfig({
-      PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
+      RUNTIME_AUTH_URL: 'https://auth.example.test/api/identity',
       RUNTIME_BOOTSTRAP: '1',
     }),
     {
+      usesExternalIdentity: true,
       usesLobbyIdentity: true,
       usesLocalIdentity: false,
       usesControlPlaneRank: true,

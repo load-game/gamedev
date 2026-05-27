@@ -3,10 +3,14 @@ import fs from 'fs'
 
 import { readPacket, writePacket } from '@gamedev/core/packets.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/core/utils-server.js'
+import { buildRuntimeControlAuthorization, readJWT } from '@gamedev/auth'
 import { cleaner } from './cleaner.js'
 import { ADMIN_CREDENTIAL_COMMAND, handleRuntimeCredentialCommand } from './adminCredentials.js'
-import { ADMIN_SHUTDOWN_COMMAND, handleAdminShutdownCommand } from './adminShutdown.js'
+import {
+  LEGACY_AGONES_SHUTDOWN_COMMAND,
+  RUNTIME_SHUTDOWN_COMMAND,
+  handleRuntimeShutdownCommand,
+} from '@gamedev/hosting/adminShutdown.js'
 import {
   allowsOpenAdminAccess,
   hasSupportedAdminCode,
@@ -329,6 +333,8 @@ export async function admin(
     assets,
     adminHtmlPath,
     onConnectionCountChanged,
+    hosting = null,
+    getHosting = null,
     agones = null,
     getAgones = null,
     isRuntimeReady = null,
@@ -341,7 +347,12 @@ export async function admin(
   const db = world?.network?.db
   const runtimeReady = typeof isRuntimeReady === 'function' ? isRuntimeReady : () => true
   const runtimeState = typeof getRuntimeState === 'function' ? getRuntimeState : () => null
-  const resolveAgones = typeof getAgones === 'function' ? getAgones : () => agones
+  const resolveHosting =
+    typeof getHosting === 'function'
+      ? getHosting
+      : typeof getAgones === 'function'
+        ? getAgones
+        : () => hosting || agones
   let changefeedWriteQueue = Promise.resolve()
   const deployLocks = new Map()
   const lockTtlSeconds = Number.parseInt(process.env.DEPLOY_LOCK_TTL || '120', 10)
@@ -934,10 +945,10 @@ export async function admin(
         const lastOpId = normalizeOperationValue(data?.lastOpId) || undefined
 
         try {
-          if (data.type === ADMIN_SHUTDOWN_COMMAND) {
-            const commandResult = await handleAdminShutdownCommand({
+          if (data.type === RUNTIME_SHUTDOWN_COMMAND || data.type === LEGACY_AGONES_SHUTDOWN_COMMAND) {
+            const commandResult = await handleRuntimeShutdownCommand({
               canDeploy: capabilities.deploy,
-              agones: resolveAgones(),
+              hosting: resolveHosting(),
               beforeShutdown: async () => {
                 await world.network.save()
               },

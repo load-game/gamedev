@@ -11,6 +11,8 @@ const BOOTSTRAP_RUNTIME_BINDING_ENV_KEYS = [
   'PUBLIC_PRIVY_APP_ID',
   'PUBLIC_WORLD_MAX_PLAYERS',
   'PUBLIC_WS_URL',
+  'RUNTIME_AUTH_URL',
+  'RUNTIME_CONTROL_URL',
   'SHUTDOWN_IDLE',
   'WORLD',
   'WORLD_ID',
@@ -36,6 +38,8 @@ export function usesHostedRuntimeBootstrap(env = process.env) {
   if (isTruthyEnvFlag(env.RUNTIME_BOOTSTRAP)) return true
   return !hasValue(env.WORLD_ID) && (hasValue(env.RUNTIME_BOOTSTRAP_INSTANCE_ID) || hasValue(env.POD_NAME))
 }
+
+export const usesRuntimeBootstrap = usesHostedRuntimeBootstrap
 
 export function hasSupportedAdminCode(env = process.env) {
   return hasValue(env.ADMIN_CODE) && !usesHostedRuntimeBootstrap(env)
@@ -126,13 +130,17 @@ function deriveLegacyControlBaseFromPublicAuthUrl(publicAuthUrl) {
 }
 
 export function resolveControlInternalBaseUrl(env = process.env) {
+  const runtimeControl = normalizePublicUrl(env.RUNTIME_CONTROL_URL)
+  if (runtimeControl) return runtimeControl
   const explicit = normalizePublicUrl(env.CONTROL_INTERNAL_BASE_URL)
   if (explicit) return explicit
   return deriveLegacyControlBaseFromPublicAuthUrl(env.PUBLIC_AUTH_URL)
 }
 
+export const resolveRuntimeControlBaseUrl = resolveControlInternalBaseUrl
+
 export function usesLegacyControlPlaneBaseUrl(env = process.env) {
-  return !hasValue(env.CONTROL_INTERNAL_BASE_URL) && hasValue(env.PUBLIC_AUTH_URL)
+  return !hasValue(env.RUNTIME_CONTROL_URL) && !hasValue(env.CONTROL_INTERNAL_BASE_URL) && hasValue(env.PUBLIC_AUTH_URL)
 }
 
 export function resolveControlInternalUrl(pathname, env = process.env) {
@@ -202,9 +210,10 @@ export function parseRuntimeBootstrapPayload(payload = null, { runtimeInstanceId
   const runtimeApiUrl = normalizePublicUrl(payload?.runtime?.publicApiUrl) || null
   const runtimeWsUrlRaw = normalizePublicUrl(payload?.runtime?.publicWsUrl) || null
   const runtimeAdminUrlRaw = normalizePublicUrl(payload?.runtime?.publicAdminUrl) || null
-  const authUrl = normalizePublicUrl(payload?.auth?.publicAuthUrl) || null
+  const authUrl = normalizePublicUrl(payload?.auth?.publicAuthUrl || payload?.auth?.runtimeAuthUrl) || null
   const privyAppId = normalizeString(payload?.auth?.publicPrivyAppId) || null
-  const controlInternalBaseUrl = normalizePublicUrl(payload?.control?.internalBaseUrl) || null
+  const controlInternalBaseUrl =
+    normalizePublicUrl(payload?.runtimeControl?.internalBaseUrl || payload?.control?.internalBaseUrl) || null
   const publicMaxUploadSize = parseNonNegativeInteger(payload?.world?.publicMaxUploadSize)
   const publicWorldMaxPlayers = parseNonNegativeInteger(payload?.world?.publicWorldMaxPlayers)
   const shutdownIdleSeconds = parseNonNegativeInteger(payload?.world?.shutdownIdleSeconds)
@@ -239,9 +248,13 @@ export function parseRuntimeBootstrapPayload(payload = null, { runtimeInstanceId
     },
     auth: {
       publicAuthUrl: authUrl,
+      runtimeAuthUrl: authUrl,
       publicPrivyAppId: privyAppId,
     },
     control: {
+      internalBaseUrl: controlInternalBaseUrl,
+    },
+    runtimeControl: {
       internalBaseUrl: controlInternalBaseUrl,
     },
   }
@@ -313,7 +326,9 @@ export function applyHostedRuntimeBootstrapPayload(env = process.env, payload = 
   }
 
   if (authUrl) {
+    env.RUNTIME_AUTH_URL = authUrl
     env.PUBLIC_AUTH_URL = authUrl
+    appliedKeys.push('RUNTIME_AUTH_URL')
     appliedKeys.push('PUBLIC_AUTH_URL')
   }
 
@@ -323,12 +338,16 @@ export function applyHostedRuntimeBootstrapPayload(env = process.env, payload = 
   }
 
   if (controlInternalBaseUrl) {
+    env.RUNTIME_CONTROL_URL = controlInternalBaseUrl
     env.CONTROL_INTERNAL_BASE_URL = controlInternalBaseUrl
+    appliedKeys.push('RUNTIME_CONTROL_URL')
     appliedKeys.push('CONTROL_INTERNAL_BASE_URL')
   }
 
   return appliedKeys
 }
+
+export const applyRuntimeBootstrapPayload = applyHostedRuntimeBootstrapPayload
 
 export function resolveRuntimeWorldDir(env = process.env, cwd = process.cwd()) {
   const worldPath = hasValue(env.WORLD)

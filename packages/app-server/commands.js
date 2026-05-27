@@ -8,7 +8,7 @@ import { parse as acornParse } from 'acorn'
 import { DirectAppServer } from './direct.js'
 import { ensureProjectAuth } from './cliAuth.js'
 import { uuid } from './utils.js'
-import { resolveBlueprintId, isBlueprintDenylist } from './blueprintUtils.js'
+import { resolveBlueprintId, isBlueprintDenylist } from '@gamedev/world-project/blueprintUtils.js'
 import { applyTargetEnv, parseTargetArgs, resolveTarget } from './targets.js'
 import { isLocalWorldUrl } from './helpers.js'
 import { buildLegacyBodyModuleSource } from '../core/legacyBody.js'
@@ -70,6 +70,22 @@ function parseDeployArgs(args = []) {
     if (arg.startsWith('--note=')) {
       options.note = arg.slice('--note='.length)
       continue
+    }
+    rest.push(arg)
+  }
+  return { options, rest }
+}
+
+function parseBuildArgs(args = []) {
+  const options = { all: false }
+  const rest = []
+  for (const arg of args) {
+    if (arg === '--all') {
+      options.all = true
+      continue
+    }
+    if (arg.startsWith('-')) {
+      throw new Error(`Unknown option: ${arg}`)
     }
     rest.push(arg)
   }
@@ -328,6 +344,68 @@ export class HyperfyCLI {
       console.log(`    📁 ${path.join(this.appsDir, appName)}`)
       console.log(``)
     }
+  }
+
+  async build(appName = null, { all = false } = {}) {
+    const server = new DirectAppServer({
+      worldUrl: this.worldUrl || 'http://localhost:3000',
+      adminCode: this.adminCode,
+      worldId: this.worldId,
+      rootDir: this.rootDir,
+    })
+    server.snapshot = {
+      blueprints: new Map(),
+      entities: new Map(),
+      settings: {},
+      spawn: null,
+    }
+
+    const index = server._indexLocalBlueprints()
+    if (!index.size) {
+      console.log(`📝 No local blueprints found in ${this.appsDir}`)
+      return
+    }
+
+    const byApp = new Map()
+    for (const info of index.values()) {
+      if (!byApp.has(info.appName)) byApp.set(info.appName, [])
+      byApp.get(info.appName).push(info)
+    }
+
+    const selectedApps = all
+      ? Array.from(byApp.keys())
+      : appName
+        ? [appName]
+        : byApp.size === 1
+          ? Array.from(byApp.keys())
+          : []
+
+    if (!selectedApps.length) {
+      console.error('❌ App name required')
+      console.log('Usage: gamedev apps build <appName>')
+      console.log('       gamedev apps build --all')
+      return 1
+    }
+
+    let blueprintCount = 0
+    for (const name of selectedApps) {
+      const infos = byApp.get(name)
+      if (!infos?.length) {
+        throw new Error(`Unknown app: ${name}`)
+      }
+      await server._buildDeployPlan(name, infos, {
+        uploadAssets: false,
+        uploadScripts: false,
+        index,
+      })
+      blueprintCount += infos.length
+      console.log(`✅ Built ${name} (${infos.length} blueprint${infos.length === 1 ? '' : 's'})`)
+    }
+
+    console.log(
+      `✅ Build complete (${selectedApps.length} app${selectedApps.length === 1 ? '' : 's'}, ${blueprintCount} blueprint${blueprintCount === 1 ? '' : 's'})`
+    )
+    return 0
   }
 
   async new(appName) {
@@ -772,6 +850,7 @@ Commands:
   new <appName>              Create a local app folder + blueprint
   list                       List local apps in ./apps
   deploy <appName>           Deploy all local blueprints under ./apps/<appName>
+  build [--all|appName]      Validate local app payloads without connecting to a world
   update <appName>           Alias for deploy
   rollback [snapshotId]      Roll back the latest deploy snapshot (or by id)
   reset [--force]            Delete local apps/assets/world.json
@@ -781,6 +860,7 @@ Commands:
 
 Options:
   --dry-run, -n              Show deploy plan without applying changes
+  --all                      Build every local app
   --note <text>              Attach a note to the deploy snapshot
   --yes, -y                  Skip confirmation prompt (for prod targets)
 
@@ -840,6 +920,16 @@ export async function runAppCommand({ command, args = [], rootDir = process.cwd(
           return 1
         }
         await cli.deploy(appName, parsed.options)
+      } catch (err) {
+        console.error(`❌ ${err?.message || err}`)
+        return 1
+      }
+      break
+
+    case 'build':
+      try {
+        const parsed = parseBuildArgs(args)
+        exitCode = (await cli.build(parsed.rest[0] || null, parsed.options)) || 0
       } catch (err) {
         console.error(`❌ ${err?.message || err}`)
         return 1

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@gamedev/core": "workspace:*"
+    "@gamedev/auth": "workspace:*",
+    "@gamedev/capabilities": "workspace:*",
+    "@gamedev/core": "workspace:*",
+    "@gamedev/hosting": "workspace:*",
+    "@gamedev/hosting-agones": "workspace:*"
   }
 }

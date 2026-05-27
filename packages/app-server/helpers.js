@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import { isEqual } from 'lodash-es'
 import { parse as acornParse } from 'acorn'
 import { uuid } from './utils.js'
-import { parseBlueprintId } from './blueprintUtils.js'
+import { parseBlueprintId } from '@gamedev/world-project/blueprintUtils.js'
 import { isValidScriptPath } from '../core/blueprintValidation.js'
 
 export const BLUEPRINT_FIELDS = [

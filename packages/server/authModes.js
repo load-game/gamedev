@@ -5,12 +5,18 @@ function hasValue(value) {
 }
 
 export function resolveAuthRuntimeConfig(env = process.env) {
-  const usesLobbyIdentity = hasValue(env.PUBLIC_AUTH_URL)
-  const usesControlPlaneRank = usesLobbyIdentity && usesHostedRuntimeBootstrap(env)
+  const configuredProvider = typeof env.RUNTIME_AUTH_PROVIDER === 'string' ? env.RUNTIME_AUTH_PROVIDER.trim() : ''
+  const usesExternalIdentity =
+    configuredProvider === 'external' ||
+    configuredProvider === 'lobby' ||
+    hasValue(env.RUNTIME_AUTH_URL) ||
+    hasValue(env.PUBLIC_AUTH_URL)
+  const usesControlPlaneRank = usesExternalIdentity && usesHostedRuntimeBootstrap(env)
 
   return {
-    usesLobbyIdentity,
-    usesLocalIdentity: !usesLobbyIdentity,
+    usesExternalIdentity,
+    usesLobbyIdentity: usesExternalIdentity,
+    usesLocalIdentity: !usesExternalIdentity,
     usesControlPlaneRank,
     usesRuntimeLocalRank: !usesControlPlaneRank,
   }

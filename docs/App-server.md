@@ -14,7 +14,7 @@ App-server is the dev server that syncs local files to a world via `/admin`. It 
   - `WORLD_ID` (must match the target worldId)
 - Run `gamedev auth` or start `gamedev dev`/`gamedev app-server` once in the project to cache a browser-authenticated world token in `.lobby/auth.json`.
   Continuous script sync requires deploy access; if the cached token only has builder access, the CLI will prompt for stronger auth.
-- `ADMIN_CODE` is no longer used by the CLI or app-server. On standalone worlds it is only for in-world `/admin <code>` privilege escalation. Bootstrapped worlds ignore admin-code auth and rely on account roles instead.
+- `ADMIN_CODE` is no longer used by the CLI or app-server. On standalone worlds it is only for in-world `/admin <code>` privilege escalation. Bootstrapped worlds can disable admin-code auth and rely on an auth adapter instead.
 
 ---
 
@@ -86,7 +86,7 @@ App-server always uploads every `.js/.ts` under `apps/<AppName>/` as `scriptFile
 
 If `scriptFormat` is missing, app-server infers it during deploy:
 - `module` when the entry exports default.
-- `legacy-body` otherwise (with a warning). The blueprint JSON is not modified.
+- `legacy-body` otherwise (with a warning). The blueprint JSON is updated with the detected format.
 
 Use `gamedev scripts migrate --module` or `--legacy-body` to tag existing blueprints.
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 
-import { completeRuntimeStartup } from '@gamedev/server/runtimeStartup.js'
+import { completeRuntimeStartup } from '@gamedev/hosting/runtimeStartup.js'
 
 function createLogger() {
   const messages = {
@@ -22,18 +22,19 @@ function createLogger() {
   }
 }
 
-test('completeRuntimeStartup requests Agones Ready before idle reconciliation', async () => {
+test('completeRuntimeStartup requests hosting Ready before idle reconciliation', async () => {
   const events = []
   const { logger, messages } = createLogger()
 
   await completeRuntimeStartup({
-    agones: {
+    hosting: {
+      name: 'test-hosting',
       ready: async () => {
         events.push('ready')
       },
     },
-    agonesIdleControllerEnabled: true,
-    agonesIdleController: {
+    idleControllerEnabled: true,
+    idleController: {
       reconcileIdleShutdown: reason => {
         events.push(`idle:${reason}`)
       },
@@ -44,23 +45,27 @@ test('completeRuntimeStartup requests Agones Ready before idle reconciliation', 
 
   assert.deepEqual(events, ['ready', 'idle:startup'])
   assert.deepEqual(messages.error, [])
-  assert.deepEqual(messages.info, ['[agones] requested Agones Ready', '[agones-idle] enabled with timeout=15s'])
+  assert.deepEqual(messages.info, [
+    '[test-hosting] requested runtime Ready',
+    '[test-hosting-idle] enabled with timeout=15s',
+  ])
 })
 
-test('completeRuntimeStartup fails fast when Agones Ready cannot be delivered', async () => {
+test('completeRuntimeStartup fails fast when hosting Ready cannot be delivered', async () => {
   const events = []
   const { logger, messages } = createLogger()
 
   await assert.rejects(
     completeRuntimeStartup({
-      agones: {
+      hosting: {
+        name: 'test-hosting',
         ready: async () => {
           events.push('ready')
           throw new Error('fetch failed')
         },
       },
-      agonesIdleControllerEnabled: true,
-      agonesIdleController: {
+      idleControllerEnabled: true,
+      idleController: {
         reconcileIdleShutdown: reason => {
           events.push(`idle:${reason}`)
         },
@@ -72,31 +77,32 @@ test('completeRuntimeStartup fails fast when Agones Ready cannot be delivered', 
 
   assert.deepEqual(events, ['ready'])
   assert.deepEqual(messages.info, [])
-  assert.deepEqual(messages.error, ['[agones] failed to request Agones Ready (fetch failed)'])
+  assert.deepEqual(messages.error, ['[test-hosting] failed to request runtime Ready (fetch failed)'])
 })
 
-test('completeRuntimeStartup skips Agones Ready when requestAgonesReady is false', async () => {
+test('completeRuntimeStartup skips hosting Ready when requestHostingReady is false', async () => {
   const events = []
   const { logger, messages } = createLogger()
 
   await completeRuntimeStartup({
-    agones: {
+    hosting: {
+      name: 'test-hosting',
       ready: async () => {
         events.push('ready')
       },
     },
-    agonesIdleControllerEnabled: true,
-    agonesIdleController: {
+    idleControllerEnabled: true,
+    idleController: {
       reconcileIdleShutdown: reason => {
         events.push(`idle:${reason}`)
       },
     },
     idleTimeoutMs: 15000,
-    requestAgonesReady: false,
+    requestHostingReady: false,
     logger,
   })
 
   assert.deepEqual(events, ['idle:startup'])
   assert.deepEqual(messages.error, [])
-  assert.deepEqual(messages.info, ['[agones-idle] enabled with timeout=15s'])
+  assert.deepEqual(messages.info, ['[test-hosting-idle] enabled with timeout=15s'])
 })

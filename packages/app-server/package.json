@@ -3,7 +3,9 @@
   "version": "0.3.3",
   "private": true,
   "type": "module",
+  "main": "index.js",
   "dependencies": {
-    "@gamedev/core": "workspace:*"
+    "@gamedev/core": "workspace:*",
+    "@gamedev/world-project": "workspace:*"
   }
 }

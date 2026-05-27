@@ -3,7 +3,7 @@ import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
 import { uuid } from '@gamedev/core/utils.js'
 import { System } from '@gamedev/core/systems/System.js'
-import { createJWT, readJWT } from '@gamedev/core/utils-server.js'
+import { createJWT, readJWT } from '@gamedev/auth'
 import { isNumber } from 'lodash-es'
 import * as THREE from '@gamedev/core/extras/three.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
@@ -184,12 +184,14 @@ export class ServerNetwork extends System {
     this.queue = []
     this.logSubscribers = new Set()
     this.authMode = 'standalone'
+    this.usesExternalIdentity = false
     this.usesLobbyIdentity = false
   }
 
   init({ db, authConfig } = {}) {
     this.db = db
-    this.usesLobbyIdentity = !!authConfig?.usesLobbyIdentity
+    this.usesExternalIdentity = !!(authConfig?.usesExternalIdentity ?? authConfig?.usesLobbyIdentity)
+    this.usesLobbyIdentity = this.usesExternalIdentity
   }
 
   async start() {
@@ -470,14 +472,14 @@ export class ServerNetwork extends System {
       if (authToken) {
         try {
           const tokenData = await readJWT(authToken, {
-            worldId: this.usesLobbyIdentity ? this.worldId : undefined,
+            worldId: this.usesExternalIdentity ? this.worldId : undefined,
           })
           const userId = tokenData?.userId
           if (!userId) {
             throw new Error('invalid_auth_token')
           }
           user = await this.db('users').where('id', userId).first()
-          if (!user && this.usesLobbyIdentity) {
+          if (!user && this.usesExternalIdentity) {
             user = {
               id: userId,
               name: 'Anonymous',
@@ -492,7 +494,7 @@ export class ServerNetwork extends System {
         }
       }
       if (!user) {
-        const isStandaloneLobbyGuest = this.usesLobbyIdentity
+        const isStandaloneExternalGuest = this.usesExternalIdentity
         user = {
           id: uuid(),
           name: 'Anonymous',
@@ -500,7 +502,7 @@ export class ServerNetwork extends System {
           rank: 0,
           createdAt: moment().toISOString(),
         }
-        if (!isStandaloneLobbyGuest) {
+        if (!isStandaloneExternalGuest) {
           await this.db('users').insert(user)
           authToken = await createJWT({ userId: user.id, worldId: this.worldId })
         } else {

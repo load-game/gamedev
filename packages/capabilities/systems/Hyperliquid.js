@@ -1,4 +1,4 @@
-import { System } from './System.js'
+import { System } from '@gamedev/core/systems/System.js'
 import { HttpTransport, InfoClient, ExchangeClient, WebSocketTransport, SubscriptionClient } from '@nktkas/hyperliquid'
 import { PrivateKeySigner } from '@nktkas/hyperliquid/signing'
 import { getAddress } from 'viem'

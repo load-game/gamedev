@@ -8,7 +8,7 @@ import Database from 'better-sqlite3'
 
 import { readPacket } from '@gamedev/core/packets.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
-import { buildRuntimeControlAuthorization } from '@gamedev/core/utils-server.js'
+import { buildRuntimeControlAuthorization } from '@gamedev/auth'
 import { buildRuntimeBootstrapAuthorization } from '@gamedev/server/runtimeBootstrap.js'
 import { createTempDir, getRepoRoot, startStandbyRuntimeServer, waitFor } from './helpers.js'
 
@@ -122,7 +122,7 @@ function buildStandbyBinding({
   runtimeInstanceId,
   worldUrl,
   auth = {},
-  controlInternalBaseUrl = 'http://world-service.internal/api',
+  controlInternalBaseUrl = 'http://runtime-control.internal/api',
 } = {}) {
   return {
     bootstrapId: `${worldId}:${runtimeInstanceId}`,
@@ -236,7 +236,7 @@ test('runtime boots into standby with pre-init bootstrap status', async t => {
   assert.equal(status.world.id, null)
 })
 
-test('runtime requests Agones Ready while booting into standby when the SDK sidecar is configured', async t => {
+test('runtime requests hosting Ready while booting into standby when the Agones SDK sidecar is configured', async t => {
   if (!(await canListenOnLoopback())) {
     t.skip('loopback sockets are unavailable in this environment')
     return
@@ -358,7 +358,7 @@ test('runtime accepts bootstrap push and transitions to ready', async t => {
   assert.equal(bootstrapStatus.state, 'ready')
   assert.equal(bootstrapStatus.world.id, worldId)
   assert.equal(bootstrapStatus.runtime.publicAdminUrl, `${server.worldUrl}/admin`)
-  assert.equal(bootstrapStatus.control.internalBaseUrl, 'http://world-service.internal/api')
+  assert.equal(bootstrapStatus.control.internalBaseUrl, 'http://runtime-control.internal/api')
 
   const envJsRes = await fetch(`${server.worldUrl}/env.js`)
   const envJs = await envJsRes.text()
@@ -506,7 +506,7 @@ test('runtime rejects bootstrap rebinding after a successful push', async t => {
       },
       auth: {},
       control: {
-        internalBaseUrl: 'http://world-service.internal/api',
+        internalBaseUrl: 'http://runtime-control.internal/api',
       },
     }),
   })
@@ -584,7 +584,7 @@ test('runtime uses bound control callbacks with world-scoped auth after bootstra
   assert.match(verifyRequest.body, /exchange-token/)
 })
 
-test('hosted admin capabilities rehydrate builder role from world-service when runtime db rank is stale', async t => {
+test('hosted admin capabilities rehydrate builder role from runtime-control when runtime db rank is stale', async t => {
   if (!(await canListenOnLoopback())) {
     t.skip('loopback sockets are unavailable in this environment')
     return
@@ -673,7 +673,7 @@ test('hosted admin capabilities rehydrate builder role from world-service when r
   assert.equal(roleRequestsAfter, roleRequestsBefore + 1)
 })
 
-test('hosted auth exchange and admin keep local builder grants when world-service role is visitor', async t => {
+test('hosted auth exchange and admin keep local builder grants when runtime-control role is visitor', async t => {
   if (!(await canListenOnLoopback())) {
     t.skip('loopback sockets are unavailable in this environment')
     return
