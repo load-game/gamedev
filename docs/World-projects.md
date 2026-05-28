@@ -1,6 +1,6 @@
 # World Projects
 
-Hyperfy world projects are normal Node projects that contain only game code and assets. They are synced to a running world via the app-server and can be deployed explicitly for staging/production.
+Lobby world projects are normal Node projects that contain only game code and assets. They are synced to a running world via the app-server and can be deployed explicitly for staging/production.
 
 ## Quick Start
 
@@ -63,6 +63,7 @@ The scaffold includes `.claude/skills/hyperfy-app-scripting/SKILL.md` to guide a
 - Commit `.lobby/targets.example.json` as the shareable template.
 - Use `gamedev dev` for continuous sync (dev only).
 - Use `gamedev app-server` for sync only (no local world server).
+- Use `gamedev apps build --all` to validate local app payloads without connecting to a world.
 - Use `gamedev apps deploy <app>` for explicit staging/prod deploys.
 
 ## Existing Worlds

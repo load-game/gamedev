@@ -2,7 +2,7 @@ import { createPublicClient, erc20Abi, formatEther, formatUnits, getAddress, htt
 import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 import * as utils from 'viem/utils'
 
-import { System } from './System.js'
+import { System } from '@gamedev/core/systems/System.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
 const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon]

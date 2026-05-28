@@ -438,7 +438,7 @@ test('cli auth status rejects invalid bearer tokens', async t => {
   assert.equal(invalid.data?.error, 'invalid_token')
 })
 
-test('invalid websocket auth tokens fall back to a guest snapshot in lobby identity mode', async t => {
+test('invalid websocket auth tokens fall back to a guest snapshot in external identity mode', async t => {
   if (!(await canListenOnLoopback())) {
     t.skip('loopback sockets are unavailable in this environment')
   }

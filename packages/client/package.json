@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@gamedev/core": "workspace:*"
+    "@gamedev/core": "workspace:*",
+    "@gamedev/extra-systems": "workspace:*"
   }
 }

@@ -7,8 +7,7 @@ import { ServerEnvironment } from '@gamedev/core/systems/ServerEnvironment.js'
 import { ServerMonitor } from '@gamedev/core/systems/ServerMonitor.js'
 import { ServerAIScripts } from '@gamedev/core/systems/ServerAIScripts.js'
 import { ServerAI } from '@gamedev/core/systems/ServerAI.js'
-import { EVM } from '@gamedev/core/systems/EVMServer.js'
-import { Hyperliquid } from '@gamedev/core/systems/Hyperliquid.js'
+import { registerServerExtraSystems } from '@gamedev/extra-systems'
 import { ServerNetwork } from './ServerNetwork.js'
 
 export function createServerWorld() {
@@ -21,7 +20,6 @@ export function createServerWorld() {
   world.register('aiScripts', ServerAIScripts)
   world.register('environment', ServerEnvironment)
   world.register('monitor', ServerMonitor)
-  world.register('evm', EVM)
-  world.register('hyperliquid', Hyperliquid)
+  registerServerExtraSystems(world)
   return world
 }

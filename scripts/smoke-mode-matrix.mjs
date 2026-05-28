@@ -53,10 +53,14 @@ function assert(condition, message) {
 const runtimeApiUrl = normalizeUrl(
   process.env.SMOKE_RUNTIME_API_URL || process.env.PUBLIC_API_URL || 'http://127.0.0.1:3000/api'
 )
-const worldServiceApiUrl = normalizeUrl(
-  process.env.SMOKE_WORLD_SERVICE_API_URL || process.env.PUBLIC_AUTH_API_URL || 'https://dev.lobby.ws/api'
+const externalAuthApiUrl = normalizeUrl(
+  process.env.SMOKE_EXTERNAL_AUTH_API_URL ||
+    process.env.SMOKE_WORLD_SERVICE_API_URL ||
+    process.env.PUBLIC_AUTH_API_URL ||
+    'https://dev.lobby.ws/api'
 )
-const lobbySessionCookie = process.env.SMOKE_LOBBY_SESSION_COOKIE?.trim() || ''
+const externalAuthSessionCookie =
+  process.env.SMOKE_EXTERNAL_AUTH_SESSION_COOKIE?.trim() || process.env.SMOKE_LOBBY_SESSION_COOKIE?.trim() || ''
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || '10000', 10)
 
 async function runLocalIdentity() {
@@ -70,23 +74,23 @@ async function runLocalIdentity() {
 }
 
 async function requestIdentityExchangeToken() {
-  if (!lobbySessionCookie) {
-    throw new SkipError('SMOKE_LOBBY_SESSION_COOKIE is required')
+  if (!externalAuthSessionCookie) {
+    throw new SkipError('SMOKE_EXTERNAL_AUTH_SESSION_COOKIE is required')
   }
-  const result = await requestJson(`${worldServiceApiUrl}/auth/exchange`, {
+  const result = await requestJson(`${externalAuthApiUrl}/auth/exchange`, {
     method: 'POST',
     headers: {
-      cookie: `session=${lobbySessionCookie}`,
+      cookie: `session=${externalAuthSessionCookie}`,
     },
     timeoutMs,
   })
-  assert(result.ok, `world-service /auth/exchange failed (${result.status})`)
+  assert(result.ok, `external auth /auth/exchange failed (${result.status})`)
   const token = typeof result.payload?.token === 'string' ? result.payload.token.trim() : ''
   assert(token, 'missing identity exchange token')
   return token
 }
 
-async function runLobbyIdentity() {
+async function runExternalIdentity() {
   const identityToken = await requestIdentityExchangeToken()
   const exchange = await requestJson(`${runtimeApiUrl}/auth/exchange`, {
     method: 'POST',
@@ -106,7 +110,7 @@ async function runLobbyIdentity() {
 
 const checks = [
   { name: 'local identity', run: runLocalIdentity },
-  { name: 'lobby identity', run: runLobbyIdentity },
+  { name: 'external identity', run: runExternalIdentity },
 ]
 
 const results = []

@@ -25,10 +25,8 @@ import { Particles } from './systems/Particles.js'
 import { Snaps } from './systems/Snaps.js'
 import { Wind } from './systems/Wind.js'
 import { XR } from './systems/XR.js'
-import { EVM } from './systems/EVMClient.js'
-import { Hyperliquid } from './systems/Hyperliquid.js'
 
-export function createClientWorld() {
+export function createClientWorld({ configure } = {}) {
   const world = new World()
   world.register('client', Client)
   world.register('livekit', ClientLiveKit)
@@ -55,7 +53,6 @@ export function createClientWorld() {
   world.register('snaps', Snaps)
   world.register('wind', Wind)
   world.register('xr', XR)
-  world.register('evm', EVM)
-  world.register('hyperliquid', Hyperliquid)
+  configure?.(world)
   return world
 }

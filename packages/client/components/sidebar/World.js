@@ -87,8 +87,8 @@ function formatShutdownError(code) {
   if (code === 'admin_url_missing') return 'Admin endpoint is unavailable for this world.'
   if (code === 'admin_code_missing') return 'Enter an admin code before requesting shutdown.'
   if (code === 'shutdown_save_failed') return 'Failed to save the world before shutdown.'
-  if (code === 'shutdown_request_failed') return 'Failed to request Agones shutdown.'
-  if (code === 'shutdown_unavailable') return 'Agones shutdown is unavailable for this runtime.'
+  if (code === 'shutdown_request_failed') return 'Failed to request runtime shutdown.'
+  if (code === 'shutdown_unavailable') return 'Runtime shutdown is unavailable for this hosting adapter.'
   if (code === 'timeout') return 'Timed out requesting shutdown.'
   return 'Failed to request shutdown.'
 }
@@ -220,11 +220,11 @@ export function World({ world, hidden }) {
   }
 
   const requestShutdown = async () => {
-    if (!world.admin?.requestAgonesShutdown || shutdownPending || shutdownRequested) return
+    if (!world.admin?.requestRuntimeShutdown || shutdownPending || shutdownRequested) return
     setShutdownPending(true)
     setShutdownError(null)
     try {
-      await world.admin.requestAgonesShutdown()
+      await world.admin.requestRuntimeShutdown()
       setShutdownRequested(true)
     } catch (err) {
       setShutdownError(err?.code || 'request_failed')
@@ -391,10 +391,10 @@ export function World({ world, hidden }) {
               {shutdownError && (
                 <div className='world-credentials-note error'>{formatShutdownError(shutdownError)}</div>
               )}
-              {world.admin?.requestAgonesShutdown && (
+              {world.admin?.requestRuntimeShutdown && (
                 <FieldToggle
                   label='Shutdown'
-                  hint='Manually save the world and request Agones shutdown for this runtime.'
+                  hint='Manually save the world and request shutdown through the active hosting adapter.'
                   trueLabel={shutdownPending ? 'Shutting down...' : 'Requested'}
                   falseLabel='Request'
                   value={shutdownPending || shutdownRequested}

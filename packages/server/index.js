@@ -21,12 +21,19 @@ import {
   resolveCliAuthStatus,
 } from './cliAuth.js'
 import { createDeferredResource } from './deferredResource.js'
-import { createAgonesPlayerTracker } from './agonesPlayerTracking.js'
-import { createAgonesSdkHttp } from './agonesSdkHttp.js'
-import { createAgonesIdleController, resolveAgonesIdleShutdownTimeoutMs } from './agonesIdleShutdown.js'
+import { createRuntimePlayerTracker } from '@gamedev/runtime-adapters/hosting/playerTracking.js'
+import { createAgonesHostingAdapter } from '@gamedev/runtime-adapters/hosting-agones'
+import {
+  createRuntimeIdleController,
+  resolveRuntimeIdleShutdownTimeoutMs,
+} from '@gamedev/runtime-adapters/hosting/runtimeIdleShutdown.js'
+import {
+  createNoopRuntimeIdleController,
+  createNoopRuntimePlayerTracker,
+} from '@gamedev/runtime-adapters/hosting/noop.js'
 import { describeWebSocketConnection, resolveWebSocketConnection } from './websocketConnection.js'
 import { resolveAuthRuntimeConfig } from './authModes.js'
-import { completeRuntimeStartup } from './runtimeStartup.js'
+import { completeRuntimeStartup } from '@gamedev/runtime-adapters/hosting/runtimeStartup.js'
 import {
   applyHostedRuntimeBootstrapPayload,
   buildRuntimeBootstrapId,
@@ -48,8 +55,8 @@ import {
 import {
   buildRuntimeControlAuthorization,
   createJWT,
-  verifyIdentityExchangeTokenWithLobby,
-} from '@gamedev/core/utils-server.js'
+  verifyExternalIdentityExchangeToken,
+} from '@gamedev/runtime-adapters/auth'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
 
 function resolveRuntimeRootDir() {
@@ -297,23 +304,6 @@ function isPostgresDbEnv(env = process.env) {
   return env.DB_URI?.startsWith('postgres://') || env.DB_URI?.startsWith('postgresql://')
 }
 
-function createNoopAgonesIdleController() {
-  return {
-    clearIdleShutdownTimer() {},
-    reconcileIdleShutdown() {},
-    requestAgonesShutdown() {},
-  }
-}
-
-function createNoopAgonesPlayerTracker() {
-  return {
-    enabled: false,
-    publishCapacity: async () => false,
-    start: () => false,
-    stop() {},
-  }
-}
-
 function validateStaticRuntimeEnv(env = process.env) {
   if (!hasValue(env.PORT)) {
     throw new Error('[envs] PORT not set')
@@ -339,7 +329,9 @@ function warnIfRuntimeUsesLegacyControlPlaneBaseUrl(env = process.env) {
   if (warnedAboutLegacyControlPlaneBaseUrl) return
   if (!usesLegacyControlPlaneBaseUrl(env)) return
   warnedAboutLegacyControlPlaneBaseUrl = true
-  console.warn('[startup] CONTROL_INTERNAL_BASE_URL not set; deriving control callbacks from PUBLIC_AUTH_URL (legacy)')
+  console.warn(
+    '[startup] RUNTIME_CONTROL_URL not set; deriving runtime control callbacks from PUBLIC_AUTH_URL (legacy)'
+  )
 }
 
 function warnIfAdminCodeUnset(env = process.env) {
@@ -633,9 +625,9 @@ function buildRuntimeState({ initialBinding = null, initialSource = null } = {})
       storage: null,
       world: null,
       worldDir: null,
-      agones: null,
-      agonesPlayerTracker: createNoopAgonesPlayerTracker(),
-      agonesIdleController: createNoopAgonesIdleController(),
+      hosting: null,
+      playerTracker: createNoopRuntimePlayerTracker(),
+      idleController: createNoopRuntimeIdleController(),
     },
   }
 }
@@ -656,18 +648,18 @@ if (bootstrapRuntimeEnabled) {
 const runtimeState = buildRuntimeState()
 
 if (runtimeState.lifecycle.state === 'standby' && hasValue(process.env.AGONES_SDK_HTTP_PORT)) {
-  const standbyAgones = createAgonesSdkHttp({ env: process.env })
-  if (standbyAgones && typeof standbyAgones.ready === 'function') {
+  const standbyHosting = createAgonesHostingAdapter({ env: process.env })
+  if (standbyHosting && typeof standbyHosting.ready === 'function') {
     void (async () => {
       for (let attempt = 0; attempt < 10; attempt += 1) {
         try {
-          await standbyAgones.ready()
-          console.info('[agones] requested Agones Ready')
+          await standbyHosting.ready()
+          console.info('[agones] requested runtime Ready')
           return
         } catch (err) {
           if (attempt === 9) {
             const message = err instanceof Error ? err.message : String(err)
-            console.warn(`[agones] failed to request Agones Ready (${message})`)
+            console.warn(`[agones] failed to request runtime Ready (${message})`)
             return
           }
           await new Promise(resolve => setTimeout(resolve, 1000))
@@ -706,47 +698,47 @@ function updateAdminConnectionCount(channel, count) {
   const normalized = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0
   if (adminConnectionCounts[channel] === normalized) return
   adminConnectionCounts[channel] = normalized
-  runtimeState.resources.agonesIdleController.reconcileIdleShutdown(`admin_${channel}`)
+  runtimeState.resources.idleController.reconcileIdleShutdown(`admin_${channel}`)
 }
 
-function configureAgonesIntegration(world) {
-  const agones = createAgonesSdkHttp({ env: process.env })
-  const idleTimeoutMs = resolveAgonesIdleShutdownTimeoutMs(process.env)
-  const agonesIdleControllerEnabled = !!agones && idleTimeoutMs > 0
-  const agonesIdleController = createAgonesIdleController({
-    enabled: agonesIdleControllerEnabled,
+function configureRuntimeHosting(world) {
+  const hosting = createAgonesHostingAdapter({ env: process.env })
+  const idleTimeoutMs = resolveRuntimeIdleShutdownTimeoutMs(process.env)
+  const idleControllerEnabled = !!hosting && idleTimeoutMs > 0
+  const idleController = createRuntimeIdleController({
+    enabled: idleControllerEnabled,
     timeoutMs: idleTimeoutMs,
-    agones,
+    hosting,
     getActiveSessionCount,
     beforeShutdown: async () => {
       await world.network.save()
     },
   })
-  const agonesPlayerTracker = createAgonesPlayerTracker({
-    agones,
+  const playerTracker = createRuntimePlayerTracker({
+    hosting,
     world,
     env: process.env,
   })
-  agonesPlayerTracker.start()
+  playerTracker.start()
 
-  runtimeState.resources.agones = agones
-  runtimeState.resources.agonesPlayerTracker = agonesPlayerTracker
-  runtimeState.resources.agonesIdleController = agonesIdleController
+  runtimeState.resources.hosting = hosting
+  runtimeState.resources.playerTracker = playerTracker
+  runtimeState.resources.idleController = idleController
 
-  if (agonesIdleControllerEnabled) {
+  if (idleControllerEnabled) {
     world.network.on('playerJoined', () => {
-      runtimeState.resources.agonesIdleController.reconcileIdleShutdown('player_joined')
+      runtimeState.resources.idleController.reconcileIdleShutdown('player_joined')
     })
     world.network.on('playerLeft', () => {
-      runtimeState.resources.agonesIdleController.reconcileIdleShutdown('player_left')
+      runtimeState.resources.idleController.reconcileIdleShutdown('player_left')
     })
   }
 
   return {
-    agones,
-    agonesIdleController,
-    agonesIdleControllerEnabled,
-    agonesPlayerTracker,
+    hosting,
+    idleController,
+    idleControllerEnabled,
+    playerTracker,
     idleTimeoutMs,
   }
 }
@@ -875,7 +867,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
     runtimeState.resources.worldDir = worldDir
 
     flushWorldProxyCalls()
-    const agonesIntegration = configureAgonesIntegration(world)
+    const hostingIntegration = configureRuntimeHosting(world)
 
     stage = 'complete_runtime_startup'
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_startup_finalize_start', {
@@ -885,11 +877,11 @@ async function initializeRuntime({ source, binding = null } = {}) {
       worldId: world?.network?.worldId || process.env.WORLD_ID || null,
     })
     await completeRuntimeStartup({
-      agones: agonesIntegration.agones,
-      agonesIdleController: agonesIntegration.agonesIdleController,
-      agonesIdleControllerEnabled: agonesIntegration.agonesIdleControllerEnabled,
-      idleTimeoutMs: agonesIntegration.idleTimeoutMs,
-      requestAgonesReady: source !== 'bootstrap',
+      hosting: hostingIntegration.hosting,
+      idleController: hostingIntegration.idleController,
+      idleControllerEnabled: hostingIntegration.idleControllerEnabled,
+      idleTimeoutMs: hostingIntegration.idleTimeoutMs,
+      requestHostingReady: source !== 'bootstrap',
     })
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_initialize_complete', {
       bootstrapId:
@@ -919,7 +911,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
       worldSlug: binding?.world?.slug || runtimeState.lifecycle.worldSlug,
     })
 
-    void agonesIntegration.agonesPlayerTracker.publishCapacity('startup')
+    void hostingIntegration.playerTracker.publishCapacity('startup')
 
     return world
   })()
@@ -939,8 +931,8 @@ async function initializeRuntime({ source, binding = null } = {}) {
         worldId: process.env.WORLD_ID || runtimeState.lifecycle.worldId || null,
         worldSlug: binding?.world?.slug || runtimeState.lifecycle.worldSlug,
       })
-      runtimeState.resources.agonesIdleController.clearIdleShutdownTimer('bootstrap_failed')
-      runtimeState.resources.agonesPlayerTracker.stop?.()
+      runtimeState.resources.idleController.clearIdleShutdownTimer('bootstrap_failed')
+      runtimeState.resources.playerTracker.stop?.()
       setRuntimeLifecycleState(runtimeState, 'failed', {
         bootstrapId: runtimeState.lifecycle.bootstrapId,
         source,
@@ -963,7 +955,7 @@ async function handleAuthExchange(req, reply) {
   }
 
   const authConfig = resolveAuthRuntimeConfig(process.env)
-  if (!authConfig.usesLobbyIdentity) {
+  if (!authConfig.usesExternalIdentity) {
     return reply.code(404).send({ error: 'not_found' })
   }
 
@@ -974,7 +966,7 @@ async function handleAuthExchange(req, reply) {
 
   const boundWorldId = resolveBoundWorldId()
   const controlAuthorization = resolveRuntimeControlAuthorization(boundWorldId)
-  const verification = await verifyIdentityExchangeTokenWithLobby(identityToken, {
+  const verification = await verifyExternalIdentityExchangeToken(identityToken, {
     controlBaseUrl: resolveControlInternalBaseUrl(process.env),
     worldId: boundWorldId,
     jwtSecret: process.env.JWT_SECRET,
@@ -1000,8 +992,8 @@ async function handleAuthExchange(req, reply) {
 
   const claimName = formatUserName(typeof claims?.name === 'string' ? claims.name.trim() : 'Anonymous')
   const avatar = typeof claims?.avatar === 'string' ? claims.avatar.trim() || null : null
-  // Lobby identity does not imply control-plane rank authority. Only hosted runtimes
-  // should rehydrate rank from world-service; self-hosted worlds keep their local rank.
+  // External identity does not imply runtime-control rank authority. Only bootstrapped
+  // runtimes should rehydrate rank from a control adapter; self-hosted worlds keep local rank.
   const rank = await resolveAuthenticatedUserRank(userId, db, authConfig, { worldId: boundWorldId })
 
   await db('users')
@@ -1163,7 +1155,7 @@ async function handleCliAuthGuest(req, reply) {
     return sendRuntimeNotReady(reply, runtimeState)
   }
   const authConfig = resolveAuthRuntimeConfig(process.env)
-  if (authConfig.usesLobbyIdentity) {
+  if (authConfig.usesExternalIdentity) {
     return reply.code(404).send({ error: 'not_found' })
   }
   try {
@@ -1483,7 +1475,7 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
     world: worldProxy,
     assets: assetsProxy,
     adminHtmlPath,
-    getAgones: () => runtimeState.resources.agones,
+    getHosting: () => runtimeState.resources.hosting,
     isRuntimeReady: () => isRuntimeReady(runtimeState),
     getRuntimeState: () => runtimeState.lifecycle.state,
     onConnectionCountChanged: count => updateAdminConnectionCount(connectionChannel, count),
@@ -1586,8 +1578,8 @@ if (runtimeState.lifecycle.state === 'bootstrapping') {
 }
 
 async function shutdown(reason) {
-  runtimeState.resources.agonesIdleController.clearIdleShutdownTimer(reason)
-  runtimeState.resources.agonesPlayerTracker.stop?.()
+  runtimeState.resources.idleController.clearIdleShutdownTimer(reason)
+  runtimeState.resources.playerTracker.stop?.()
   if (runtimeState.resources.world?.network?.save) {
     await runtimeState.resources.world.network.save()
   }

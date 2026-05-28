@@ -208,9 +208,18 @@ importers:
       '@gamedev/core':
         specifier: workspace:*
         version: link:packages/core
+      '@gamedev/extra-systems':
+        specifier: workspace:*
+        version: link:packages/extra-systems
+      '@gamedev/runtime-adapters':
+        specifier: workspace:*
+        version: link:packages/runtime-adapters
       '@gamedev/server':
         specifier: workspace:*
         version: link:packages/server
+      '@gamedev/world-project':
+        specifier: workspace:*
+        version: link:packages/world-project
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.4
@@ -235,6 +244,9 @@ importers:
       '@gamedev/core':
         specifier: workspace:*
         version: link:../core
+      '@gamedev/world-project':
+        specifier: workspace:*
+        version: link:../world-project
 
   packages/cli:
     dependencies:
@@ -247,8 +259,17 @@ importers:
       '@gamedev/core':
         specifier: workspace:*
         version: link:../core
+      '@gamedev/extra-systems':
+        specifier: workspace:*
+        version: link:../extra-systems
 
   packages/core: {}
+
+  packages/extra-systems:
+    dependencies:
+      '@gamedev/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/node-client:
     dependencies:
@@ -256,11 +277,21 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/runtime-adapters: {}
+
   packages/server:
     dependencies:
       '@gamedev/core':
         specifier: workspace:*
         version: link:../core
+      '@gamedev/extra-systems':
+        specifier: workspace:*
+        version: link:../extra-systems
+      '@gamedev/runtime-adapters':
+        specifier: workspace:*
+        version: link:../runtime-adapters
+
+  packages/world-project: {}
 
 packages:
 
@@ -1273,7 +1304,7 @@ packages:
 
   '@paulmillr/qr@0.2.1':
     resolution: {integrity: sha512-IHnV6A+zxU7XwmKFinmYjUcwlyK9+xkG3/s9KcQhI9BjQKycrJ1JRO+FbNYPwZiPKW3je/DR0k7w8/gLa5eaxQ==}
-    deprecated: 'The package is now available as "qr": npm install qr'
+    deprecated: 'Switch to "qr" (new package name) for security updates: npm install qr'
 
   '@phosphor-icons/webcomponents@2.1.5':
     resolution: {integrity: sha512-JcvQkZxvcX2jK+QCclm8+e8HXqtdFW9xV4/kk2aL9Y3dJA2oQVt+pzbv1orkumz3rfx4K9mn9fDoMr1He1yr7Q==}
@@ -4564,8 +4595,8 @@ packages:
     resolution: {integrity: sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==}
     engines: {node: '>=0.10.0'}
 
-  react@19.3.0-canary-d5736f09-20260507:
-    resolution: {integrity: sha512-EL3w0mHylqEtiySCjcj/nPOkK1j6KvKsaFkeavTqR6hbd6bQi7gyCcTSHXQ2XpTjv8hfKWFArSVF6he1sgQcEQ==}
+  react@19.3.0-canary-fef12a01-20260413:
+    resolution: {integrity: sha512-M9RtWF/KiutUtmfGWBcOkCsZ+w2Ty9HJuIajFkBI+qDOeT8gO7B8lQyuXpDjOTtqwRvFuO11kd/3B5zsyYsOCQ==}
     engines: {node: '>=0.10.0'}
 
   readable-stream@2.3.8:
@@ -5977,13 +6008,13 @@ snapshots:
 
   '@firebolt-dev/css@0.4.3':
     dependencies:
-      react: 19.3.0-canary-d5736f09-20260507
+      react: 19.3.0-canary-fef12a01-20260413
       stylis: 4.3.6
 
   '@firebolt-dev/jsx@0.4.3':
     dependencies:
       '@firebolt-dev/css': 0.4.3
-      react: 19.3.0-canary-d5736f09-20260507
+      react: 19.3.0-canary-fef12a01-20260413
 
   '@floating-ui/core@1.7.5':
     dependencies:
@@ -11393,7 +11424,7 @@ snapshots:
 
   react@19.2.5: {}
 
-  react@19.3.0-canary-d5736f09-20260507: {}
+  react@19.3.0-canary-fef12a01-20260413: {}
 
   readable-stream@2.3.8:
     dependencies:

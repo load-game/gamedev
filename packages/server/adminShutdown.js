@@ -1,61 +1,33 @@
-import { createAgonesSdkHttp, resolveAgonesSdkHttpBaseUrl } from './agonesSdkHttp.js'
+import {
+  ADMIN_SHUTDOWN_COMMAND,
+  LEGACY_AGONES_SHUTDOWN_COMMAND,
+  RUNTIME_SHUTDOWN_COMMAND,
+  handleRuntimeShutdownCommand,
+} from '@gamedev/runtime-adapters/hosting/adminShutdown.js'
+import { createAgonesHostingAdapter, resolveAgonesSdkHttpBaseUrl } from '@gamedev/runtime-adapters/hosting-agones'
 
-export const ADMIN_SHUTDOWN_COMMAND = 'agones_shutdown'
+export {
+  ADMIN_SHUTDOWN_COMMAND,
+  LEGACY_AGONES_SHUTDOWN_COMMAND,
+  RUNTIME_SHUTDOWN_COMMAND,
+  handleRuntimeShutdownCommand,
+}
+
+function normalizeAgonesTransport(agones) {
+  if (!agones) return agones
+  if (agones.name) return agones
+  return { name: 'agones', ...agones }
+}
+
+export function handleAdminShutdownCommand({ agones, ...options } = {}) {
+  const hosting =
+    options.hosting || (agones === undefined ? createAgonesHostingAdapter() : normalizeAgonesTransport(agones))
+  return handleRuntimeShutdownCommand({
+    ...options,
+    hosting,
+  })
+}
 
 export function resolveAgonesShutdownUrl(env = process.env) {
   return `${resolveAgonesSdkHttpBaseUrl(env)}/shutdown`
-}
-
-function resolveShutdownRequestFailureReason(err) {
-  const message = err instanceof Error ? err.message : String(err)
-  return message.startsWith('agones_sdk_status_') ? message : 'request_failed'
-}
-
-export async function handleAdminShutdownCommand({
-  canDeploy,
-  beforeShutdown = null,
-  agones = createAgonesSdkHttp(),
-} = {}) {
-  if (!canDeploy) {
-    return {
-      ok: false,
-      error: 'admin_required',
-      reason: 'deploy_capability_required',
-    }
-  }
-
-  if (!agones || typeof agones.shutdown !== 'function') {
-    return {
-      ok: false,
-      error: 'shutdown_unavailable',
-      reason: 'missing_shutdown_transport',
-    }
-  }
-
-  if (typeof beforeShutdown === 'function') {
-    try {
-      await beforeShutdown()
-    } catch {
-      return {
-        ok: false,
-        error: 'shutdown_save_failed',
-        reason: 'before_shutdown_failed',
-      }
-    }
-  }
-
-  try {
-    await agones.shutdown()
-  } catch (err) {
-    return {
-      ok: false,
-      error: 'shutdown_request_failed',
-      reason: resolveShutdownRequestFailureReason(err),
-    }
-  }
-
-  return {
-    ok: true,
-    requested: true,
-  }
 }

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { css } from '@firebolt-dev/css'
 
 import { createClientWorld } from '@gamedev/core/createClientWorld.js'
+import { registerClientExtraSystems } from '@gamedev/extra-systems'
 import { CoreUI } from './components/CoreUI.js'
 import { assetPath } from './utils.js'
 import { EditorLayout } from './components/editor/EditorLayout.js'
@@ -16,7 +17,7 @@ export function Client({ wsUrl, apiUrl, authUrl, connectionStatus, onSetup }) {
   const viewportRef = useRef()
   const cssLayerRef = useRef()
   const uiRef = useRef()
-  const world = useMemo(() => createClientWorld(), [])
+  const world = useMemo(() => createClientWorld({ configure: registerClientExtraSystems }), [])
   const walletAdapter = useMemo(() => createRuntimeWalletAdapter(), [])
   const [ui, setUI] = useState(world.ui.state)
   const [resolvedWsUrl, setResolvedWsUrl] = useState(undefined) // undefined = pending, null = offline

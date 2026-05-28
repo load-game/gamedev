@@ -1,0 +1,16 @@
+{
+  "name": "@gamedev/runtime-adapters",
+  "version": "0.3.3",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./auth": "./auth/index.js",
+    "./auth/*": "./auth/*",
+    "./hosting": "./hosting/index.js",
+    "./hosting/*": "./hosting/*",
+    "./hosting-agones": "./hosting-agones/index.js",
+    "./hosting-agones/*": "./hosting-agones/*"
+  }
+}

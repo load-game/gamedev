@@ -3,12 +3,12 @@ import { test } from 'vite-plus/test'
 
 import {
   ADMIN_SHUTDOWN_COMMAND,
-  handleAdminShutdownCommand,
-  resolveAgonesShutdownUrl,
-} from '@gamedev/server/adminShutdown.js'
+  handleRuntimeShutdownCommand,
+} from '@gamedev/runtime-adapters/hosting/adminShutdown.js'
+import { resolveAgonesShutdownUrl } from '@gamedev/server/adminShutdown.js'
 
-test('command contract uses agones_shutdown name', () => {
-  assert.equal(ADMIN_SHUTDOWN_COMMAND, 'agones_shutdown')
+test('command contract uses generic runtime_shutdown name', () => {
+  assert.equal(ADMIN_SHUTDOWN_COMMAND, 'runtime_shutdown')
 })
 
 test('resolveAgonesShutdownUrl uses the default and configured Agones SDK ports', () => {
@@ -16,8 +16,8 @@ test('resolveAgonesShutdownUrl uses the default and configured Agones SDK ports'
   assert.equal(resolveAgonesShutdownUrl({ AGONES_SDK_HTTP_PORT: '1234' }), 'http://127.0.0.1:1234/shutdown')
 })
 
-test('admin shutdown command denies callers without deploy capability', async () => {
-  const result = await handleAdminShutdownCommand({
+test('runtime shutdown command denies callers without deploy capability', async () => {
+  const result = await handleRuntimeShutdownCommand({
     canDeploy: false,
   })
 
@@ -28,12 +28,12 @@ test('admin shutdown command denies callers without deploy capability', async ()
   })
 })
 
-test('admin shutdown command saves before requesting Agones shutdown', async () => {
+test('runtime shutdown command saves before requesting hosting shutdown', async () => {
   const events = []
 
-  const result = await handleAdminShutdownCommand({
+  const result = await handleRuntimeShutdownCommand({
     canDeploy: true,
-    agones: {
+    hosting: {
       shutdown: async () => {
         events.push('shutdown')
       },
@@ -50,12 +50,12 @@ test('admin shutdown command saves before requesting Agones shutdown', async () 
   })
 })
 
-test('admin shutdown command does not request Agones shutdown when saving fails', async () => {
+test('runtime shutdown command does not request hosting shutdown when saving fails', async () => {
   let requested = false
 
-  const result = await handleAdminShutdownCommand({
+  const result = await handleRuntimeShutdownCommand({
     canDeploy: true,
-    agones: {
+    hosting: {
       shutdown: async () => {
         requested = true
       },
@@ -73,12 +73,12 @@ test('admin shutdown command does not request Agones shutdown when saving fails'
   })
 })
 
-test('admin shutdown command surfaces Agones shutdown request failures', async () => {
-  const result = await handleAdminShutdownCommand({
+test('runtime shutdown command surfaces hosting shutdown request failures', async () => {
+  const result = await handleRuntimeShutdownCommand({
     canDeploy: true,
-    agones: {
+    hosting: {
       shutdown: async () => {
-        throw new Error('agones_sdk_status_503')
+        throw new Error('hosting_status_503')
       },
     },
   })
@@ -86,14 +86,14 @@ test('admin shutdown command surfaces Agones shutdown request failures', async (
   assert.deepEqual(result, {
     ok: false,
     error: 'shutdown_request_failed',
-    reason: 'agones_sdk_status_503',
+    reason: 'hosting_status_503',
   })
 })
 
-test('admin shutdown command reports shutdown unavailable when Agones is disabled', async () => {
-  const result = await handleAdminShutdownCommand({
+test('runtime shutdown command reports shutdown unavailable when hosting is disabled', async () => {
+  const result = await handleRuntimeShutdownCommand({
     canDeploy: true,
-    agones: null,
+    hosting: null,
   })
 
   assert.deepEqual(result, {

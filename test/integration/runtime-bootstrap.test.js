@@ -40,11 +40,11 @@ test('applyHostedRuntimeBootstrapPayload backfills hosted runtime world binding'
       publicAdminUrl: 'https://gs.example.com:7000/admin',
     },
     auth: {
-      publicAuthUrl: 'https://dev.lobby.ws/api/identity',
+      runtimeAuthUrl: 'https://auth.example.test/api/identity',
       publicPrivyAppId: 'privy-app-id',
     },
     control: {
-      internalBaseUrl: 'https://world-service.lobby.svc.cluster.local/api',
+      internalBaseUrl: 'https://runtime-control.example.test/api',
     },
   })
 
@@ -58,8 +58,10 @@ test('applyHostedRuntimeBootstrapPayload backfills hosted runtime world binding'
     'PUBLIC_API_URL',
     'PUBLIC_WS_URL',
     'PUBLIC_ADMIN_URL',
+    'RUNTIME_AUTH_URL',
     'PUBLIC_AUTH_URL',
     'PUBLIC_PRIVY_APP_ID',
+    'RUNTIME_CONTROL_URL',
     'CONTROL_INTERNAL_BASE_URL',
   ])
   assert.equal(env.WORLD, '.runtime-worlds/demo-world')
@@ -70,8 +72,11 @@ test('applyHostedRuntimeBootstrapPayload backfills hosted runtime world binding'
   assert.equal(env.PUBLIC_ADMIN_URL, 'https://gs.example.com:7000/admin')
   assert.equal(env.PUBLIC_API_URL, 'https://gs.example.com:7000/api')
   assert.equal(env.PUBLIC_WS_URL, 'wss://gs.example.com:7000/ws')
+  assert.equal(env.RUNTIME_AUTH_URL, 'https://auth.example.test/api/identity')
+  assert.equal(env.PUBLIC_AUTH_URL, 'https://auth.example.test/api/identity')
   assert.equal(env.PUBLIC_PRIVY_APP_ID, 'privy-app-id')
-  assert.equal(env.CONTROL_INTERNAL_BASE_URL, 'https://world-service.lobby.svc.cluster.local/api')
+  assert.equal(env.RUNTIME_CONTROL_URL, 'https://runtime-control.example.test/api')
+  assert.equal(env.CONTROL_INTERNAL_BASE_URL, 'https://runtime-control.example.test/api')
 })
 
 test('usesHostedRuntimeBootstrap recognizes explicit bootstrap runtimes and startup inference', () => {
@@ -96,10 +101,12 @@ test('clearBootstrapRuntimeBindingEnv removes world-bound config before standby 
     PUBLIC_WS_URL: 'wss://runtime.example.com/ws',
     PUBLIC_ADMIN_URL: 'https://runtime.example.com/admin',
     PUBLIC_AUTH_URL: 'https://auth.example.com/api/identity',
+    RUNTIME_AUTH_URL: 'https://auth.example.com/api/identity',
     PUBLIC_PRIVY_APP_ID: 'privy-app-id',
     PUBLIC_MAX_UPLOAD_SIZE: '12',
     PUBLIC_WORLD_MAX_PLAYERS: '24',
-    CONTROL_INTERNAL_BASE_URL: 'https://world-service.internal/api',
+    RUNTIME_CONTROL_URL: 'https://runtime-control.example.test/api',
+    CONTROL_INTERNAL_BASE_URL: 'https://runtime-control.example.test/api',
     SHUTDOWN_IDLE: '90',
     JWT_SECRET: 'secret',
   }
@@ -170,10 +177,10 @@ test('parseRuntimeBootstrapPayload normalizes the frozen binding shape', () => {
       publicWsUrl: '',
     },
     auth: {
-      publicAuthUrl: 'https://dev.lobby.ws/api/identity/',
+      runtimeAuthUrl: 'https://auth.example.test/api/identity/',
     },
     control: {
-      internalBaseUrl: 'https://world-service.lobby.svc.cluster.local/api/',
+      internalBaseUrl: 'https://runtime-control.example.test/api/',
     },
   })
 
@@ -181,8 +188,9 @@ test('parseRuntimeBootstrapPayload normalizes the frozen binding shape', () => {
   assert.equal(parsed.runtime.publicApiUrl, 'https://gs.example.com:7443/api')
   assert.equal(parsed.runtime.publicWsUrl, 'wss://gs.example.com:7443/ws')
   assert.equal(parsed.runtime.publicAdminUrl, 'https://gs.example.com:7443/admin')
-  assert.equal(parsed.auth.publicAuthUrl, 'https://dev.lobby.ws/api/identity')
-  assert.equal(parsed.control.internalBaseUrl, 'https://world-service.lobby.svc.cluster.local/api')
+  assert.equal(parsed.auth.runtimeAuthUrl, 'https://auth.example.test/api/identity')
+  assert.equal(parsed.auth.publicAuthUrl, 'https://auth.example.test/api/identity')
+  assert.equal(parsed.control.internalBaseUrl, 'https://runtime-control.example.test/api')
 })
 
 test('derivePublicAdminUrl prefers api urls and falls back to websocket urls', () => {
@@ -204,10 +212,18 @@ test('derivePublicAdminUrl prefers api urls and falls back to websocket urls', (
 test('resolveControlInternalBaseUrl prefers explicit control url and falls back to legacy auth url', () => {
   assert.equal(
     resolveControlInternalBaseUrl({
-      CONTROL_INTERNAL_BASE_URL: 'https://world-service.lobby.svc.cluster.local/api/',
+      RUNTIME_CONTROL_URL: 'https://runtime-control.example.test/api/',
+      CONTROL_INTERNAL_BASE_URL: 'https://legacy-control.example.test/api/',
       PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
     }),
-    'https://world-service.lobby.svc.cluster.local/api'
+    'https://runtime-control.example.test/api'
+  )
+  assert.equal(
+    resolveControlInternalBaseUrl({
+      CONTROL_INTERNAL_BASE_URL: 'https://legacy-control.example.test/api/',
+      PUBLIC_AUTH_URL: 'https://dev.lobby.ws/api/identity',
+    }),
+    'https://legacy-control.example.test/api'
   )
   assert.equal(
     resolveControlInternalBaseUrl({
@@ -217,9 +233,9 @@ test('resolveControlInternalBaseUrl prefers explicit control url and falls back 
   )
   assert.equal(
     resolveControlInternalUrl('/internal/users/user-1', {
-      CONTROL_INTERNAL_BASE_URL: 'https://world-service.lobby.svc.cluster.local/api',
+      RUNTIME_CONTROL_URL: 'https://runtime-control.example.test/api',
     }),
-    'https://world-service.lobby.svc.cluster.local/api/internal/users/user-1'
+    'https://runtime-control.example.test/api/internal/users/user-1'
   )
 })
 
