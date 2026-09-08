@@ -3,9 +3,10 @@ import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 import * as utils from 'viem/utils'
 
 import { System } from '@gamedev/core/systems/System.js'
+import { localEvmChains } from '../localEvmChain.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
-const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon]
+const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon, ...localEvmChains()]
 const SUPPORTED_CHAINS_BY_ID = new Map(SUPPORTED_CHAINS.map(chain => [chain.id, chain]))
 const TOKENS_BY_CHAIN_ID = {
   [mainnet.id]: {
