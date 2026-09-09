@@ -596,6 +596,13 @@ export class ClientControls extends System {
 
   onPointerDown = e => {
     if (e.isCoreUI) return
+    const rect = this.viewport.getBoundingClientRect()
+    this.pointer.position.set(e.clientX - rect.left, e.clientY - rect.top, 0)
+    this.pointer.coords.set(
+      Math.max(0, Math.min(1, this.pointer.position.x / rect.width)),
+      Math.max(0, Math.min(1, this.pointer.position.y / rect.height)),
+      0
+    )
     if (e.pointerType === 'touch') {
       e.preventDefault()
       const info = {

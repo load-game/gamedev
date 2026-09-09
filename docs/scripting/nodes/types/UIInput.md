@@ -130,3 +130,16 @@ const input = app.create('uiinput', {
 })
 app.add(input)
 ```
+### `.type`: String
+
+Native input type, default `text`. `button` creates a keyboard-accessible
+world-space action whose pointer click or Enter key invokes `onSubmit`.
+Use `value` for its visible label, `disabled` to prevent activation, and the
+same `focus()` / `onFocus` API for keyboard navigation. Nodes retain browser
+focus and text selection when their properties update without rebuilding.
+
+`fontFamily` accepts a CSS font-family string (default `Space Mono, monospace`).
+`onKeyDown({key, code, shiftKey})` receives keyboard data without a DOM event.
+Return `true` to consume the key and replace the default behavior, for example
+for a Tab focus loop or Escape closing a world-space form. Other keys retain
+native input behavior. `onSubmit` still handles Enter when not consumed.

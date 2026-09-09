@@ -671,3 +671,45 @@ world.setReticle({
   ],
 })
 ```
+
+### Custom development chains
+
+Self-hosted runtimes can opt into an additional EVM chain with `LOCAL_EVM_RPC_URL`
+(server) and `PUBLIC_LOCAL_EVM_RPC_URL` (browser and wallet). Set the matching
+`LOCAL_EVM_CHAIN_ID` / `PUBLIC_LOCAL_EVM_CHAIN_ID` to a positive safe integer;
+both default to 31337 for existing projects. Optional `LOCAL_EVM_CHAIN_NAME` /
+`PUBLIC_LOCAL_EVM_CHAIN_NAME` supplies the wallet label. Public RPC URLs must be
+reachable by the browser. These settings take effect when the runtime starts.
+
+`world.evm(chainId)` uses that configured RPC for reads. `switchChain()` offers
+configured metadata to an injected wallet only when it reports unknown chain
+(error 4902), then verifies the selected chain. Rejections are propagated.
+
+Client EVM runtimes also expose `connect()`, `disconnect()` and
+`getWalletState()`. Connection requests wallet access; disconnection clears the
+runtime wallet binding until explicitly connected again, without revoking the
+wallet extension permission or logging out the world identity. `getWalletState()`
+refreshes `{address, connected, chainId, source}` from the wallet. Recheck it
+before each signature when an operation spans multiple transactions.
+
+`getBlock`, `getBalance` (integer wei), `getTransactionReceipt`, `simulateContract`
+and `estimateContractGas` accept the corresponding viem public-client arguments
+and use the bound chain's public RPC. None requests a signature.
+
+### Browser preferences
+
+`world.getBrowserPreferences()` returns `{colorScheme: 'light' | 'dark',
+reducedMotion: boolean}` on the client, or null on the server. Read again to
+observe system preference changes. `world.getPreference(key)` and
+`world.setPreference(key, value)` persist small JSON values locally, scoped to
+the current blueprint. Values are limited to 4096 serialized characters.
+
+`evm.getRpcChainId()` asks the selected public RPC for its actual chain ID.
+Use it to validate deployment configuration; the existing `getChainId()` on a
+bound runtime returns the configured chain ID and is not an RPC health check.
+
+`evm.onWalletChange(listener)` subscribes to wallet binding snapshots and returns
+an unsubscribe function. Register that function with the app's destroy handler.
+Injected provider account, chain and disconnect events invalidate the binding
+immediately, before asynchronous reads establish the replacement state. Polling
+also detects changes for providers that do not implement events.

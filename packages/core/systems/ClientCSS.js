@@ -46,7 +46,7 @@ export class ClientCSS extends System {
     if (!this.renderer) return
     for (const objectCSS of this.scene.children) {
       if (!objectCSS.target) continue
-      if (objectCSS.interacting) continue
+      if (objectCSS.interacting && !objectCSS.followTarget) continue
       objectCSS.target.matrixWorld.decompose(objectCSS.position, objectCSS.quaternion, v1)
     }
   }

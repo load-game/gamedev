@@ -169,6 +169,12 @@ export class EVM extends System {
       abis: this.abis,
       getAddress: () => this.getAddress(),
       isConnected: () => this.isConnected(),
+      connect: () => this._requireWalletAdapter().connect(),
+      disconnect: () => this._requireWalletAdapter().disconnect(),
+      getWalletState: () => this._requireWalletAdapter().refresh(),
+      onWalletChange: listener => this._requireWalletAdapter().subscribe(listener),
+      getRpcChainId: async () =>
+        this._getPublicClient(boundChainId || (await this._resolveOperationChainId())).getChainId(),
       getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
       readContract: params => this.readContract(params, { chainId: boundChainId }),
       sendTransaction: params => this.sendTransaction(params, { chainId: boundChainId }),
@@ -183,6 +189,19 @@ export class EVM extends System {
       transferToken: (tokenAddress, to, amount, decimals) =>
         this.transferToken(tokenAddress, to, amount, decimals, { chainId: boundChainId }),
       transferUSDC: (to, amount) => this.transferUSDC(to, amount, { chainId: boundChainId }),
+    }
+
+    for (const method of [
+      'getBlock',
+      'getBalance',
+      'getTransactionReceipt',
+      'simulateContract',
+      'estimateContractGas',
+    ]) {
+      runtimeAPI[method] = async params => {
+        const id = boundChainId || (await this._resolveOperationChainId())
+        return this._getPublicClient(id)[method](params)
+      }
     }
 
     this.runtimeAPIs.set(key, runtimeAPI)
@@ -293,7 +312,7 @@ export class EVM extends System {
     if (!publicClient) {
       publicClient = createPublicClient({
         chain: targetChain,
-        transport: http(),
+        transport: http(undefined, { batch: true }),
       })
       this.publicClients.set(targetChain.id, publicClient)
     }
@@ -522,8 +541,9 @@ export class EVM extends System {
       throw new Error('chainId is required')
     }
 
-    const targetChainId = this._requireSupportedChain(requestedChainId).id
-    const result = await this._requireWalletAdapter().switchChain({ chainId: targetChainId })
+    const targetChain = this._requireSupportedChain(requestedChainId)
+    const targetChainId = targetChain.id
+    const result = await this._requireWalletAdapter().switchChain({ chainId: targetChainId, chain: targetChain })
     this.chainId = normalizeChainId(result?.id) || targetChainId
     this.pendingPlayerSync = true
     this.pendingNetworkSync = true

@@ -11,6 +11,7 @@ const defaults = {
   height: 32,
   factor: 100,
   fontSize: 14,
+  fontFamily: 'Space Mono, monospace',
   color: '#000000',
   backgroundColor: '#ffffff',
   borderWidth: 1,
@@ -34,6 +35,7 @@ export class UIInput extends Node {
     this.height = data.height
     this.factor = data.factor
     this.fontSize = data.fontSize
+    this.fontFamily = data.fontFamily
     this.color = data.color
     this.backgroundColor = data.backgroundColor
     this.borderWidth = data.borderWidth
@@ -47,6 +49,7 @@ export class UIInput extends Node {
     this._onBlur = data.onBlur
     this._onChange = data.onChange
     this._onSubmit = data.onSubmit
+    this._onKeyDown = data.onKeyDown
 
     this.n = 0
   }
@@ -59,6 +62,7 @@ export class UIInput extends Node {
     this._height = source._height
     this._factor = source._factor
     this._fontSize = source._fontSize
+    this._fontFamily = source._fontFamily
     this._color = source._color
     this._backgroundColor = source._backgroundColor
     this._borderWidth = source._borderWidth
@@ -71,6 +75,7 @@ export class UIInput extends Node {
     this._onBlur = source._onBlur
     this._onChange = source._onChange
     this._onSubmit = source._onSubmit
+    this._onKeyDown = source._onKeyDown
     return this
   }
 
@@ -156,14 +161,15 @@ export class UIInput extends Node {
     input.style.color = this._color
     input.style.backgroundColor = this._backgroundColor
     input.style.outline = 'none'
-    input.style.fontFamily = 'Space Mono, monospace'
-    input.style.pointerEvents = 'none'
+    input.style.fontFamily = this._fontFamily
+    input.style.pointerEvents = 'auto'
 
     container.appendChild(inner)
     inner.appendChild(input)
 
     this.objectCSS = new CSS3DObject(container)
     this.objectCSS.target = this.mesh
+    this.objectCSS.followTarget = true
     this.mesh.updateMatrixWorld()
     this.mesh.matrixWorld.decompose(this.objectCSS.position, this.objectCSS.quaternion, v1)
     this.objectCSS.scale.setScalar(1 / this._factor)
@@ -184,6 +190,9 @@ export class UIInput extends Node {
     container.addEventListener('pointerdown', e => {
       e.stopPropagation()
     })
+    // Preserve native focus, keyboard and button activation on touch screens.
+    // The world viewport otherwise prevents touchstart's default behavior.
+    container.addEventListener('touchstart', e => e.stopPropagation(), { passive: true })
 
     inner.addEventListener('mouseenter', () => {
       if (isDesktop) {
@@ -195,7 +204,7 @@ export class UIInput extends Node {
     inner.addEventListener('mouseleave', () => {
       if (isDesktop && document.activeElement !== input) {
         this.objectCSS.interacting = false
-        input.style.pointerEvents = 'none'
+        input.style.pointerEvents = 'auto'
       }
     })
 
@@ -205,9 +214,9 @@ export class UIInput extends Node {
     })
 
     input.addEventListener('blur', () => {
+      this.objectCSS.interacting = false
       if (isDesktop) {
-        this.objectCSS.interacting = false
-        input.style.pointerEvents = 'none'
+        input.style.pointerEvents = 'auto'
       }
       this._onBlur?.(this._value)
     })
@@ -218,6 +227,11 @@ export class UIInput extends Node {
     })
 
     input.addEventListener('keydown', e => {
+      if (this._onKeyDown?.({ key: e.key, code: e.code, shiftKey: e.shiftKey }) === true) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
       if (e.key === 'Enter') {
         e.preventDefault()
         this._onSubmit?.(this._value)
@@ -225,6 +239,11 @@ export class UIInput extends Node {
         e.preventDefault()
         input.blur()
       }
+    })
+
+    // Button inputs use the same world-space focus and submission API as text fields.
+    input.addEventListener('click', () => {
+      if (this._type === 'button' && !this._disabled) this._onSubmit?.(this._value)
     })
 
     if (this.n !== n) return
@@ -265,7 +284,7 @@ export class UIInput extends Node {
   }
 
   focus() {
-    this.input?.focus()
+    this.input?.focus({ preventScroll: true })
   }
 
   blur() {
@@ -474,6 +493,23 @@ export class UIInput extends Node {
     return this._type
   }
 
+  get fontFamily() {
+    return this._fontFamily
+  }
+  set fontFamily(value = defaults.fontFamily) {
+    if (!isString(value)) throw new Error('[uiinput] fontFamily not a string')
+    this._fontFamily = value
+    if (this.input) this.input.style.fontFamily = value
+  }
+
+  get onKeyDown() {
+    return this._onKeyDown
+  }
+  set onKeyDown(value) {
+    if (value != null && !isFunction(value)) throw new Error('[uiinput] onKeyDown not a function')
+    this._onKeyDown = value
+  }
+
   set type(value = defaults.type) {
     if (!isString(value)) {
       throw new Error('[uiinput] type not a string')
@@ -613,6 +649,18 @@ export class UIInput extends Node {
         },
         get type() {
           return self.type
+        },
+        get fontFamily() {
+          return self.fontFamily
+        },
+        set fontFamily(value) {
+          self.fontFamily = value
+        },
+        get onKeyDown() {
+          return self.onKeyDown
+        },
+        set onKeyDown(value) {
+          self.onKeyDown = value
         },
         set type(v) {
           self.type = v

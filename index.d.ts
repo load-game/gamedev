@@ -904,6 +904,36 @@ interface RaycastHit {
 }
 
 interface EVMAPI {
+  utils: { formatEther: Function; formatUnits: Function; getAddress: Function; parseUnits: Function }
+  abis: { erc20: any[] }
+  connect(): Promise<any>
+  disconnect(): void
+  onWalletChange(
+    listener: (state: {
+      address: string | null
+      connected: boolean
+      chainId: number | null
+      source: string | null
+    }) => void
+  ): () => void
+  getWalletState(): Promise<{
+    address: string | null
+    connected: boolean
+    chainId: number | null
+    source: string | null
+  }>
+  getChainId(params?: any): Promise<number>
+  getRpcChainId(): Promise<number>
+  switchChain(params?: any): Promise<{ id: number }>
+  readContract(params: any): Promise<any>
+  writeContract(params: any): Promise<string>
+  sendTransaction(params: any): Promise<string>
+  waitForTransactionReceipt(params: any): Promise<any>
+  getBlock(params?: any): Promise<any>
+  getBalance(params: any): Promise<bigint>
+  getTransactionReceipt(params: any): Promise<any>
+  simulateContract(params: any): Promise<any>
+  estimateContractGas(params: any): Promise<bigint>
   getAddress(): string | null
   isConnected(): boolean
   getNativeBalance(address?: string | null): Promise<number>
@@ -1120,7 +1150,10 @@ interface WorldAPI {
   load(type: 'avatar' | 'model', url: string): Promise<BaseNode>
 
   // EVM
-  evm(): EVMAPI
+  evm(chainId?: number): EVMAPI
+  getBrowserPreferences(): { colorScheme: 'light' | 'dark'; reducedMotion: boolean } | null
+  getPreference(key: string): any
+  setPreference(key: string, value: any): void
 
   // Hyperliquid
   hyperliquid(): HyperliquidAPI
