@@ -1246,6 +1246,8 @@ type ControlKeys =
   | 'metaLeft'
 
 interface ControlPointer {
+  /** False prevents automatic click-to-lock until this control releases or restores true. Explicit lock() still works. */
+  lockOnClick: boolean
   coords: Vector3
   position: Vector3
   delta: Vector3

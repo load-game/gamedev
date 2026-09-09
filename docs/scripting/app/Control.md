@@ -54,6 +54,7 @@ app.on('update', () => {
 *   `pointer.coords` (Vector3): Pointer coordinates in normalized screen space (`[0,0]` to `[1,1]`).
 *   `pointer.position` (Vector3): Pointer coordinates in screen pixels.
 *   `pointer.delta` (Vector3): Change in pointer position since the last frame.
+*   `pointer.lockOnClick` (Boolean, default `true`): Set to `false` for free-cursor world picking. While any active control opts out, the automatic click-to-lock handler lets clicks reach app controls. Explicit `pointer.lock()` still works. Restore `true` or release the control to restore ordinary behavior.
 *   `pointer.locked` (Boolean): `true` if the pointer is currently locked.
 *   `pointer.lock()`: Requests to lock the pointer to the screen.
 *   `pointer.unlock()`: Releases the pointer lock.

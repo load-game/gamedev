@@ -720,6 +720,10 @@ export class ClientControls extends System {
     }
   }
 
+  shouldLockPointerOnClick() {
+    return !this.controls.some(control => control.entries.pointer?.lockOnClick === false)
+  }
+
   async lockPointer() {
     if (isTouch) return
     this.pointer.shouldLock = true
@@ -879,6 +883,8 @@ function createPointer(controls, control, prop) {
   const position = new THREE.Vector3() // [0,0] to [viewportWidth,viewportHeight]
   const delta = new THREE.Vector3() // position delta (pixels)
   return {
+    // Releasing this control automatically restores the normal world click behavior.
+    lockOnClick: true,
     get coords() {
       return coords.copy(controls.pointer.coords)
     },
