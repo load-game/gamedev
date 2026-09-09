@@ -95,3 +95,4 @@ Gives you the dimensions of the screen in pixels, useful when positioning UI.
 
 *   `screen.width` (Number): The width of the screen in px.
 *   `screen.height` (Number): The height of the screen in px.
+Capturing `control.tab` also suppresses the engine's Tab build-mode shortcut while the control is bound. Releasing the control restores the shortcut.

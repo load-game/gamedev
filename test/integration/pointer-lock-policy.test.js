@@ -45,3 +45,44 @@ test('free-cursor app can receive the first world click; releasing it restores a
   assert.equal(locks, 4)
   builder.control.release()
 })
+
+test('captured app Tab navigates the app without toggling build mode, and release restores it', () => {
+  const world = { emit() {}, entities: { player: { isXR: false } }, ui: { state: {} } }
+  const controls = new ClientControls(world)
+  world.controls = controls
+  const builder = Object.create(ClientBuilder.prototype)
+  builder.world = world
+  builder.updateActions = () => {}
+  let toggles = 0,
+    navigations = 0
+  builder.toggle = () => {
+    toggles++
+  }
+  builder.start()
+  void builder.control.tab
+  const app = controls.bind({ priority: 2 })
+  app.tab.onPress = () => {
+    navigations++
+  }
+  const press = () => {
+    controls.simulateButton('tab', true)
+    builder.update(1 / 60)
+    controls.simulateButton('tab', false)
+    controls.postLateUpdate()
+  }
+  press()
+  assert.equal(toggles, 1)
+  assert.equal(navigations, 1)
+  app.tab.capture = true
+  press()
+  assert.equal(toggles, 1)
+  assert.equal(navigations, 2)
+  app.tab.capture = false
+  press()
+  assert.equal(toggles, 2)
+  app.tab.capture = true
+  app.release()
+  press()
+  assert.equal(toggles, 3)
+  builder.control.release()
+})

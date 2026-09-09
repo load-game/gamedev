@@ -720,6 +720,10 @@ export class ClientControls extends System {
     }
   }
 
+  isButtonCaptured(prop) {
+    return this.controls.some(control => control.entries[prop]?.capture === true)
+  }
+
   shouldLockPointerOnClick() {
     return !this.controls.some(control => control.entries.pointer?.lockOnClick === false)
   }

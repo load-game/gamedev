@@ -490,7 +490,7 @@ export class ClientBuilder extends System {
     if (!player) return
     const xr = player.isXR
     // toggle build
-    if (this.control.tab.pressed) {
+    if (this.control.tab.pressed && !this.world.controls.isButtonCaptured('tab')) {
       this.toggle()
     }
     // deselect if dead
