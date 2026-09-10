@@ -177,6 +177,7 @@ export class EVM extends System {
         this._getPublicClient(boundChainId || (await this._resolveOperationChainId())).getChainId(),
       getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
       readContract: params => this.readContract(params, { chainId: boundChainId }),
+      signMessage: params => this._requireWalletAdapter().signMessage(params),
       sendTransaction: params => this.sendTransaction(params, { chainId: boundChainId }),
       writeContract: params => this.writeContract(params, { chainId: boundChainId }),
       waitForTransactionReceipt: params => this.waitForTransactionReceipt(params, { chainId: boundChainId }),

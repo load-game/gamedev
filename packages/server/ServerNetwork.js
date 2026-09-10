@@ -1,4 +1,5 @@
 import moment from 'moment'
+import { WalletBindings } from './WalletBindings.js'
 import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
 import { uuid } from '@gamedev/core/utils.js'
@@ -176,6 +177,8 @@ export class ServerNetwork extends System {
     this.id = 0
     this.ids = -1
     this.sockets = new Map()
+    this.pendingAdmissions = 0
+    this.walletBindings = new WalletBindings(this)
     this.socketIntervalId = setInterval(() => this.checkSockets(), PING_RATE * 1000)
     this.saveTimerId = null
     this.dirtyBlueprints = new Set()
@@ -446,15 +449,19 @@ export class ServerNetwork extends System {
   }
 
   async onConnection(ws, params, req) {
+    let reserved = false
     try {
       // check player limit
       const playerLimit = this.world.settings.playerLimit
-      if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size >= playerLimit) {
+      if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size + this.pendingAdmissions >= playerLimit) {
         const packet = writePacket('kick', 'player_limit')
         ws.send(packet)
         ws.close()
         return
       }
+
+      this.pendingAdmissions++
+      reserved = true
 
       // check connection params
       const connectionParams = params && typeof params === 'object' ? params : {}
@@ -521,6 +528,14 @@ export class ServerNetwork extends System {
       // livekit options
       const livekit = await this.world.livekit.serialize(user.id)
 
+      // Recheck after asynchronous identity and voice setup.
+      if (this.sockets.has(user.id) || ws.readyState !== 1) {
+        if (ws.readyState === 1) {
+          ws.send(writePacket('kick', 'duplicate_user'))
+          ws.close()
+        }
+        return
+      }
       // create socket
       const socket = new Socket({ id: user.id, ws, network: this })
       const playerName = name || user.name
@@ -576,6 +591,9 @@ export class ServerNetwork extends System {
       }
     } catch (err) {
       console.error(err)
+      ws.close()
+    } finally {
+      if (reserved) this.pendingAdmissions--
     }
   }
 
@@ -1101,9 +1119,27 @@ export class ServerNetwork extends System {
   }
 
   onEntityEvent = (socket, event) => {
+    if (!Array.isArray(event) || event.length !== 4) return
     const [id, version, name, data] = event
+    if (typeof id !== 'string' || typeof name !== 'string' || name.length > 128) return
+    if (
+      [
+        'destroy',
+        'update',
+        'fixedUpdate',
+        'updated',
+        'lateUpdate',
+        'enter',
+        'leave',
+        'chat',
+        'command',
+        'health',
+      ].includes(name)
+    )
+      return
     const entity = this.world.entities.get(id)
-    entity?.onEvent(version, name, data, socket.id)
+    if (!entity || version !== entity.blueprint?.version) return
+    entity.onEvent(version, name, data, socket.id)
   }
 
   onScriptAiRequest = (socket, data) => {

@@ -713,3 +713,61 @@ an unsubscribe function. Register that function with the app's destroy handler.
 Injected provider account, chain and disconnect events invalidate the binding
 immediately, before asynchronous reads establish the replacement state. Polling
 also detects changes for providers that do not implement events.
+
+### Scoped furniture and moving rooms
+
+`world.furnishing()` returns an app-scoped capability. `validate(room, item,
+transform, placed)` runs on both client and server and uses engine OBB geometry.
+A room has `size: [width, clearance, depth]`; its local origin is the floor center.
+An item declares `size`, optional local `center`, `surfaces`, optional allowed
+`orientations` in radians, and `collision: 'solid' | 'overlap'`. Transforms contain
+`position`, `yaw`, and `surface: 'floor' | 'wall'`. Rugs can allow overlap. Wall
+pieces must touch an actual room wall. Invalid numbers, bounds and surfaces fail.
+
+`toWorld(frame, point)`, `toLocal(frame, point)` and `contains(frame, size, point)`
+use `{position: [x,y,z], yaw}`. `moveRoom(node, previousFrame, nextFrame, size)`
+requires a node owned by this app. It updates the room and carries occupants while
+preserving local position and yaw. Kinematic room colliders and registered snap
+nodes follow the normal engine transform updates. On clients only the local player
+is teleported; other players replicate their own movement.
+
+Client `begin({room, frame, node, item, transform, placed, authorized, onPreview,
+onCommit, onEnd})` creates one edit session per capability. `frame` and `placed`
+are functions, so a moving room and concurrent authoritative layout remain current.
+The engine captures camera and movement input and uses stage pointer raycasts and
+registered snap points. Native touch buttons can call `nudge`, `rotate`, `undo`,
+`redo`, `confirm`, and `dispose`; these are the same controls used on desktop.
+`setGrid(0)` disables translation snapping; positive values up to two metres enable
+it. History retains 32 changes. `preview(transform)` reports provisional validity.
+
+`authorized()` must reflect the current authenticated lease. The server must
+independently validate item ownership, room policy and layout revision. `onCommit`
+must await durable server acceptance. Failed saves cancel the preview and release
+controls. Revocation, explicit disposal and app destruction also release controls.
+Returning an item to inventory is an authoritative game operation; remove its node
+after the server acknowledges it. This API never grants admin entity mutation.
+
+### Wallet proof for app ownership
+
+Server `world.walletAuth()` exposes `challenge(playerId, address)`,
+`verify(playerId, signature)`, `get(playerId)` and `revoke(playerId)`. A challenge
+expires after 120 seconds and binds the app, world, socket, player, address and a
+random nonce. Verification consumes the nonce once. Leave, socket replacement,
+revocation and app destruction invalidate the binding, including in-flight checks.
+Use client `world.evm().signMessage({account, message})` to sign the exact returned
+message. This requests a message signature, with no transaction or token approval.
+The app owns its duplicate-session and explicit handoff policy.
+
+Server `player.kick(reason)` disconnects a player with a reason. Ordinary scripts
+must not treat a client-supplied address as proof or accept lifecycle event names
+as remote commands. Entity event packets cannot invoke engine lifecycle handlers.
+
+### Native inputs in screen UI
+
+`uiinput` supports both world-space and screen-space `ui` parents. Screen inputs
+participate in Yoga layout and engine pointer capture, and support the same native
+button and text behavior. Removal cleans up their DOM element and focus handlers.
+World scripts create nodes through `app.create`; they do not inject browser UI.
+
+Script globals expose `Date.now()` and `Date.parse(isoTimestamp)`. The scripting
+Date is a limited object, not a constructor. Use timestamp arithmetic for age.

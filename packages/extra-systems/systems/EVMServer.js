@@ -124,6 +124,8 @@ export class EVM extends System {
       getAddress: this.getAddress.bind(this),
       isConnected: this.isConnected.bind(this),
       getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
+      getRpcChainId: () => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getChainId(),
+      getBlock: params => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getBlock(params),
       readContract: params => this.readContract(params, { chainId: boundChainId }),
       waitForTransactionReceipt: params => this.waitForTransactionReceipt(params, { chainId: boundChainId }),
       getNativeBalance: address => this.getNativeBalance(address, { chainId: boundChainId }),

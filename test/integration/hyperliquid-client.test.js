@@ -34,8 +34,9 @@ test('EVM client injects world and player APIs', async () => {
   assert.equal(injected.world.evm(), runtime)
   assert.equal(injected.world.evm(42161), arbitrumRuntime)
   assert.equal(runtime.actions, undefined)
-  assert.equal(runtime.connect, undefined)
-  assert.equal(runtime.disconnect, undefined)
+  assert.equal(typeof runtime.connect, 'function')
+  assert.equal(typeof runtime.disconnect, 'function')
+  assert.equal(typeof runtime.signMessage, 'function')
   assert.equal(await runtime.getChainId(), 1)
   assert.equal(await arbitrumRuntime.getChainId(), 42161)
   assert.equal(

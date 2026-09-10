@@ -238,7 +238,9 @@ export class Storage {
         }
       }
 
-      const now = new Date().toISOString()
+      // CAS tokens must change even when two commits land within one millisecond.
+      const newest = Math.max(0, ...rows.map(row => Date.parse(row.updatedAt) || 0))
+      const now = new Date(Math.max(Date.now(), newest + 1)).toISOString()
       const rowsToWrite = normalizedOps.map(operation => {
         const existingRow = rowsByKey.get(operation.key)
         return {

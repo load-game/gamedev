@@ -1,3 +1,4 @@
+import * as THREE from '../extras/three.js'
 import { System } from './System.js'
 import { SnapOctree } from '../extras/SnapOctree.js'
 

@@ -3,6 +3,7 @@ import * as THREE from '../extras/three.js'
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 
 import { Node } from './Node.js'
+import Yoga from 'yoga-layout'
 
 const defaults = {
   value: '',
@@ -80,7 +81,37 @@ export class UIInput extends Node {
   }
 
   mount() {
+    this.ui = this.parent?.ui
+    this.screenInput = this.ui?._space === 'screen'
+    if (this.screenInput && !this.ctx.world.network.isServer) {
+      this.yogaNode = Yoga.Node.create()
+      this.yogaNode.setWidth(this._width * this.ui._res)
+      this.yogaNode.setHeight(this._height * this.ui._res)
+      this.yogaNode.setFlexShrink(0)
+      this.parent.yogaNode.insertChild(this.yogaNode, this.parent.yogaNode.getChildCount())
+      this.ui.redraw()
+      this.ctx.world.setHot(this, true)
+    }
     this.build()
+  }
+
+  draw(ctx, offsetLeft, offsetTop) {
+    if (!this.screenInput || !this.yogaNode) return
+    this.box = {
+      left: offsetLeft + this.yogaNode.getComputedLeft(),
+      top: offsetTop + this.yogaNode.getComputedTop(),
+      width: this.yogaNode.getComputedWidth(),
+      height: this.yogaNode.getComputedHeight(),
+    }
+    this.lateUpdate()
+  }
+
+  lateUpdate() {
+    if (!this.screenInput || !this.container || !this.box || !this.ui?.canvas) return
+    const rect = this.ui.canvas.getBoundingClientRect()
+    this.container.style.left = `${rect.left + this.box.left / this.ui._res}px`
+    this.container.style.top = `${rect.top + this.box.top / this.ui._res}px`
+    this.container.style.visibility = 'visible'
   }
 
   commit(didMove) {
@@ -100,10 +131,22 @@ export class UIInput extends Node {
 
   unmount() {
     this.unbuild()
+    if (this.yogaNode) {
+      this.parent.yogaNode?.removeChild(this.yogaNode)
+      this.yogaNode.free()
+      this.yogaNode = null
+      this.ui?.redraw()
+    }
+    this.ctx.world.setHot(this, false)
   }
 
   build() {
     this.needsRebuild = false
+    if (this.screenInput && this.yogaNode) {
+      this.yogaNode.setWidth(this._width * this.ui._res)
+      this.yogaNode.setHeight(this._height * this.ui._res)
+      this.ui.redraw()
+    }
     if (this.ctx.world.network.isServer) return
     this.unbuild()
 
@@ -111,28 +154,30 @@ export class UIInput extends Node {
     const widthM = this._width / this._factor
     const heightM = this._height / this._factor
 
-    const geometry = new THREE.PlaneGeometry(widthM, heightM)
-    const material = new THREE.MeshBasicMaterial({
-      opacity: 0,
-      color: new THREE.Color('black'),
-      blending: THREE.NoBlending,
-      side: THREE.FrontSide,
-    })
-    this.mesh = new THREE.Mesh(geometry, material)
-    this.mesh.matrixWorld.copy(this.matrixWorld)
-    this.mesh.matrixAutoUpdate = false
-    this.mesh.matrixWorldAutoUpdate = false
-    this.mesh.renderOrder = -1
-    this.ctx.world.stage.scene.add(this.mesh)
+    if (!this.screenInput) {
+      const geometry = new THREE.PlaneGeometry(widthM, heightM)
+      const material = new THREE.MeshBasicMaterial({
+        opacity: 0,
+        color: new THREE.Color('black'),
+        blending: THREE.NoBlending,
+        side: THREE.FrontSide,
+      })
+      this.mesh = new THREE.Mesh(geometry, material)
+      this.mesh.matrixWorld.copy(this.matrixWorld)
+      this.mesh.matrixAutoUpdate = false
+      this.mesh.matrixWorldAutoUpdate = false
+      this.mesh.renderOrder = -1
+      this.ctx.world.stage.scene.add(this.mesh)
 
-    this.sItem = {
-      matrix: this.matrixWorld,
-      geometry,
-      material,
-      getEntity: () => this.ctx.entity,
-      node: this,
+      this.sItem = {
+        matrix: this.matrixWorld,
+        geometry,
+        material,
+        getEntity: () => this.ctx.entity,
+        node: this,
+      }
+      this.ctx.world.stage.octree.insert(this.sItem)
     }
-    this.ctx.world.stage.octree.insert(this.sItem)
 
     const widthPx = `${this._width}px`
     const heightPx = `${this._height}px`
@@ -167,12 +212,20 @@ export class UIInput extends Node {
     container.appendChild(inner)
     inner.appendChild(input)
 
-    this.objectCSS = new CSS3DObject(container)
-    this.objectCSS.target = this.mesh
-    this.objectCSS.followTarget = true
-    this.mesh.updateMatrixWorld()
-    this.mesh.matrixWorld.decompose(this.objectCSS.position, this.objectCSS.quaternion, v1)
-    this.objectCSS.scale.setScalar(1 / this._factor)
+    if (this.screenInput) {
+      this.objectCSS = { interacting: false }
+      container.style.position = 'fixed'
+      container.style.zIndex = '20'
+      container.style.visibility = 'hidden'
+      this.ctx.world.pointer.ui.appendChild(container)
+    } else {
+      this.objectCSS = new CSS3DObject(container)
+      this.objectCSS.target = this.mesh
+      this.objectCSS.followTarget = true
+      this.mesh.updateMatrixWorld()
+      this.mesh.matrixWorld.decompose(this.objectCSS.position, this.objectCSS.quaternion, v1)
+      this.objectCSS.scale.setScalar(1 / this._factor)
+    }
 
     this.input = input
     this.inner = inner
@@ -196,25 +249,25 @@ export class UIInput extends Node {
 
     inner.addEventListener('mouseenter', () => {
       if (isDesktop) {
-        this.objectCSS.interacting = true
+        if (this.objectCSS) this.objectCSS.interacting = true
         input.style.pointerEvents = 'auto'
       }
     })
 
     inner.addEventListener('mouseleave', () => {
       if (isDesktop && document.activeElement !== input) {
-        this.objectCSS.interacting = false
+        if (this.objectCSS) this.objectCSS.interacting = false
         input.style.pointerEvents = 'auto'
       }
     })
 
     input.addEventListener('focus', () => {
-      this.objectCSS.interacting = true
+      if (this.objectCSS) this.objectCSS.interacting = true
       this._onFocus?.(this._value)
     })
 
     input.addEventListener('blur', () => {
-      this.objectCSS.interacting = false
+      if (this.objectCSS) this.objectCSS.interacting = false
       if (isDesktop) {
         input.style.pointerEvents = 'auto'
       }
@@ -247,7 +300,7 @@ export class UIInput extends Node {
     })
 
     if (this.n !== n) return
-    this.ctx.world.css?.add(this.objectCSS)
+    if (!this.screenInput) this.ctx.world.css?.add(this.objectCSS)
   }
 
   unbuild() {
@@ -263,9 +316,10 @@ export class UIInput extends Node {
       this.sItem = null
     }
     if (this.objectCSS) {
-      this.ctx.world.css?.remove(this.objectCSS)
+      if (!this.screenInput) this.ctx.world.css?.remove(this.objectCSS)
       this.objectCSS = null
     }
+    this.container?.remove()
     this.input = null
     this.inner = null
     this.container = null

@@ -538,6 +538,12 @@ export class RuntimeWalletAdapter {
     return publicClient.getBalance({ address: resolvedAddress })
   }
 
+  async signMessage(params) {
+    const { context, walletClient } = await this._getViemClients({ request: true })
+    if (params?.account && !sameAddress(params.account, context.address)) throw new Error('Wallet account changed')
+    return walletClient.signMessage({ ...params, account: context.address })
+  }
+
   async sendTransaction(params) {
     const { context, walletClient } = await this._getViemClients({ request: true })
     return walletClient.sendTransaction({

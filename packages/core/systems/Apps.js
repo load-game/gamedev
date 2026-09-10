@@ -7,6 +7,7 @@ import { getRef } from '../nodes/Node.js'
 import { Layers } from '../extras/Layers.js'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { warn } from '../extras/warn.js'
+import { createFurnishingAPI } from '../extras/furnishing.js'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -201,6 +202,13 @@ export class Apps extends System {
       // ...
     }
     this.worldMethods = {
+      furnishing(entity) {
+        return createFurnishingAPI(entity)
+      },
+      walletAuth(entity) {
+        if (!world.network.isServer) throw new Error('server_only')
+        return world.network.walletBindings.forApp(entity)
+      },
       getBrowserPreferences(entity) {
         if (!world.network.isClient) return null
         return {
