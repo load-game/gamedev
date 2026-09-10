@@ -60,9 +60,11 @@ export class Stage extends System {
 
   clean() {
     for (const node of this.dirtyNodes) {
+      // A child commit can invalidate a parent already visited in this pass
+      // (for example a resized screen input). Let it requeue that parent.
+      this.dirtyNodes.delete(node)
       node.clean()
     }
-    this.dirtyNodes.clear()
   }
 
   insert(options) {

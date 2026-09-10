@@ -71,6 +71,10 @@ const scrollDelta = control.scrollDelta.value
 *   `scrollDelta.value` (Number): The scroll delta for the current frame.
 *   `scrollDelta.capture` (Boolean): If `true`, consumes the scroll event.
 
+Captured scroll input also receives wheel events over native screen UI canvases
+and inputs. Release the capture when the menu closes. Core editor UI keeps its
+own scrolling behavior.
+
 ### Camera
 
 Lets you read and also modify the camera position if needed.
