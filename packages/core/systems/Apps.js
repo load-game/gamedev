@@ -7,6 +7,7 @@ import { getRef } from '../nodes/Node.js'
 import { Layers } from '../extras/Layers.js'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { warn } from '../extras/warn.js'
+import { createFurnishingAPI } from '../extras/furnishing.js'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -201,6 +202,35 @@ export class Apps extends System {
       // ...
     }
     this.worldMethods = {
+      furnishing(entity) {
+        return createFurnishingAPI(entity)
+      },
+      walletAuth(entity) {
+        if (!world.network.isServer) throw new Error('server_only')
+        return world.network.walletBindings.forApp(entity)
+      },
+      getBrowserPreferences(entity) {
+        if (!world.network.isClient) return null
+        return {
+          colorScheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+          reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        }
+      },
+      getPreference(entity, key) {
+        if (!world.network.isClient || typeof key !== 'string') return null
+        try {
+          return JSON.parse(localStorage.getItem(`app:${entity.data.blueprint}:${key}`))
+        } catch {
+          return null
+        }
+      },
+      setPreference(entity, key, value) {
+        if (!world.network.isClient || typeof key !== 'string') return
+        const serialized = JSON.stringify(value)
+        if (typeof serialized !== 'string' || serialized.length > 4096)
+          throw new Error('Preference exceeds 4096 characters')
+        localStorage.setItem(`app:${entity.data.blueprint}:${key}`, serialized)
+      },
       add(entity, pNode) {
         const node = getRef(pNode)
         if (!node) return

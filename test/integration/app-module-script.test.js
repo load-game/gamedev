@@ -82,3 +82,11 @@ test('app executes module scripts via scriptRef', async () => {
   await waitFor(() => appEntity.data.state?.total === 5)
   assert.equal(appEntity.data.state.total, 5)
 })
+
+test('script Date parses timestamped external data without exposing ambient constructors', async () => {
+  const { Scripts } = await import('@gamedev/core/systems/Scripts.js')
+  const scripts = new Scripts({})
+  assert.equal(scripts.compartment.evaluate('Date.parse("2026-09-10T12:00:00Z")'), 1789041600000)
+  assert.ok(Number.isNaN(scripts.compartment.evaluate('Date.parse("invalid")')))
+  assert.equal(scripts.compartment.evaluate('typeof Date'), 'object')
+})

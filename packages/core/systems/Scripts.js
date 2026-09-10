@@ -52,6 +52,7 @@ export class Scripts extends System {
       },
       Date: {
         now: () => Date.now(),
+        parse: value => Date.parse(value),
       },
       URL,
       Math,

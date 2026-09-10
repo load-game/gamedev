@@ -60,6 +60,12 @@ export function createPlayerProxy(entity, player) {
     get destroyed() {
       return !!player.destroyed
     },
+    kick(reason = 'removed') {
+      if (!world.network.isServer) throw new Error('server_only')
+      const socket = world.network.sockets.get(player.data.id)
+      socket?.send('kick', String(reason).slice(0, 240))
+      socket?.disconnect()
+    },
     teleport(position, rotationY) {
       if (player.data.owner === world.network.id) {
         // if player is local we can set directly

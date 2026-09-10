@@ -634,7 +634,7 @@ function createInjectedRuntimeAuthBridge(authBaseUrl) {
     enabled: true,
     mode: 'injected',
     allowsUnscopedWalletAccess() {
-      return !!authBaseUrl
+      return !!authBaseUrl || !!env.PUBLIC_LOCAL_EVM_RPC_URL
     },
     hasWalletProvider(chain) {
       const normalizedChain = chain === 'any' ? 'any' : normalizeWalletChain(chain)

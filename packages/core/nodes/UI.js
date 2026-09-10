@@ -181,6 +181,7 @@ export class UI extends Node {
           world.pointer.setScreenHit(hit)
         }
         const onPointerMove = e => {
+          if (!hit) onPointerEnter(e)
           const rect = canvas.getBoundingClientRect()
           const x = (e.clientX - rect.left) * this._res
           const y = (e.clientY - rect.top) * this._res
@@ -192,9 +193,23 @@ export class UI extends Node {
           world.pointer.setScreenHit(null)
         }
         const onPointerDown = e => {
+          onPointerEnter(e)
+          if (e.pointerType === 'touch') {
+            // A tap may begin and end between render frames, without any move event.
+            e.preventDefault()
+            e.stopPropagation()
+            world.pointer.pointerState.update(hit, true, false)
+            return
+          }
           this.ctx.world.controls.viewport.dispatchEvent(new PointerEvent('pointerdown', e))
         }
         const onPointerUp = e => {
+          if (e.pointerType === 'touch') {
+            e.preventDefault()
+            e.stopPropagation()
+            world.pointer.pointerState.update(hit, false, true)
+            return
+          }
           this.ctx.world.controls.viewport.dispatchEvent(new PointerEvent('pointerup', e))
         }
         canvas.addEventListener('pointerenter', onPointerEnter)

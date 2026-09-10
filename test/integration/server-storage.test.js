@@ -232,3 +232,22 @@ test('storage commit supports create-if-absent and fresh prefix scans', async ()
     await db.destroy()
   }
 })
+
+test('back-to-back durable commits never reuse the CAS timestamp', async () => {
+  const { db } = await createStorageDB()
+  try {
+    const storage = new Storage(db)
+    await storage.init()
+    const a = await storage.commit([{ key: 'home', value: { revision: 0 }, expectedUpdatedAt: null }])
+    const b = await storage.commit([{ key: 'home', value: { revision: 1 }, expectedUpdatedAt: a.entries[0].updatedAt }])
+    assert.equal(b.ok, true)
+    assert.notEqual(a.entries[0].updatedAt, b.entries[0].updatedAt)
+    const stale = await storage.commit([
+      { key: 'home', value: { revision: 2 }, expectedUpdatedAt: a.entries[0].updatedAt },
+    ])
+    assert.equal(stale.ok, false)
+    await storage.close()
+  } finally {
+    await db.destroy()
+  }
+})

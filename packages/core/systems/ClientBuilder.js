@@ -174,7 +174,11 @@ export class ClientBuilder extends System {
     this.control.mouseLeft.onPress = () => {
       // pointer lock requires user-gesture in safari
       // so this can't be done during update cycle
-      if (!this.control.pointer.locked && (!this.isGizmoMode || !this.selected)) {
+      if (
+        this.world.controls.shouldLockPointerOnClick() &&
+        !this.control.pointer.locked &&
+        (!this.isGizmoMode || !this.selected)
+      ) {
         this.control.pointer.lock()
         this.justPointerLocked = true
         return true // capture
@@ -486,7 +490,7 @@ export class ClientBuilder extends System {
     if (!player) return
     const xr = player.isXR
     // toggle build
-    if (this.control.tab.pressed) {
+    if (this.control.tab.pressed && !this.world.controls.isButtonCaptured('tab')) {
       this.toggle()
     }
     // deselect if dead

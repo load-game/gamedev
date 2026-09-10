@@ -500,6 +500,22 @@ interface UITextNode extends BaseNode {
   fontWeight: 'normal' | 'bold' | number
 }
 
+interface UIInputNode extends BaseNode {
+  type: 'text' | 'number' | 'password' | 'button'
+  value: string
+  placeholder: string
+  disabled: boolean
+  width: number
+  height: number
+  fontSize: number
+  fontFamily: string
+  color: string
+  backgroundColor: string
+  borderRadius: number
+  onChange: ((value: string) => void) | null
+  onSubmit: ((value: string) => void) | null
+}
+
 interface UIImageNode extends BaseNode {
   display: 'flex' | 'none'
   src: string | null
@@ -802,6 +818,7 @@ type NodeNameToType = {
   ui: UINode
   uiview: UIViewNode
   uitext: UITextNode
+  uiinput: UIInputNode
   uiimage: UIImageNode
 }
 
@@ -851,6 +868,25 @@ type NodeNameToInit = {
   ui: UIInit
   uiview: UIViewInit
   uitext: UITextInit
+  uiinput: NodeInitBase &
+    Partial<
+      Pick<
+        UIInputNode,
+        | 'type'
+        | 'value'
+        | 'placeholder'
+        | 'disabled'
+        | 'width'
+        | 'height'
+        | 'fontSize'
+        | 'fontFamily'
+        | 'color'
+        | 'backgroundColor'
+        | 'borderRadius'
+        | 'onChange'
+        | 'onSubmit'
+      >
+    >
   uiimage: UIImageInit
 }
 
@@ -868,6 +904,7 @@ interface Player {
   rotation: Euler
 
   // methods
+  kick(reason?: string): void
   teleport(position: Vector3Like, rotationY?: number): void
   replaceAnimations(newEmotes: Record<string, string>, reset?: boolean): void
   firstPerson(value?: boolean): void
@@ -904,6 +941,37 @@ interface RaycastHit {
 }
 
 interface EVMAPI {
+  utils: { formatEther: Function; formatUnits: Function; getAddress: Function; parseUnits: Function }
+  abis: { erc20: any[] }
+  connect(): Promise<any>
+  disconnect(): void
+  onWalletChange(
+    listener: (state: {
+      address: string | null
+      connected: boolean
+      chainId: number | null
+      source: string | null
+    }) => void
+  ): () => void
+  getWalletState(): Promise<{
+    address: string | null
+    connected: boolean
+    chainId: number | null
+    source: string | null
+  }>
+  getChainId(params?: any): Promise<number>
+  getRpcChainId(): Promise<number>
+  switchChain(params?: any): Promise<{ id: number }>
+  readContract(params: any): Promise<any>
+  signMessage(params: { account: string; message: string }): Promise<string>
+  writeContract(params: any): Promise<string>
+  sendTransaction(params: any): Promise<string>
+  waitForTransactionReceipt(params: any): Promise<any>
+  getBlock(params?: any): Promise<any>
+  getBalance(params: any): Promise<bigint>
+  getTransactionReceipt(params: any): Promise<any>
+  simulateContract(params: any): Promise<any>
+  estimateContractGas(params: any): Promise<bigint>
   getAddress(): string | null
   isConnected(): boolean
   getNativeBalance(address?: string | null): Promise<number>
@@ -1065,11 +1133,76 @@ interface WorldStorageCommitResult {
   entries: WorldStorageEntry[]
 }
 
+interface RoomFrame {
+  position: [number, number, number]
+  yaw: number
+}
+interface FurnitureTransform {
+  position: [number, number, number]
+  yaw: number
+  surface: 'floor' | 'wall'
+}
+interface FurnitureRule {
+  size: [number, number, number]
+  center?: [number, number, number]
+  surfaces: string[]
+  orientations?: number[]
+  collision?: 'solid' | 'overlap'
+}
+interface FurniturePlacement {
+  id: string
+  item: FurnitureRule
+  transform: FurnitureTransform
+}
+interface FurnitureSession {
+  readonly transform: FurnitureTransform
+  setGrid(step: number): void
+  preview(transform: FurnitureTransform): { ok: boolean; reason?: string }
+  nudge(dx: number, dz: number): void
+  rotate(angle?: number): void
+  undo(): void
+  redo(): void
+  confirm(): Promise<void>
+  dispose(): void
+}
+interface FurnishingAPI {
+  validate(
+    room: { size: [number, number, number] },
+    item: FurnitureRule,
+    transform: FurnitureTransform,
+    placed?: FurniturePlacement[]
+  ): { ok: boolean; reason?: string; transform?: FurnitureTransform }
+  toWorld(frame: RoomFrame, point: number[]): number[]
+  toLocal(frame: RoomFrame, point: number[]): number[]
+  contains(frame: RoomFrame, size: number[], point: number[]): boolean
+  moveRoom(node: BaseNode, frame: RoomFrame, next: RoomFrame, size: number[]): void
+  begin(options: {
+    room: { size: [number, number, number] }
+    frame: () => RoomFrame
+    node: BaseNode
+    item: FurnitureRule
+    transform: FurnitureTransform
+    placed?: () => FurniturePlacement[]
+    authorized: () => boolean
+    onPreview?: (transform: FurnitureTransform, result: { ok: boolean; reason?: string }) => void
+    onCommit: (transform: FurnitureTransform) => Promise<unknown>
+    onEnd?: (accepted: boolean) => void
+  }): FurnitureSession
+  dispose(): void
+}
 interface WorldAPI {
   // Identity / env
   readonly networkId: string
   readonly isServer: boolean
   readonly isClient: boolean
+
+  furnishing(): FurnishingAPI
+  walletAuth(): {
+    challenge(playerId: string, address: string): { message: string }
+    verify(playerId: string, signature: string): Promise<string>
+    get(playerId: string): string | null
+    revoke(playerId: string): void
+  }
 
   // Scene management
   add(node: BaseNode): void
@@ -1120,7 +1253,10 @@ interface WorldAPI {
   load(type: 'avatar' | 'model', url: string): Promise<BaseNode>
 
   // EVM
-  evm(): EVMAPI
+  evm(chainId?: number): EVMAPI
+  getBrowserPreferences(): { colorScheme: 'light' | 'dark'; reducedMotion: boolean } | null
+  getPreference(key: string): any
+  setPreference(key: string, value: any): void
 
   // Hyperliquid
   hyperliquid(): HyperliquidAPI
@@ -1213,6 +1349,8 @@ type ControlKeys =
   | 'metaLeft'
 
 interface ControlPointer {
+  /** False prevents automatic click-to-lock until this control releases or restores true. Explicit lock() still works. */
+  lockOnClick: boolean
   coords: Vector3
   position: Vector3
   delta: Vector3

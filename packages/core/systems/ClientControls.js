@@ -596,6 +596,13 @@ export class ClientControls extends System {
 
   onPointerDown = e => {
     if (e.isCoreUI) return
+    const rect = this.viewport.getBoundingClientRect()
+    this.pointer.position.set(e.clientX - rect.left, e.clientY - rect.top, 0)
+    this.pointer.coords.set(
+      Math.max(0, Math.min(1, this.pointer.position.x / rect.width)),
+      Math.max(0, Math.min(1, this.pointer.position.y / rect.height)),
+      0
+    )
     if (e.pointerType === 'touch') {
       e.preventDefault()
       const info = {
@@ -711,6 +718,14 @@ export class ClientControls extends System {
         }
       }
     }
+  }
+
+  isButtonCaptured(prop) {
+    return this.controls.some(control => control.entries[prop]?.capture === true)
+  }
+
+  shouldLockPointerOnClick() {
+    return !this.controls.some(control => control.entries.pointer?.lockOnClick === false)
   }
 
   async lockPointer() {
@@ -872,6 +887,8 @@ function createPointer(controls, control, prop) {
   const position = new THREE.Vector3() // [0,0] to [viewportWidth,viewportHeight]
   const delta = new THREE.Vector3() // position delta (pixels)
   return {
+    // Releasing this control automatically restores the normal world click behavior.
+    lockOnClick: true,
     get coords() {
       return coords.copy(controls.pointer.coords)
     },

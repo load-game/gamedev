@@ -190,16 +190,20 @@ export class RuntimeWalletAdapter {
     }
     this.sessionWalletFetchedAt = 0
     this.listeners = new Set()
+    this.disconnected = false
+    this.refreshVersion = 0
 
     this.unsubscribeWalletBridge = null
     this.unsubscribeAccount = null
     this.refreshTimer = null
+    this.injectedSubscriptions = []
 
     this._bindLifecycle()
     void this.refresh()
   }
 
   _bindLifecycle() {
+    this._bindInjectedEvents()
     if (this.walletBridge && typeof this.walletBridge.subscribe === 'function') {
       this.unsubscribeWalletBridge = this.walletBridge.subscribe(() => {
         void this.refresh()
@@ -220,6 +224,8 @@ export class RuntimeWalletAdapter {
   }
 
   destroy() {
+    for (const remove of this.injectedSubscriptions) remove()
+    this.injectedSubscriptions = []
     this.unsubscribeWalletBridge?.()
     this.unsubscribeAccount?.()
     this.unsubscribeWalletBridge = null
@@ -336,6 +342,7 @@ export class RuntimeWalletAdapter {
   }
 
   async _resolveWalletContext({ request = false } = {}) {
+    if (this.disconnected) return null
     const sessionWallet = await this._getSessionWalletBinding()
     if (sessionWallet?.type === 'solana') {
       return null
@@ -380,7 +387,9 @@ export class RuntimeWalletAdapter {
   }
 
   async refresh() {
+    const version = ++this.refreshVersion
     const context = await this._resolveWalletContext({ request: false }).catch(() => null)
+    if (version !== this.refreshVersion) return this.getSnapshot()
     if (!context) {
       this._updateSnapshot({
         source: null,
@@ -392,6 +401,7 @@ export class RuntimeWalletAdapter {
     }
 
     const chainId = await readProviderChainId(context.provider)
+    if (version !== this.refreshVersion) return this.getSnapshot()
     this._updateSnapshot({
       source: context.source,
       address: context.address,
@@ -399,6 +409,36 @@ export class RuntimeWalletAdapter {
       chainId,
     })
     return this.getSnapshot()
+  }
+
+  async connect() {
+    this.disconnected = false
+    this._bindInjectedEvents()
+    await this._requireWalletContext({ request: true })
+    return this.refresh()
+  }
+
+  disconnect() {
+    this.disconnected = true
+    this.refreshVersion++
+    this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })
+  }
+
+  _bindInjectedEvents() {
+    for (const remove of this.injectedSubscriptions) remove()
+    this.injectedSubscriptions = []
+    const provider = getInjectedProvider()
+    if (!provider?.on) return
+    for (const event of ['accountsChanged', 'chainChanged', 'disconnect']) {
+      const handler = () => {
+        // Invalidate first; a provider read must establish the new binding.
+        this.refreshVersion++
+        this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })
+        if (event !== 'disconnect') void this.refresh()
+      }
+      provider.on(event, handler)
+      this.injectedSubscriptions.push(() => provider.removeListener?.(event, handler))
+    }
   }
 
   async getChainId({ request = false } = {}) {
@@ -415,12 +455,31 @@ export class RuntimeWalletAdapter {
       const maybeNumber = parseChainId(targetChainHex)
       await context.wallet.switchChain(maybeNumber || targetChainHex)
     } else {
-      await context.provider.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: targetChainHex }],
-      })
+      const switchRequest = { method: 'wallet_switchEthereumChain', params: [{ chainId: targetChainHex }] }
+      try {
+        await context.provider.request(switchRequest)
+      } catch (error) {
+        if (error?.code !== 4902 || !input?.chain) throw error
+        const chain = input.chain
+        if (chain.id !== parseChainId(targetChainHex)) throw new Error('Chain metadata does not match requested chain')
+        await context.provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: targetChainHex,
+              chainName: chain.name,
+              nativeCurrency: chain.nativeCurrency,
+              rpcUrls: chain.rpcUrls.default.http,
+            },
+          ],
+        })
+        await context.provider.request(switchRequest)
+      }
     }
 
+    if ((await readProviderChainId(context.provider)) !== parseChainId(targetChainHex)) {
+      throw new Error('Wallet did not switch to the requested chain')
+    }
     await this.refresh()
     return { id: parseChainId(targetChainHex) }
   }
@@ -479,6 +538,12 @@ export class RuntimeWalletAdapter {
     return publicClient.getBalance({ address: resolvedAddress })
   }
 
+  async signMessage(params) {
+    const { context, walletClient } = await this._getViemClients({ request: true })
+    if (params?.account && !sameAddress(params.account, context.address)) throw new Error('Wallet account changed')
+    return walletClient.signMessage({ ...params, account: context.address })
+  }
+
   async sendTransaction(params) {
     const { context, walletClient } = await this._getViemClients({ request: true })
     return walletClient.sendTransaction({
@@ -489,6 +554,11 @@ export class RuntimeWalletAdapter {
 
   async writeContract(params) {
     const { context, walletClient } = await this._getViemClients({ request: true })
+    const expectedAccount = typeof params?.account === 'string' ? params.account : params?.account?.address
+    if (expectedAccount && !sameAddress(expectedAccount, context.address)) throw new Error('Wallet account changed')
+    if (params?.chain?.id && (await readProviderChainId(context.provider)) !== params.chain.id) {
+      throw new Error('Wallet chain changed')
+    }
     return walletClient.writeContract({
       ...params,
       account: params?.account || context.address,
