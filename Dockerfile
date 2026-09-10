@@ -5,15 +5,15 @@ WORKDIR /app
 # Install Python and build tools
 RUN apk add --no-cache python3 make g++ linux-headers eudev-dev
 
-# Install Vite Plus and copy workspace metadata first
-RUN corepack enable && npm install -g vite-plus@0.1.22
+# Enable the locked package manager and copy workspace metadata first
+RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY packages ./packages
-RUN vp install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy all source files and build
 COPY . .
-RUN vp run build
+RUN pnpm run build
 
 # Production stage
 FROM node:24.15.0-alpine AS production
