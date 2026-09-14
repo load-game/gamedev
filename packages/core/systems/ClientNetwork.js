@@ -62,7 +62,28 @@ export class ClientNetwork extends System {
     })
   }
 
-  connect() {
+  async connect() {
+    if (globalThis.env?.PUBLIC_JOIN_URL) {
+      try {
+        const tabId = globalThis.sessionStorage.getItem('lobbyTab') || globalThis.crypto.randomUUID()
+        globalThis.sessionStorage.setItem('lobbyTab', tabId)
+        const response = await fetch(globalThis.env.PUBLIC_JOIN_URL, {
+          method: 'POST',
+          headers: { 'x-lobby-tab': tabId },
+          credentials: 'include',
+          signal: AbortSignal.timeout(45000),
+        })
+        const assignment = await response.json()
+        if (!response.ok || !assignment.wsUrl || !assignment.ticket) throw new Error('Instance unavailable')
+        const target = new URL(assignment.wsUrl)
+        target.searchParams.set('admissionTicket', assignment.ticket)
+        this.wsUrl = target.toString()
+      } catch {
+        this.world.emit('connectionStatus', { status: 'offline' })
+        this._scheduleReconnect()
+        return
+      }
+    }
     const authToken = storage.get('authToken')
     let url = this.wsUrl
     try {
@@ -111,7 +132,9 @@ export class ClientNetwork extends System {
     if (this._intentionalOffline || this._reconnectTimer) return
     this._reconnectTimer = setTimeout(() => {
       this._reconnectTimer = null
-      this.connect()
+      // A fresh scene avoids retaining entities from a previous instance.
+      if (this.wasConnected && globalThis.env?.PUBLIC_JOIN_URL) globalThis.location.reload()
+      else this.connect()
     }, this.retryDelay)
   }
 

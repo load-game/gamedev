@@ -1,4 +1,5 @@
 import moment from 'moment'
+import { Admission } from './Admission.js'
 import { WalletBindings } from './WalletBindings.js'
 import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
@@ -178,6 +179,9 @@ export class ServerNetwork extends System {
     this.ids = -1
     this.sockets = new Map()
     this.pendingAdmissions = 0
+    this.admission = process.env.ADMISSION_SECRET
+      ? new Admission({ capacity: getWorldMaxPlayers(), graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000) })
+      : null
     this.walletBindings = new WalletBindings(this)
     this.socketIntervalId = setInterval(() => this.checkSockets(), PING_RATE * 1000)
     this.saveTimerId = null
@@ -450,7 +454,10 @@ export class ServerNetwork extends System {
 
   async onConnection(ws, params, req) {
     let reserved = false
+    let admittedId = null
+    let admissionComplete = false
     try {
+      if (this.admission) admittedId = this.admission.consume(params?.admissionTicket)
       // check player limit
       const playerLimit = this.world.settings.playerLimit
       if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size + this.pendingAdmissions >= playerLimit) {
@@ -476,7 +483,14 @@ export class ServerNetwork extends System {
 
       // get or create user
       let user
-      if (authToken) {
+      if (admittedId) {
+        user = await this.db('users').where('id', admittedId).first()
+        if (!user) {
+          user = { id: admittedId, name: 'Anonymous', avatar: null, rank: 0, createdAt: moment().toISOString() }
+          await this.db('users').insert(user).onConflict('id').ignore()
+        }
+        authToken = null
+      } else if (authToken) {
         try {
           const tokenData = await readJWT(authToken, {
             worldId: this.usesExternalIdentity ? this.worldId : undefined,
@@ -536,6 +550,10 @@ export class ServerNetwork extends System {
         }
         return
       }
+      if (this.admission) {
+        this.admission.connected(admittedId)
+        admissionComplete = true
+      }
       // create socket
       const socket = new Socket({ id: user.id, ws, network: this })
       const playerName = name || user.name
@@ -590,9 +608,11 @@ export class ServerNetwork extends System {
         this.emit('playerJoined', joined)
       }
     } catch (err) {
+      if (admittedId && admissionComplete && !this.sockets.has(admittedId)) this.admission.disconnected(admittedId)
       console.error(err)
       ws.close()
     } finally {
+      if (admittedId && !admissionComplete) this.admission.failed(admittedId)
       if (reserved) this.pendingAdmissions--
     }
   }
@@ -1227,6 +1247,7 @@ export class ServerNetwork extends System {
     this.world.livekit.clearModifiers(socket.id)
     socket.player.destroy(true)
     this.sockets.delete(socket.id)
+    this.admission?.disconnected(socket.id)
     const playerId = socket.player?.data?.id
     if (playerId) {
       this.emit('playerLeft', { id: playerId })

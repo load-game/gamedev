@@ -12,6 +12,7 @@ import statics from '@fastify/static'
 import multipart from '@fastify/multipart'
 
 import { admin } from './admin.js'
+import { authorizedAdmission } from './Admission.js'
 import {
   buildCliAuthPage,
   createCliAuthSessionStore,
@@ -475,7 +476,7 @@ function buildBootstrapStatusPayload(state) {
 
 function buildRuntimeStatusPayload(state) {
   const payload = {
-    ok: isRuntimeReady(state),
+    ok: isRuntimeReady(state) && (!process.env.WORLD_READY_FILE || fs.existsSync(process.env.WORLD_READY_FILE)),
     state: state.lifecycle.state,
     worldId: state.resources.world?.network?.worldId || process.env.WORLD_ID || null,
     commitHash: process.env.COMMIT_HASH || null,
@@ -489,6 +490,7 @@ function buildRuntimeStatusPayload(state) {
     payload.imageUrl = world.resolveURL(world.settings.image?.url) || null
     payload.playerCount = world?.network?.sockets?.size || 0
     payload.playerLimit = world.settings.playerLimit ?? null
+    payload.admission = world.network.admission?.status() || null
   }
 
   return payload
@@ -691,7 +693,8 @@ function getAdminConnectionCount() {
 }
 
 function getActiveSessionCount() {
-  return (runtimeState.resources.world?.network?.sockets?.size || 0) + getAdminConnectionCount()
+  const network = runtimeState.resources.world?.network
+  return (network?.admission?.status().used ?? network?.sockets?.size ?? 0) + getAdminConnectionCount()
 }
 
 function updateAdminConnectionCount(channel, count) {
@@ -769,11 +772,11 @@ async function initializeRuntime({ source, binding = null } = {}) {
     })
 
     stage = 'load_runtime_modules'
-    const [{ assets }, { cleaner }, { getDB }, { Storage }, { createServerWorld }] = await Promise.all([
+    const [{ assets }, { cleaner }, { getDB }, { createAppStorage }, { createServerWorld }] = await Promise.all([
       import('./assets.js'),
       import('./cleaner.js'),
       import('./db.js'),
-      import('./Storage.js'),
+      import('./sharedStorage.js'),
       import('./createServerWorld.js'),
     ])
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_modules_ready', {
@@ -817,7 +820,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
     })
 
     stage = 'storage_init'
-    const storage = new Storage(db)
+    const storage = await createAppStorage(db)
     const storageInitStartedAt = Date.now()
     await storage.init()
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_storage_init_complete', {
@@ -881,7 +884,7 @@ async function initializeRuntime({ source, binding = null } = {}) {
       idleController: hostingIntegration.idleController,
       idleControllerEnabled: hostingIntegration.idleControllerEnabled,
       idleTimeoutMs: hostingIntegration.idleTimeoutMs,
-      requestHostingReady: source !== 'bootstrap',
+      requestHostingReady: source !== 'bootstrap' && !process.env.WORLD_READY_FILE,
     })
     logRuntimeBootstrapDebug(runtimeState, 'bootstrap_runtime_initialize_complete', {
       bootstrapId:
@@ -1464,6 +1467,23 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
     reply.header('Cache-Control', 'no-store')
     const status = buildRuntimeStatusPayload(runtimeState)
     return reply.code(status.ok ? 200 : 503).send(status)
+  })
+
+  app.post('/internal/admission/:action', async (req, reply) => {
+    if (!authorizedAdmission(req, process.env.ADMISSION_SECRET)) return reply.code(401).send({ error: 'unauthorized' })
+    const admission = runtimeState.resources.world?.network?.admission
+    if (!buildRuntimeStatusPayload(runtimeState).ok || !admission)
+      return reply.code(503).send({ error: 'admission_unavailable' })
+    try {
+      if (req.params.action === 'reserve') return admission.reserve(req.body?.sessionId)
+      if (req.params.action === 'drain') {
+        admission.draining = true
+        return admission.status()
+      }
+      return reply.code(404).send({ error: 'not_found' })
+    } catch (error) {
+      return reply.code(409).send({ error: error.message })
+    }
   })
 
   if (includeBootstrapControl) {
