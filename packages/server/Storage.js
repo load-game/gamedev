@@ -208,6 +208,13 @@ export class Storage {
     const keys = normalizedOps.map(operation => operation.key)
 
     const result = await this.db.transaction(async trx => {
+      // Lock absent keys too: SELECT FOR UPDATE alone cannot serialize first creation.
+      // Sorted transaction-scoped locks prevent deadlocks across overlapping batches.
+      if (this.db.client.config.client === 'pg') {
+        for (const key of [...keys].sort()) {
+          await trx.raw("SELECT pg_advisory_xact_lock(hashtextextended(current_schema() || ':' || ?, 0))", [key])
+        }
+      }
       const rows = await trx('world_storage').select('key', 'value', 'createdAt', 'updatedAt').whereIn('key', keys)
       const rowsByKey = new Map(rows.map(row => [this.normalizeKey(row.key), row]))
 
