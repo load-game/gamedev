@@ -366,7 +366,7 @@ export class ClientControls extends System {
     }
   }
 
-  async init({ viewport }) {
+  async init({ viewport, ui }) {
     if (!isBrowser) return
     this.viewport = viewport
     this.screen.width = this.viewport.offsetWidth
@@ -379,6 +379,7 @@ export class ClientControls extends System {
     this.viewport.addEventListener('pointerup', this.onPointerUp)
     this.viewport.addEventListener('pointercancel', this.onPointerUp)
     this.viewport.addEventListener('wheel', this.onScroll, { passive: false })
+    this.bindScreenUIScroll(ui)
     document.body.addEventListener('contextmenu', this.onContextMenu)
     this.viewport.addEventListener('touchstart', this.onTouchStart)
     window.addEventListener('resize', this.onResize)
@@ -782,6 +783,25 @@ export class ClientControls extends System {
     this.scroll.delta += delta
   }
 
+  // Native screen canvases and inputs live beside the 3D viewport. Forward their
+  // wheel events only when an app has explicitly captured scroll input.
+  bindScreenUIScroll(ui) {
+    this.unbindScreenUIScroll()
+    if (!ui || ui === this.viewport || this.viewport?.contains(ui)) return
+    this.screenUIScrollTarget = ui
+    ui.addEventListener('wheel', this.onScreenUIScroll, { passive: false })
+  }
+
+  unbindScreenUIScroll() {
+    this.screenUIScrollTarget?.removeEventListener('wheel', this.onScreenUIScroll)
+    this.screenUIScrollTarget = null
+  }
+
+  onScreenUIScroll = e => {
+    if (!this.controls.some(control => control.entries.scrollDelta?.capture)) return
+    this.onScroll(e)
+  }
+
   onContextMenu = e => {
     e.preventDefault()
   }
@@ -832,6 +852,7 @@ export class ClientControls extends System {
     this.viewport.removeEventListener('pointerup', this.onPointerUp)
     this.viewport.removeEventListener('pointercancel', this.onPointerUp)
     this.viewport.removeEventListener('wheel', this.onScroll, { passive: false })
+    this.unbindScreenUIScroll()
     document.body.removeEventListener('contextmenu', this.onContextMenu)
     this.viewport.removeEventListener('touchstart', this.onTouchStart)
     window.removeEventListener('resize', this.onResize)
