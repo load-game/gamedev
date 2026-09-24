@@ -2,6 +2,7 @@ import { Participant, ParticipantEvent, Room, RoomEvent, ScreenSharePresets, Tra
 import * as THREE from '../extras/three.js'
 
 import { System } from './System.js'
+import { normalizeVoiceDistance } from './Settings.js'
 import { isBoolean } from 'lodash-es'
 
 const v1 = new THREE.Vector3()
@@ -43,6 +44,9 @@ export class ClientLiveKit extends System {
   }
 
   onSettingsChange = changes => {
+    if (changes.voiceRefDistance || changes.voiceRolloffFactor) {
+      this.voices.forEach(voice => voice.updateDistance())
+    }
     if (changes.voice) {
       this.defaultLevel = changes.voice.value
       const myLevel = this.levels[this.world.network.id] || this.defaultLevel
@@ -418,9 +422,7 @@ class PlayerVoice {
     this.panner = world.audio.ctx.createPanner()
     this.panner.panningModel = 'HRTF'
     this.panner.distanceModel = 'inverse'
-    this.panner.refDistance = 1
-    this.panner.maxDistance = 40
-    this.panner.rolloffFactor = 3
+    this.updateDistance()
     this.panner.coneInnerAngle = 360
     this.panner.coneOuterAngle = 360
     this.panner.coneOuterGain = 0
@@ -431,6 +433,12 @@ class PlayerVoice {
       this.player.setSpeaking(speaking)
     }
     this.participant.on(ParticipantEvent.IsSpeakingChanged, this.onSpeaking)
+  }
+
+  updateDistance() {
+    const settings = this.world.settings
+    this.panner.refDistance = normalizeVoiceDistance('voiceRefDistance', settings.voiceRefDistance)
+    this.panner.rolloffFactor = normalizeVoiceDistance('voiceRolloffFactor', settings.voiceRolloffFactor)
   }
 
   setMuted(muted) {
