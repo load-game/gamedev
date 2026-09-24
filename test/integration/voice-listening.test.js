@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict'
 import EventEmitter from 'eventemitter3'
 import { test } from 'vite-plus/test'
+import { Settings } from '../../packages/core/systems/Settings.js'
 import { ClientLiveKit } from '../../packages/core/systems/ClientLiveKit.js'
 
 function fixture() {
   const ready = []
-  const settings = new EventEmitter()
-  settings.voice = 'spatial'
   const world = {
-    settings,
+    settings: null,
     audio: { ready: fn => ready.push(fn) },
     network: {
       id: 'local',
@@ -17,6 +16,8 @@ function fixture() {
       },
     },
   }
+  world.settings = new Settings(world)
+  world.settings.deserialize({ voice: 'spatial' })
   const voice = new ClientLiveKit(world)
   world.livekit = voice
   voice.start()
@@ -162,6 +163,15 @@ test('remote audio has exactly one game-controlled output route and releases nod
   try {
     voice.onTrackSubscribed(track, {}, participant)
     const remote = voice.voices.get('remote')
+    assert.equal(remote.panner.refDistance, 4)
+    assert.equal(remote.panner.rolloffFactor, 1)
+    world.settings.set('voiceRefDistance', 6)
+    world.settings.set('voiceRolloffFactor', 0.5)
+    world.settings.preFixedUpdate()
+    assert.equal(remote.panner.refDistance, 6)
+    assert.equal(remote.panner.rolloffFactor, 0.5)
+    // A tuning change must preserve the track and the single output route.
+    assert.equal(voice.voices.get('remote'), remote)
     assert.equal(element.muted, true)
     assert.equal(track.context, undefined)
     assert.deepEqual(remote.source.targets, [remote.root])
@@ -186,4 +196,26 @@ test('remote audio has exactly one game-controlled output route and releases nod
     globalThis.MediaStream = oldMediaStream
     voice.destroy()
   }
+})
+
+test('voice distance settings round-trip and reject unsafe values on load and live changes', () => {
+  const settings = new Settings({})
+  settings.deserialize({ voiceRefDistance: 8, voiceRolloffFactor: 0 })
+  const restored = new Settings({})
+  restored.deserialize(settings.serialize())
+  assert.equal(restored.voiceRefDistance, 8)
+  assert.equal(restored.voiceRolloffFactor, 0)
+  for (const value of [undefined, null, -1, NaN, Infinity, '4']) {
+    restored.deserialize({ voiceRefDistance: value, voiceRolloffFactor: value })
+    assert.equal(restored.voiceRefDistance, 4)
+    assert.equal(restored.voiceRolloffFactor, 1)
+    restored.set('voiceRefDistance', 8)
+    restored.set('voiceRefDistance', value)
+    restored.set('voiceRolloffFactor', 0)
+    restored.set('voiceRolloffFactor', value)
+    assert.equal(restored.voiceRefDistance, 4)
+    assert.equal(restored.voiceRolloffFactor, 1)
+  }
+  restored.set('voiceRefDistance', 0)
+  assert.equal(restored.voiceRefDistance, 4)
 })
