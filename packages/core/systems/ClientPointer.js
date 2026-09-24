@@ -27,6 +27,15 @@ export class ClientPointer extends System {
     this.control = this.world.controls.bind({
       priority: ControlPriorities.POINTER,
     })
+    this.control.mouseLeft.onPress = () => {
+      if (this.control.pointer.locked || this.screenHit) return
+      const hit = this.world.stage.raycastPointer(this.control.pointer.position)[0]
+      if (!hit || !this.pointerState.getAncestorPath(hit).some(node => typeof node.onPointerDown === 'function')) return
+      // Dispatch before the builder consumes the first click to lock mouse-look.
+      this.worldPressHandled = true
+      this.pointerState.update(hit, true, false)
+      return true
+    }
   }
 
   update(delta) {
@@ -45,10 +54,12 @@ export class ClientPointer extends System {
       pressed = this.control.mouseLeft.pressed
       released = this.control.mouseLeft.released
     } else {
-      hit = this.screenHit
+      hit = this.screenHit || this.world.stage.raycastPointer(this.control.pointer.position)[0]
       pressed = this.control.mouseLeft.pressed
       released = this.control.mouseLeft.released
     }
+    if (this.worldPressHandled) pressed = false
+    this.worldPressHandled = false
     this.pointerState.update(hit, pressed, released)
   }
 
