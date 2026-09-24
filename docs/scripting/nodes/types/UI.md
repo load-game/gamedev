@@ -93,6 +93,8 @@ When `false`, the UI is not raycast-able and pointer events will pass through it
 
 If you are building informational screen-space UI that does not need to respond to pointer events, this should be set to `false` for improved performance and user experience.
 
+World-space UI receives pointer events from both the aiming reticle and the free cursor. A free-cursor click on an `onPointerDown` handler is consumed before automatic mouse-look locking. Screen-space UI and nearer world geometry take precedence.
+
 Note: This property controls whether the UI is interactive at all. To handle specific pointer interactions, use the pointer event callbacks inherited from Node (`.onPointerEnter`, `.onPointerDown`, etc.).
 
 ### `.backgroundColor`: String
