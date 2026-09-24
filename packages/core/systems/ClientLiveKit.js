@@ -17,6 +17,8 @@ export class ClientLiveKit extends System {
     this.connectingPromise = null
     this.leaving = false
     this.pendingMicEnable = false
+    this.destroyed = false
+    this.micQueue = Promise.resolve()
     this.status = {
       available: false,
       connected: false,
@@ -63,6 +65,10 @@ export class ClientLiveKit extends System {
     this.levels = opts.levels
     this.muted = opts.muted
     this.emit('status', this.status)
+    // Listening never requests microphone permission. Wait for the game's audio gesture.
+    this.world.audio.ready(() => {
+      if (!this.destroyed) void this.connect()
+    })
   }
 
   onLocalSpeakingChanged = speaking => {
@@ -72,15 +78,17 @@ export class ClientLiveKit extends System {
   }
 
   async connect() {
-    if (this.status.connected || !this.opts) return
+    if (this.destroyed || this.status.connected || !this.opts) return
     if (this.connecting) return this.connectingPromise
     this.connecting = true
     this.status.connecting = true
     this.emit('status', this.status)
     this.connectingPromise = new Promise(resolve => {
       this.world.audio.ready(async () => {
+        if (this.destroyed) return resolve()
+        let room
         try {
-          this.room = new Room({
+          room = this.room = new Room({
             webAudioMix: {
               audioContext: this.world.audio.ctx,
             },
@@ -97,7 +105,11 @@ export class ClientLiveKit extends System {
           this.room.on(RoomEvent.TrackSubscribed, this.onTrackSubscribed)
           this.room.on(RoomEvent.TrackUnsubscribed, this.onTrackUnsubscribed)
           this.room.localParticipant.on(ParticipantEvent.IsSpeakingChanged, this.onLocalSpeakingChanged)
-          await this.room.connect(this.opts.wsUrl, this.opts.token)
+          await room.connect(this.opts.wsUrl, this.opts.token)
+          if (this.destroyed || this.room !== room) {
+            await room.disconnect()
+            return resolve()
+          }
           this.status.connected = true
           this.status.connecting = false
           this.status.mic = false
@@ -105,6 +117,8 @@ export class ClientLiveKit extends System {
           this.connectingPromise = null
           this.emit('status', this.status)
         } catch (err) {
+          if (this.room === room) this.onDisconnected('connection-failed')
+          await room?.disconnect()
           this.status.connecting = false
           this.connecting = false
           this.connectingPromise = null
@@ -163,7 +177,15 @@ export class ClientLiveKit extends System {
     })
   }
 
-  async setMicrophoneEnabled(value) {
+  setMicrophoneEnabled(value) {
+    const request = this.micQueue.then(() => this.applyMicrophoneEnabled(value))
+    this.micQueue = request.catch(() => {})
+    return request
+  }
+
+  async applyMicrophoneEnabled(value) {
+    value = isBoolean(value) ? value : !this.status.mic
+    if (value && this.status.muted) throw new Error('muted_by_moderator')
     if (value && this.leaving) {
       this.pendingMicEnable = true
       return
@@ -174,14 +196,14 @@ export class ClientLiveKit extends System {
     if (!this.room || !this.status.connected) {
       throw new Error('livekit_not_connected')
     }
-    value = isBoolean(value) ? value : !this.room.localParticipant.isMicrophoneEnabled
     if (value && this.status.muted) {
       throw new Error('muted_by_moderator')
     }
     if (this.status.mic === value) return
     await this.room.localParticipant.setMicrophoneEnabled(value)
-    if (!value && !this.status.screenshare) {
-      this.disconnect()
+    // A moderator may mute us while a microphone permission prompt is open.
+    if (value && this.status.muted) {
+      await this.room?.localParticipant.setMicrophoneEnabled(false)
     }
   }
 
@@ -248,9 +270,6 @@ export class ClientLiveKit extends System {
       this.removeScreen(screen)
       this.status.screenshare = null
       this.emit('status', this.status)
-      if (!this.status.mic) {
-        this.disconnect()
-      }
     }
   }
 
@@ -340,8 +359,8 @@ export class ClientLiveKit extends System {
     const wasPending = this.pendingMicEnable
     this.pendingMicEnable = false
     this.emit('status', this.status)
-    if (wasPending) {
-      this.setMicrophoneEnabled(true)
+    if (wasPending && !this.destroyed) {
+      void this.setMicrophoneEnabled(true).catch(err => console.error('[livekit] microphone failed', err))
     }
   }
 
@@ -371,8 +390,12 @@ export class ClientLiveKit extends System {
   }
 
   destroy() {
+    this.destroyed = true
+    this.world.settings.off('change', this.onSettingsChange)
+    const room = this.room
     this.screenNodes.clear()
     this.onDisconnected('destroy')
+    void room?.disconnect()
   }
 }
 
@@ -384,10 +407,15 @@ class PlayerVoice {
     this.muted = muted
     this.track = track
     this.participant = participant
-    this.track.setAudioContext(world.audio.ctx)
+    // Own the complete audio route so LiveKit's default destination cannot bypass
+    // spatial attenuation or the game's voice-volume control.
+    this.track.setAudioContext(undefined)
+    this.element = this.track.attach()
+    this.element.muted = true
+    this.source = world.audio.ctx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack]))
     this.root = world.audio.ctx.createGain()
+    this.source.connect(this.root)
     this.panner = world.audio.ctx.createPanner()
-    this.panner.panningModel = 'HRTF'
     this.panner.panningModel = 'HRTF'
     this.panner.distanceModel = 'inverse'
     this.panner.refDistance = 1
@@ -397,15 +425,12 @@ class PlayerVoice {
     this.panner.coneOuterAngle = 360
     this.panner.coneOuterGain = 0
     this.gain = world.audio.groupGains.voice
-    this.root.connect(this.gain)
-    this.root.connect(this.panner)
-    this.panner.connect(this.gain)
-    this.track.attach()
     this.apply()
-    this.participant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
+    this.onSpeaking = speaking => {
       this.world.livekit.emit('speaking', { playerId: this.player.data.id, speaking })
       this.player.setSpeaking(speaking)
-    })
+    }
+    this.participant.on(ParticipantEvent.IsSpeakingChanged, this.onSpeaking)
   }
 
   setMuted(muted) {
@@ -421,18 +446,14 @@ class PlayerVoice {
   }
 
   apply() {
-    if (this.muted) {
-      this.root.gain.value = 0
-      this.track.setWebAudioPlugins([this.root])
-    } else if (this.level === 'disabled') {
-      this.root.gain.value = 0
-      this.track.setWebAudioPlugins([this.root])
-    } else if (this.level === 'spatial') {
-      this.root.gain.value = 1
-      this.track.setWebAudioPlugins([this.panner])
-    } else if (this.level === 'global') {
-      this.root.gain.value = 1
-      this.track.setWebAudioPlugins([this.root])
+    this.root.disconnect()
+    this.panner.disconnect()
+    this.root.gain.value = this.muted || this.level === 'disabled' ? 0 : 1
+    if (this.level === 'spatial') {
+      this.root.connect(this.panner)
+      this.panner.connect(this.gain)
+    } else {
+      this.root.connect(this.gain)
     }
   }
 
@@ -461,6 +482,10 @@ class PlayerVoice {
   destroy() {
     this.world.livekit.emit('speaking', { playerId: this.player.data.id, speaking: false })
     this.player.setSpeaking(false)
+    this.participant.off(ParticipantEvent.IsSpeakingChanged, this.onSpeaking)
+    this.source.disconnect()
+    this.root.disconnect()
+    this.panner.disconnect()
     this.track.detach()
   }
 }
