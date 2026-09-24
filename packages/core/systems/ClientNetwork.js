@@ -272,9 +272,18 @@ export class ClientNetwork extends System {
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
     this.world.livekit?.deserialize(data.livekit)
+    this.world.companions?.deserialize(data.companions, data.companionProtocol)
     this.world.ai?.deserialize?.(data.ai)
     storage.set('authToken', data.authToken)
     this.world.admin?.onSnapshot?.(data)
+  }
+
+  onCompanionState = data => {
+    this.world.companions?.setState(data)
+  }
+
+  onCompanionResult = data => {
+    this.world.companions?.result(data)
   }
 
   onSettingsModified = data => {

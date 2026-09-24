@@ -203,6 +203,48 @@ export class Apps extends System {
       // ...
     }
     this.worldMethods = {
+      companions(entity) {
+        if (!world.network.isClient) throw new Error('client_only')
+        return {
+          list: () => structuredClone(world.companions.agents),
+          request: (action, params) => world.companions.request(action, params),
+        }
+      },
+      clearAgentLandmarks(entity) {
+        if (!world.network.isClient) return
+        for (const id of world.companions.landmarks.keys())
+          if (id.startsWith(`${entity.data.id}:`)) world.companions.landmarks.delete(id)
+      },
+      agentLandmark(entity, item) {
+        if (
+          !world.network.isClient ||
+          !item ||
+          typeof item.id !== 'string' ||
+          typeof item.label !== 'string' ||
+          !Array.isArray(item.position) ||
+          item.position.length !== 3 ||
+          !item.position.every(Number.isFinite)
+        )
+          return
+        const id = `${entity.data.id}:${item.id}`
+        world.companions.landmarks.set(id, {
+          id,
+          label: item.label.slice(0, 160),
+          description: String(item.description || '').slice(0, 600),
+          position: [...item.position],
+          approach:
+            Array.isArray(item.approach) && item.approach.length === 3 && item.approach.every(Number.isFinite)
+              ? [...item.approach]
+              : null,
+        })
+        if (!entity.hasAgentLandmarkCleanup) {
+          entity.hasAgentLandmarkCleanup = true
+          entity.on('destroy', () => {
+            for (const key of world.companions.landmarks.keys())
+              if (key.startsWith(`${entity.data.id}:`)) world.companions.landmarks.delete(key)
+          })
+        }
+      },
       playerContext(entity, options) {
         return createPlayerContext(entity, options)
       },

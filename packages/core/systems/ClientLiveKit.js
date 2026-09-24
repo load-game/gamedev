@@ -11,6 +11,7 @@ const q1 = new THREE.Quaternion()
 export class ClientLiveKit extends System {
   constructor(world) {
     super(world)
+    this.externalAudio = new URLSearchParams(globalThis.location?.search || '').get('audio') === 'external'
     this.room = null
     this.opts = null
     this.connecting = false
@@ -66,6 +67,7 @@ export class ClientLiveKit extends System {
     this.muted = opts.muted
     this.emit('status', this.status)
     // Listening never requests microphone permission. Wait for the game's audio gesture.
+    if (this.externalAudio) return
     this.world.audio.ready(() => {
       if (!this.destroyed) void this.connect()
     })
@@ -78,7 +80,7 @@ export class ClientLiveKit extends System {
   }
 
   async connect() {
-    if (this.destroyed || this.status.connected || !this.opts) return
+    if (this.externalAudio || this.destroyed || this.status.connected || !this.opts) return
     if (this.connecting) return this.connectingPromise
     this.connecting = true
     this.status.connecting = true
