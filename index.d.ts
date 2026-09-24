@@ -1197,6 +1197,23 @@ interface WorldAPI {
   readonly isClient: boolean
 
   furnishing(): FurnishingAPI
+  /** Client-only companion pairing for the current game connection. */
+  companions(): {
+    list(): Array<{ id: string; name: string; owner: string; ownerPlayerId: string | null; generation: number }>
+    request(
+      action: 'challenge' | 'authorize' | 'revoke',
+      params: { agentId: string; signature?: string }
+    ): Promise<unknown>
+  }
+  /** Client-only, app-scoped descriptions used by nearby agents. */
+  agentLandmark(item: {
+    id: string
+    label: string
+    description?: string
+    position: [number, number, number]
+    approach?: [number, number, number] | null
+  }): void
+  clearAgentLandmarks(): void
   walletAuth(): {
     challenge(playerId: string, address: string): { message: string }
     verify(playerId: string, signature: string): Promise<string>

@@ -1,3 +1,5 @@
+import { ClientCompanions } from './systems/ClientCompanions.js'
+import { AgentControl } from './systems/AgentControl.js'
 import { World } from './World.js'
 
 import { Client } from './systems/Client.js'
@@ -34,6 +36,8 @@ export function createClientWorld({ configure } = {}) {
   world.register('prefs', ClientPrefs)
   world.register('controls', ClientControls)
   world.register('network', ClientNetwork)
+  world.register('companions', ClientCompanions)
+  world.register('agentControl', AgentControl)
   world.register('admin', AdminClient)
   world.register('loader', ClientLoader)
   world.register('css', ClientCSS)

@@ -1,6 +1,7 @@
 import { Friends, readFriendJoin } from './Friends.js'
 import moment from 'moment'
 import { Admission } from './Admission.js'
+import { Companions } from './Companions.js'
 import { WalletBindings } from './WalletBindings.js'
 import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
@@ -184,6 +185,7 @@ export class ServerNetwork extends System {
       ? new Admission({ capacity: getWorldMaxPlayers(), graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000) })
       : null
     this.walletBindings = new WalletBindings(this)
+    this.companions = new Companions(this)
     this.friendServices = new Map()
     this.socketIntervalId = setInterval(() => this.checkSockets(), PING_RATE * 1000)
     this.saveTimerId = null
@@ -629,6 +631,8 @@ export class ServerNetwork extends System {
         livekit,
         ai: this.world.ai?.serialize?.() || null,
         authToken,
+        companions: this.companions.list(),
+        companionProtocol: 1,
         hasAdminCode: !!process.env.ADMIN_CODE,
         adminCodeAuthSupported: hasSupportedAdminCode(process.env),
       })
@@ -649,6 +653,16 @@ export class ServerNetwork extends System {
     } finally {
       if (admittedId && !admissionComplete) this.admission.failed(admittedId)
       if (reserved) this.pendingAdmissions--
+    }
+  }
+
+  onCompanionRequest = async (socket, data) => {
+    if (!data || typeof data.requestId !== 'string' || data.requestId.length > 100) return
+    try {
+      const value = await this.companions.request(socket, data)
+      socket.send('companionResult', { requestId: data.requestId, value })
+    } catch (error) {
+      socket.send('companionResult', { requestId: data.requestId, error: error.message })
     }
   }
 
@@ -1282,6 +1296,7 @@ export class ServerNetwork extends System {
     this.world.livekit.clearModifiers(socket.id)
     socket.player.destroy(true)
     this.sockets.delete(socket.id)
+    this.companions.leave(socket)
     this.admission?.disconnected(socket.id)
     const playerId = socket.player?.data?.id
     if (playerId) {

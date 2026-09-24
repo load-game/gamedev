@@ -50,6 +50,9 @@ const names = [
   'serverLogHistory',
   'subscribeLogs',
   'unsubscribeLogs',
+  'companionRequest',
+  'companionResult',
+  'companionState',
 ]
 
 const byName = {}

@@ -31,6 +31,15 @@ export class Client extends System {
     this.world.settings.on('change', this.onSettingsChange)
   }
 
+  enableAgentTicks() {
+    if (this.agentTimer) return
+    document.removeEventListener('visibilitychange', this.onVisibilityChange)
+    worker?.postMessage('stop')
+    this.world.graphics.renderer.setAnimationLoop(null)
+    this.world.graphics.renderOnDemand = true
+    this.agentTimer = setInterval(() => this.world.tick(performance.now()), 1000 / 60)
+  }
+
   onSettingsChange = changes => {
     if (changes.title) {
       document.title = changes.title.value || 'World'
@@ -85,6 +94,7 @@ export class Client extends System {
   }
 
   destroy() {
+    clearInterval(this.agentTimer)
     this.world.graphics.renderer.setAnimationLoop(null)
     worker?.postMessage('stop')
     worker = null

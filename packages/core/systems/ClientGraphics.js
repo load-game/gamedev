@@ -167,6 +167,7 @@ export class ClientGraphics extends System {
   }
 
   commit() {
+    if (this.renderOnDemand) return
     this.render()
   }
 
