@@ -771,3 +771,35 @@ World scripts create nodes through `app.create`; they do not inject browser UI.
 
 Script globals expose `Date.now()` and `Date.parse(isoTimestamp)`. The scripting
 Date is a limited object, not a constructor. Use timestamp arithmetic for age.
+
+### Wallet friends
+
+On the server, call `const friends = world.friends(auth)` with this app's
+`world.walletAuth()` instance. The app must authenticate the caller and pass the
+actual sending player ID, never an ID supplied inside the client payload.
+
+- `friends.request(playerId, nearbyPlayerId)` requires both verified wallets and
+  positions within five metres. There is no request-by-address operation.
+- `friends.act(playerId, address, action)` accepts `accept`, `decline`, `cancel`,
+  `remove`, `block`, or `unblock`. Only the recipient can accept a request.
+- `friends.list(playerId)` returns the caller's relationships, names, addresses,
+  `online` and `sameCity`. Presence is visible only to accepted friends.
+- `friends.sync()` immediately updates presence after verification or revocation.
+  The engine also renews it every ten seconds and expires it after thirty seconds.
+- `friends.join(playerId, address)` issues a thirty-second join authorization for
+  an accepted friend in another instance. Pass it to client-side
+  `await world.joinFriend(token)`. The client reserves before leaving, retains the
+  assignment only in the current tab, and reloads into the destination's normal
+  spawn. Errors leave the current city connected.
+
+Records are scoped by world ID and app entity ID. Keep those IDs identical across
+instances. `engine:friends:` records automatically use configured shared storage.
+No wallet key, on-chain transaction or platform account is required. A wallet
+change creates a different identity. When a wallet has several verified sessions,
+its most recently verified live session supplies its location. Basic limits are
+200 relationships per wallet and ten new requests per minute.
+
+Cross-instance joining requires the fixed-game gateway's friend join support and
+its shared `ADMISSION_SECRET`. The gateway binds authorizations to its signed
+session cookie and tab. The destination checks the friendship and live recipient
+again before applying the normal admission capacity limit.

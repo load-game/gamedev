@@ -1204,6 +1204,29 @@ interface WorldAPI {
     revoke(playerId: string): void
   }
 
+  /** Server-only persistent wallet friendships, scoped to this app and world. */
+  friends(auth: ReturnType<WorldAPI['walletAuth']>): {
+    request(playerId: string, nearbyPlayerId: string): Promise<boolean>
+    act(
+      playerId: string,
+      address: string,
+      action: 'accept' | 'decline' | 'cancel' | 'remove' | 'block' | 'unblock'
+    ): Promise<boolean>
+    list(playerId: string): Promise<
+      Array<{
+        address: string
+        name: string
+        state: 'friend' | 'incoming' | 'outgoing' | 'blocked'
+        online: boolean
+        sameCity: boolean
+      }>
+    >
+    sync(): Promise<void>
+    join(playerId: string, address: string): Promise<string>
+  }
+  /** Client-only: reserve the friend's city before reloading into it. */
+  joinFriend(token: string): Promise<void>
+
   // Scene management
   add(node: BaseNode): void
   remove(node: BaseNode): void

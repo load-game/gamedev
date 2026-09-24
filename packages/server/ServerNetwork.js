@@ -1,3 +1,4 @@
+import { Friends, readFriendJoin } from './Friends.js'
 import moment from 'moment'
 import { Admission } from './Admission.js'
 import { WalletBindings } from './WalletBindings.js'
@@ -183,6 +184,7 @@ export class ServerNetwork extends System {
       ? new Admission({ capacity: getWorldMaxPlayers(), graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000) })
       : null
     this.walletBindings = new WalletBindings(this)
+    this.friendServices = new Map()
     this.socketIntervalId = setInterval(() => this.checkSockets(), PING_RATE * 1000)
     this.saveTimerId = null
     this.dirtyBlueprints = new Set()
@@ -193,6 +195,39 @@ export class ServerNetwork extends System {
     this.authMode = 'standalone'
     this.usesExternalIdentity = false
     this.usesLobbyIdentity = false
+  }
+
+  friendsForApp(entity, auth) {
+    if (this.friendServices.has(entity.data.id)) return this.friendServices.get(entity.data.id)
+    const service = new Friends({
+      storage: this.world.storage,
+      auth,
+      players: () => [...this.world.entities.players.values()].map(p => entity.getPlayerProxy(p.data.id)),
+      scope: entity.data.id,
+      worldId: this.worldId,
+      generation: this.admission?.generation,
+      secret: process.env.ADMISSION_SECRET,
+    })
+    this.friendServices.set(entity.data.id, service)
+    const sync = () => {
+      void service.sync().catch(() => {})
+    }
+    const timer = setInterval(sync, 10000)
+    entity.onWorldEvent('leave', sync)
+    entity.on('destroy', () => {
+      clearInterval(timer)
+      this.friendServices.delete(entity.data.id)
+      void service.dispose().catch(() => {})
+    })
+    return service
+  }
+
+  async reserveFriend(token, sessionId) {
+    const value = readFriendJoin(token, process.env.ADMISSION_SECRET)
+    const service = this.friendServices.get(value.appId)
+    if (!service) throw new Error('friend_offline')
+    await service.authorizeJoin(token, sessionId)
+    return this.admission.reserve(sessionId)
   }
 
   init({ db, authConfig } = {}) {

@@ -1476,6 +1476,8 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
       return reply.code(503).send({ error: 'admission_unavailable' })
     try {
       if (req.params.action === 'reserve') return admission.reserve(req.body?.sessionId)
+      if (req.params.action === 'friend')
+        return await runtimeState.resources.world.network.reserveFriend(req.body?.token, req.body?.sessionId)
       if (req.params.action === 'drain') {
         admission.draining = true
         return admission.status()
