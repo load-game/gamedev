@@ -803,3 +803,18 @@ Cross-instance joining requires the fixed-game gateway's friend join support and
 its shared `ADMISSION_SECRET`. The gateway binds authorizations to its signed
 session cookie and tab. The destination checks the friendship and live recipient
 again before applying the normal admission capacity limit.
+
+### Player context menu input
+
+`world.playerContext({ enabled, onOpen })` is a client-only, opt-in handler for
+right-clicking another player. `onOpen({ playerId, x, y })` runs on release after
+a click with at most six pixels of movement. Coordinates are viewport pixels;
+locked-pointer selection uses the reticle and screen center. Stage geometry
+occludes players. Native UI, cancelled gestures, and right-drags do not open a
+menu. Right-drag rotates the camera. `enabled()` gates the handler for modal or
+editing states. The returned `dispose()` releases input and listeners; app
+destruction also disposes it. The world owns menu presentation and distance rules.
+
+On the server, `friends.status(playerId, targetId)` returns `none`, `incoming`,
+`outgoing`, `friend`, or `blocked` for a verified nearby player. A wallet address
+is included only for an existing relationship, for use with `friends.act()`.

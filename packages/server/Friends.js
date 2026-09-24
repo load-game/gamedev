@@ -71,6 +71,20 @@ export class Friends {
     }
     throw new Error('friends_busy')
   }
+  async status(id, targetId) {
+    const owner = this.owner(id)
+    const players = this.players(),
+      a = players.find(p => p.id === id),
+      b = players.find(p => p.id === targetId)
+    if (!a || !b || a.position.distanceTo(b.position) > 5) throw new Error('friends_not_nearby')
+    const other = this.auth.get(targetId)
+    if (!other) throw new Error('friends_player_sign_in')
+    if (owner === other) throw new Error('friends_invalid_player')
+    const { value } = await this.user(owner)
+    if (this.owner(id) !== owner || this.auth.get(targetId) !== other) throw new Error('friends_sign_in')
+    const link = value.links[other]
+    return link ? { state: link.state, address: other } : { state: 'none' }
+  }
   async request(id, targetId) {
     const players = this.players(),
       a = players.find(p => p.id === id),

@@ -1,3 +1,4 @@
+import { createPlayerContext } from '../extras/playerContext.js'
 import moment from 'moment'
 import { isArray, isFunction, isNumber } from 'lodash-es'
 import * as THREE from '../extras/three.js'
@@ -202,6 +203,9 @@ export class Apps extends System {
       // ...
     }
     this.worldMethods = {
+      playerContext(entity, options) {
+        return createPlayerContext(entity, options)
+      },
       furnishing(entity) {
         return createFurnishingAPI(entity)
       },
@@ -213,7 +217,7 @@ export class Apps extends System {
         if (!world.network.isServer) throw new Error('server_only')
         const service = world.network.friendsForApp(entity, auth)
         return Object.fromEntries(
-          ['request', 'act', 'list', 'sync', 'join'].map(name => [name, service[name].bind(service)])
+          ['request', 'act', 'list', 'status', 'sync', 'join'].map(name => [name, service[name].bind(service)])
         )
       },
       joinFriend(entity, token) {

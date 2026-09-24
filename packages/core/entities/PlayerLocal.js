@@ -851,7 +851,7 @@ export class PlayerLocal extends Entity {
           v3.copy(v1).sub(v2)
           this.hmdLast.copy(v3)
         }
-      } else if (this.control.pointer.locked) {
+      } else if (this.control.pointer.locked || this.world.controls.pointer.rightDragging) {
         // or pointer lock, rotate camera with pointer movement
         this.cam.rotation.x += -this.control.pointer.delta.y * POINTER_LOOK_SPEED * delta
         this.cam.rotation.y += -this.control.pointer.delta.x * POINTER_LOOK_SPEED * delta

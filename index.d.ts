@@ -1206,6 +1206,7 @@ interface WorldAPI {
 
   /** Server-only persistent wallet friendships, scoped to this app and world. */
   friends(auth: ReturnType<WorldAPI['walletAuth']>): {
+    status(playerId: string, targetId: string): Promise<{ state: string; address?: string }>
     request(playerId: string, nearbyPlayerId: string): Promise<boolean>
     act(
       playerId: string,
@@ -1225,6 +1226,10 @@ interface WorldAPI {
     join(playerId: string, address: string): Promise<string>
   }
   /** Client-only: reserve the friend's city before reloading into it. */
+  playerContext(options: {
+    enabled?: () => boolean
+    onOpen: (target: { playerId: string; x: number; y: number }) => void
+  }): { dispose(): void }
   joinFriend(token: string): Promise<void>
 
   // Scene management

@@ -210,3 +210,21 @@ test.skipIf(!process.env.TEST_POSTGRES_URL)(
     }
   }
 )
+
+test('nearby context status distinguishes requests and friends without exposing unrelated wallet addresses', async () => {
+  const f = await fixture()
+  try {
+    assert.deepEqual(await f.a.status('alice', 'bob'), { state: 'none' })
+    await f.a.request('alice', 'bob')
+    assert.deepEqual(await f.a.status('alice', 'bob'), { state: 'outgoing', address: bob })
+    assert.deepEqual(await f.a.status('bob', 'alice'), { state: 'incoming', address: alice })
+    await f.a.act('bob', alice, 'accept')
+    assert.deepEqual(await f.a.status('alice', 'bob'), { state: 'friend', address: bob })
+    f.players[1].position.x = 6
+    await assert.rejects(f.a.status('alice', 'bob'), /friends_not_nearby/)
+    f.bindings.delete('alice')
+    await assert.rejects(f.a.status('alice', 'bob'), /friends_sign_in/)
+  } finally {
+    await f.close()
+  }
+})
