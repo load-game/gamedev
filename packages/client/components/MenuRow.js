@@ -296,11 +296,21 @@ function MicBtn({ world }) {
     } catch (err) {
       if (err?.message === 'muted_by_moderator') {
         world.emit('toast', 'You are muted by a moderator.')
+      } else if (err?.name === 'NotAllowedError') {
+        world.emit('toast', 'Microphone access was denied. You can still listen.')
+      } else if (err?.name === 'NotFoundError') {
+        world.emit('toast', 'No microphone found. You can still listen.')
+      } else {
+        world.emit('toast', 'Could not enable voice. Check your connection and microphone, then try again.')
       }
     }
   }
   return (
-    <div
+    <button
+      type='button'
+      aria-label={livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
+      aria-pressed={livekit.mic}
+      title={livekit.mic ? 'Mute microphone and keep listening' : 'Unmute microphone'}
       className='editor-mic'
       css={css`
         width: 2.75rem;
@@ -339,7 +349,7 @@ function MicBtn({ world }) {
       ) : (
         <MicOffIcon size='1.1rem' />
       )}
-    </div>
+    </button>
   )
 }
 
