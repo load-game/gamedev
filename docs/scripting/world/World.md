@@ -732,10 +732,16 @@ nodes follow the normal engine transform updates. On clients only the local play
 is teleported; other players replicate their own movement.
 
 Client `begin({room, frame, node, item, transform, placed, authorized, onPreview,
-onCommit, onEnd})` creates one edit session per capability. `frame` and `placed`
+onCommit, onEnd, onError, onGridChange})` creates one edit session per capability. `frame` and `placed`
 are functions, so a moving room and concurrent authoritative layout remain current.
 The engine captures camera and movement input and uses stage pointer raycasts and
-registered snap points. Native touch buttons can call `nudge`, `rotate`, `undo`,
+registered snap points. The overhead camera stays fixed while the preview follows
+the mouse over room surfaces. Left click commits a valid placement; R and Shift+R
+rotate by 15 degrees in opposite directions, G toggles a 0.5 m grid, and Escape
+cancels. UI hover and clicks do not move or place furniture. Wall items align to
+the wall under the cursor. `onGridChange(step)` reports snapping changes and
+`onError(error)` receives failures from mouse-triggered commits. Hover movement
+does not fill the undo history. Native touch buttons can call `nudge`, `rotate`, `undo`,
 `redo`, `confirm`, and `dispose`; these are the same controls used on desktop.
 `setGrid(0)` disables translation snapping; positive values up to two metres enable
 it. History retains 32 changes. `preview(transform)` reports provisional validity.

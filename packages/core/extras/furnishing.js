@@ -115,6 +115,8 @@ export function createFurnishingAPI(entity) {
       placed = () => [],
       onPreview = () => {},
       onCommit,
+      onError = () => {},
+      onGridChange = () => {},
       onEnd = () => {},
       authorized = () => true,
     }) {
@@ -129,10 +131,16 @@ export function createFurnishingAPI(entity) {
         future = [],
         disposed = false,
         pending = false,
-        grid = 0
+        grid = 0,
+        armed = false
+      const lastPointer = new THREE.Vector3(NaN, NaN, NaN)
       const control = world.controls.bind({ priority: ControlPriorities.APP })
       control.pointer.lockOnClick = false
       control.pointer.unlock()
+      control.mouseLeft.capture = true
+      control.keyR.capture = true
+      control.keyG.capture = true
+      control.escape.capture = true
       control.keyW.capture = true
       control.keyA.capture = true
       control.keyS.capture = true
@@ -170,6 +178,8 @@ export function createFurnishingAPI(entity) {
         setGrid(step) {
           if (!Number.isFinite(step) || step < 0 || step > 2) throw new Error('invalid_grid')
           grid = step
+          lastPointer.set(NaN, NaN, NaN)
+          onGridChange(grid)
         },
         preview: show,
         nudge(dx, dz) {
@@ -225,11 +235,24 @@ export function createFurnishingAPI(entity) {
       function update() {
         if (!authorized()) return session.dispose()
         control.camera.position.fromArray(transformPoint(frame(), [0, 10, 9]))
-        if (!control.mouseLeft.pressed || pending) return
+        if (pending) return
+        // A menu click that starts a session must never also place the item.
+        if (!armed) {
+          armed = !control.mouseLeft.down
+          return
+        }
+        if (world.pointer?.screenHit) return
+        const pointer = control.pointer.position
+        const moved = !lastPointer.equals(pointer)
+        if (!moved && !control.mouseLeft.pressed) return
         const hits = world.stage.raycastPointer(control.pointer.position)
         const inItem = candidate => {
           for (let n = candidate; n; n = n.parent) if (n === node) return true
           return false
+        }
+        // World-space UI also owns its hover and click, even above a room surface.
+        for (let n = hits[0]?.node; n; n = n.parent) {
+          if (typeof n.onPointerDown === 'function') return
         }
         const hit = hits
           .sort((a, b) => a.distance - b.distance)
@@ -265,10 +288,19 @@ export function createFurnishingAPI(entity) {
           position[1] = snapScalar(local[1] - item.size[1] / 2, grid)
           yaw = onX ? (-sign * Math.PI) / 2 : sign > 0 ? Math.PI : 0
         }
-        show({ ...current, position, yaw })
+        lastPointer.copy(pointer)
+        // Hover does not consume the bounded undo history every animation frame.
+        const result = show({ ...current, position, yaw }, false)
+        if (control.mouseLeft.pressed && result.ok) void session.confirm().catch(onError)
       }
       control.escape.onPress = () => session.dispose()
-      control.keyR.onPress = () => session.rotate()
+      control.keyR.onPress = () => {
+        if (!pending && !disposed)
+          session.rotate(control.shiftLeft.down || control.shiftRight.down ? -Math.PI / 12 : Math.PI / 12)
+      }
+      control.keyG.onPress = () => {
+        if (!pending && !disposed) session.setGrid(grid ? 0 : 0.5)
+      }
       entity.on('update', update)
       active = session
       show(current, false)

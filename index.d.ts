@@ -1186,6 +1186,8 @@ interface FurnishingAPI {
     authorized: () => boolean
     onPreview?: (transform: FurnitureTransform, result: { ok: boolean; reason?: string }) => void
     onCommit: (transform: FurnitureTransform) => Promise<unknown>
+    onError?: (error: unknown) => void
+    onGridChange?: (step: number) => void
     onEnd?: (accepted: boolean) => void
   }): FurnitureSession
   dispose(): void
