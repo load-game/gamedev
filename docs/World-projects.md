@@ -89,3 +89,18 @@ Use the scripting docs for runtime APIs and lifecycle:
 - `docs/scripting/README.md`
 - `docs/scripting/app/App.md`
 - `docs/scripting/world/World.md`
+
+## Spatial voice distance
+
+World settings accept `voiceRefDistance` and `voiceRolloffFactor` alongside
+`voice: "spatial"`. Defaults are 4 world units and 1. Voice stays at full distance
+gain through the reference distance, then follows an inverse curve. With these
+defaults, gain is 50% at 8 units and 25% at 16 units. HRTF directionality remains
+active. The inverse curve has no hard distance cutoff.
+
+Set these values in `world.json` under `settings` and import the world, or update
+through the existing administrator settings API. Connected listeners apply
+changes to their existing tracks. `voiceRefDistance` must be a finite positive
+number; `voiceRolloffFactor` must be finite and nonnegative. Zero rolloff disables
+distance attenuation. Missing or invalid values use the defaults. Global voice
+and the player's voice-volume preference retain their existing behavior.
