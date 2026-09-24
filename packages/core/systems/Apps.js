@@ -209,6 +209,17 @@ export class Apps extends System {
         if (!world.network.isServer) throw new Error('server_only')
         return world.network.walletBindings.forApp(entity)
       },
+      friends(entity, auth) {
+        if (!world.network.isServer) throw new Error('server_only')
+        const service = world.network.friendsForApp(entity, auth)
+        return Object.fromEntries(
+          ['request', 'act', 'list', 'sync', 'join'].map(name => [name, service[name].bind(service)])
+        )
+      },
+      joinFriend(entity, token) {
+        if (!world.network.isClient) throw new Error('client_only')
+        return world.network.joinFriend(token)
+      },
       getBrowserPreferences(entity) {
         if (!world.network.isClient) return null
         return {

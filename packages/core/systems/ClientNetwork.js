@@ -1,3 +1,4 @@
+import { reserveFriendTravel, takeFriendTravel } from '../friendTravel.js'
 import moment from 'moment'
 import { emoteUrls } from '../extras/playerEmotes.js'
 import { readPacket, writePacket } from '../packets.js'
@@ -62,19 +63,36 @@ export class ClientNetwork extends System {
     })
   }
 
+  async joinFriend(token) {
+    if (this.joiningFriend) throw new Error('join_busy')
+    this.joiningFriend = true
+    try {
+      await reserveFriendTravel(token)
+      this._intentionalOffline = true
+      this._clearReconnect()
+      globalThis.location.reload()
+    } catch (error) {
+      this.joiningFriend = false
+      throw error
+    }
+  }
+
   async connect() {
     if (globalThis.env?.PUBLIC_JOIN_URL) {
       try {
         const tabId = globalThis.sessionStorage.getItem('lobbyTab') || globalThis.crypto.randomUUID()
         globalThis.sessionStorage.setItem('lobbyTab', tabId)
-        const response = await fetch(globalThis.env.PUBLIC_JOIN_URL, {
-          method: 'POST',
-          headers: { 'x-lobby-tab': tabId },
-          credentials: 'include',
-          signal: AbortSignal.timeout(45000),
-        })
-        const assignment = await response.json()
-        if (!response.ok || !assignment.wsUrl || !assignment.ticket) throw new Error('Instance unavailable')
+        let assignment = takeFriendTravel()
+        if (!assignment) {
+          const response = await fetch(globalThis.env.PUBLIC_JOIN_URL, {
+            method: 'POST',
+            headers: { 'x-lobby-tab': tabId },
+            credentials: 'include',
+            signal: AbortSignal.timeout(45000),
+          })
+          assignment = await response.json()
+          if (!response.ok || !assignment.wsUrl || !assignment.ticket) throw new Error('Instance unavailable')
+        }
         const target = new URL(assignment.wsUrl)
         target.searchParams.set('admissionTicket', assignment.ticket)
         this.wsUrl = target.toString()

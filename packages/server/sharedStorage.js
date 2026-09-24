@@ -102,7 +102,7 @@ export async function createAppStorage(db, env = process.env) {
         [schema]
       )
     })
-    return new RoutedStorage(local, new Storage(sharedDb), prefixes)
+    return new RoutedStorage(local, new Storage(sharedDb), [...prefixes, 'engine:friends:'])
   } catch (error) {
     await sharedDb.destroy()
     throw error
