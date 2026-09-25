@@ -268,6 +268,7 @@ export class ClientNetwork extends System {
 
     this.world.settings.deserialize(data.settings)
     this.world.settings.setHasAdminCode(data.hasAdminCode)
+    this.world.chat.authenticated = data.authenticatedChat === 1
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
