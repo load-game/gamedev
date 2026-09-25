@@ -69,7 +69,7 @@ export class PlayerLocal extends Entity {
     if (locomotionEmotes) {
       this.data.locomotionEmotes = this.locomotionEmotes
     }
-    this.init()
+    this.ready = this.init()
   }
 
   async init() {
@@ -191,6 +191,7 @@ export class PlayerLocal extends Entity {
       await this.world.loader.preloader
     }
 
+    if (this.destroyed) return
     this.applyAvatar()
     this.initCapsule()
     this.initControl()
@@ -198,6 +199,26 @@ export class PlayerLocal extends Entity {
     this.world.setHot(this, true)
     this.world.on('xrSession', this.onXRSession)
     this.world.emit('ready', true)
+  }
+
+  destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
+    clearTimeout(this.chatTimer)
+    this.world.off('xrSession', this.onXRSession)
+    this.control?.release()
+    this._ragdoll?.destroy()
+    this.capsuleHandle?.destroy()
+    this.capsule?.release()
+    this.capsuleShape?.release()
+    this.material?.release()
+    if (this.groundSweepGeometry) PHYSX.destroy(this.groundSweepGeometry)
+    this.base?.deactivate()
+    this.aura?.deactivate()
+    if (this.world.camera.parent === this.xrRig) this.world.stage.scene.attach(this.world.camera)
+    this.xrRig?.removeFromParent()
+    this.world.setHot(this, false)
+    this.world.events.emit('leave', { playerId: this.data.id })
   }
 
   getAvatarUrl() {
@@ -210,6 +231,7 @@ export class PlayerLocal extends Entity {
     this.world.loader
       .load('avatar', avatarUrl)
       .then(src => {
+        if (this.destroyed) return
         if (this.avatar) this.avatar.deactivate()
         this.avatar = src.toNodes().get('avatar')
         this.avatar.onLoad = () => {
@@ -302,6 +324,7 @@ export class PlayerLocal extends Entity {
         this.base.position.copy(position)
       },
     })
+    for (const value of [geometry, flags, filterData, transform]) PHYSX.destroy(value)
   }
 
   initControl() {

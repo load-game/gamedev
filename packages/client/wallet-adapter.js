@@ -373,13 +373,16 @@ export class RuntimeWalletAdapter {
         request,
       })
       if (injectedSession) return injectedSession
+      if (!this._allowsUnscopedWalletAccess()) return null
     }
 
     return this._resolveInjectedContext({ request })
   }
 
   async _requireWalletContext({ request = true } = {}) {
+    if (this.authBridge?.isReconnecting?.()) throw new Error('Rejoining with your account…')
     const context = await this._resolveWalletContext({ request })
+    if (this.authBridge?.isReconnecting?.()) throw new Error('Switching accounts…')
     if (!context) {
       throw new Error('Wallet not connected')
     }
@@ -411,7 +414,20 @@ export class RuntimeWalletAdapter {
     return this.getSnapshot()
   }
 
+  resetSession() {
+    this.disconnected = false
+    this.sessionWalletFetchedAt = 0
+    this.sessionWallet = null
+    this.refreshVersion++
+    this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })
+  }
+
   async connect() {
+    if (this.authBridge?.ensureWalletSession) {
+      const ready = await this.authBridge.ensureWalletSession()
+      if (!ready) throw Object.assign(new Error('Signed in. Rejoining the world…'), { skipAuth: true })
+      this.sessionWalletFetchedAt = 0
+    }
     this.disconnected = false
     this._bindInjectedEvents()
     await this._requireWalletContext({ request: true })
@@ -419,6 +435,7 @@ export class RuntimeWalletAdapter {
   }
 
   disconnect() {
+    if (this.authBridge?.mode === 'identity') void this.authBridge.logoutAndClearSession().catch(() => {})
     this.disconnected = true
     this.refreshVersion++
     this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })

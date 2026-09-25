@@ -130,6 +130,8 @@ function matchesWalletAddress(chain, expectedAddress, nextAddress) {
 }
 
 export function useWalletAuth(world) {
+  const [sessionRevision, setSessionRevision] = useState(0)
+  useEffect(() => globalThis.__runtimeAuth?.onStateChange?.(() => setSessionRevision(value => value + 1)), [world])
   const [walletAuth, setWalletAuth] = useState(defaultWalletAuthState)
   const sessionWalletRef = useRef({
     type: '',
@@ -176,7 +178,7 @@ export function useWalletAuth(world) {
     }
 
     const handleWalletAddressChange = nextValue => {
-      if (auth.mode === 'privy') return
+      if (auth.mode === 'privy' || auth.mode === 'identity') return
       const expectedWallet = sessionWalletRef.current
       const expectedAddress = expectedWallet.address
       if (!expectedAddress) return
@@ -211,7 +213,7 @@ export function useWalletAuth(world) {
         },
       })
       if (!expectedAddress) return
-      if (auth.mode === 'privy') return
+      if (auth.mode === 'privy' || auth.mode === 'identity') return
 
       if (!providerAvailable) {
         if (auth.mode === 'injected') {
@@ -327,7 +329,7 @@ export function useWalletAuth(world) {
         clearInterval(verifyTimerId)
       }
     }
-  }, [world])
+  }, [world, sessionRevision])
 
   const connectWallet = async (options = {}) => {
     const auth = globalThis.__runtimeAuth
@@ -343,7 +345,7 @@ export function useWalletAuth(world) {
       if (shouldResumePrivySiwe) {
         clearPrivySiweResumeIntent()
       }
-      window.location.reload()
+      if (auth.mode !== 'identity') window.location.reload()
     } catch (err) {
       if (shouldResumePrivySiwe) {
         clearPrivySiweResumeIntent()
@@ -365,9 +367,10 @@ export function useWalletAuth(world) {
     try {
       await auth.logoutAndClearSession?.()
     } catch {
-      // always reload to force a clean guest state
+      if (auth.mode === 'identity') world.emit('toast', auth.getState().error)
     } finally {
-      window.location.reload()
+      if (auth.mode !== 'identity') window.location.reload()
+      setWalletAuth(prev => ({ ...prev, pending: false }))
     }
   }
 

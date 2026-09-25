@@ -251,6 +251,10 @@ export class Apps extends System {
       furnishing(entity) {
         return createFurnishingAPI(entity)
       },
+      account() {
+        if (!world.network.isClient) throw new Error('client_only')
+        return world.network.identity ? { ...world.network.identity } : null
+      },
       walletAuth(entity) {
         if (!world.network.isServer) throw new Error('server_only')
         return world.network.walletBindings.forApp(entity)
