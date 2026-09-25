@@ -61,3 +61,14 @@ test('protected admission requires a matching identity and rejects expiry before
   now = 2001
   assert.throws(() => admission.consume(first.ticket), /invalid_ticket/)
 })
+
+test('guest-enabled identity admission accepts guests but never downgrades malformed identity', () => {
+  const admission = new Admission({ capacity: 2, requireIdentity: true, allowGuests: true })
+  const id = 'guest_session_000001'
+  assert.throws(() => admission.reserve(id, { userId: id }), /identity_required/)
+  const guest = admission.reserve(id)
+  assert.equal(admission.seats.get(id).identity, null)
+  assert.equal(admission.consume(guest.ticket), id)
+  admission.connected(id)
+  assert.equal(admission.status().connected, 1)
+})

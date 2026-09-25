@@ -220,6 +220,7 @@ export class ClientNetwork extends System {
   onSnapshot(data) {
     this.id = data.id
     this.identity = data.identity || null
+    globalThis.__runtimeAuth?.setConnectionIdentity?.(this.identity)
     this.serverTimeOffset = data.serverTime - performance.now()
     this.apiUrl = data.apiUrl
     this.maxUploadSize = data.maxUploadSize

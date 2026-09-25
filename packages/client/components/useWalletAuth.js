@@ -176,7 +176,7 @@ export function useWalletAuth(world) {
     }
 
     const handleWalletAddressChange = nextValue => {
-      if (auth.mode === 'privy') return
+      if (auth.mode === 'privy' || auth.mode === 'identity') return
       const expectedWallet = sessionWalletRef.current
       const expectedAddress = expectedWallet.address
       if (!expectedAddress) return
@@ -211,7 +211,7 @@ export function useWalletAuth(world) {
         },
       })
       if (!expectedAddress) return
-      if (auth.mode === 'privy') return
+      if (auth.mode === 'privy' || auth.mode === 'identity') return
 
       if (!providerAvailable) {
         if (auth.mode === 'injected') {
@@ -343,7 +343,7 @@ export function useWalletAuth(world) {
       if (shouldResumePrivySiwe) {
         clearPrivySiweResumeIntent()
       }
-      window.location.reload()
+      if (auth.mode !== 'identity') window.location.reload()
     } catch (err) {
       if (shouldResumePrivySiwe) {
         clearPrivySiweResumeIntent()

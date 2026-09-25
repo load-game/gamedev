@@ -380,6 +380,7 @@ export class RuntimeWalletAdapter {
   }
 
   async _requireWalletContext({ request = true } = {}) {
+    if (this.authBridge?.isReconnecting?.()) throw new Error('Rejoining with your account…')
     const context = await this._resolveWalletContext({ request })
     if (!context) {
       throw new Error('Wallet not connected')
@@ -413,6 +414,11 @@ export class RuntimeWalletAdapter {
   }
 
   async connect() {
+    if (this.authBridge?.ensureWalletSession) {
+      const ready = await this.authBridge.ensureWalletSession()
+      if (!ready) throw Object.assign(new Error('Signed in. Rejoining the world…'), { skipAuth: true })
+      this.sessionWalletFetchedAt = 0
+    }
     this.disconnected = false
     this._bindInjectedEvents()
     await this._requireWalletContext({ request: true })

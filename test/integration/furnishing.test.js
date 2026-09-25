@@ -48,6 +48,18 @@ function identityFixture(options = {}) {
   return { auth: new WalletBindings(network, options).forApp(entity), network, listeners }
 }
 const account = privateKeyToAccount('0x' + '1'.repeat(64))
+test('Identity guests cannot bypass sign-in with legacy per-app wallet proof', () => {
+  const { auth, network } = identityFixture()
+  network.requiresIdentityWallet = true
+  assert.equal(auth.get('p'), null)
+  assert.throws(() => auth.challenge('p', account.address), /authentication_required/)
+  network.sockets.get('p').identity = {
+    authenticatedWith: 'evm',
+    walletAddress: account.address,
+    expiresAt: Date.now() + 60000,
+  }
+  assert.equal(auth.get('p'), account.address)
+})
 test('signed challenge binds only its live player and cannot replay', async () => {
   const { auth } = identityFixture(),
     c = auth.challenge('p', account.address),

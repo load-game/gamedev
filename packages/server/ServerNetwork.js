@@ -184,10 +184,12 @@ export class ServerNetwork extends System {
     this.admission = process.env.ADMISSION_SECRET
       ? new Admission({
           requireIdentity: process.env.IDENTITY_REQUIRED === 'true',
+          allowGuests: process.env.IDENTITY_ALLOW_GUESTS === 'true',
           capacity: getWorldMaxPlayers(),
           graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000),
         })
       : null
+    this.requiresIdentityWallet = process.env.IDENTITY_REQUIRED === 'true'
     this.walletBindings = new WalletBindings(this)
     this.companions = new Companions(this)
     this.friendServices = new Map()
@@ -503,7 +505,8 @@ export class ServerNetwork extends System {
     try {
       if (this.admission) admittedId = this.admission.consume(params?.admissionTicket)
       const identity = admittedId ? this.admission.seats.get(admittedId)?.identity : null
-      if (process.env.IDENTITY_REQUIRED === 'true' && !identity) throw new Error('authentication_required')
+      if (process.env.IDENTITY_REQUIRED === 'true' && process.env.IDENTITY_ALLOW_GUESTS !== 'true' && !identity)
+        throw new Error('authentication_required')
       // check player limit
       const playerLimit = this.world.settings.playerLimit
       if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size + this.pendingAdmissions >= playerLimit) {
@@ -534,7 +537,7 @@ export class ServerNetwork extends System {
         if (!user) {
           user = {
             id: admittedId,
-            name: identity?.name || 'Anonymous',
+            name: identity?.name || 'Guest',
             avatar: null,
             rank: 0,
             createdAt: moment().toISOString(),

@@ -7,9 +7,16 @@ export function authorizedAdmission(request, secret) {
 }
 
 export class Admission {
-  constructor({ capacity, graceMs = 60_000, ticketMs = 30_000, now = Date.now, requireIdentity = false } = {}) {
+  constructor({
+    capacity,
+    graceMs = 60_000,
+    ticketMs = 30_000,
+    now = Date.now,
+    requireIdentity = false,
+    allowGuests = false,
+  } = {}) {
     if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error('admission_invalid_capacity')
-    Object.assign(this, { capacity, graceMs, ticketMs, now, requireIdentity })
+    Object.assign(this, { capacity, graceMs, ticketMs, now, requireIdentity, allowGuests })
     this.generation = randomUUID()
     this.seats = new Map()
     this.draining = false
@@ -23,17 +30,17 @@ export class Admission {
 
   reserve(sessionId, identity) {
     if (
-      this.requireIdentity &&
-      (!identity ||
-        identity.userId !== sessionId ||
-        typeof identity.issuer !== 'string' ||
-        !identity.issuer.startsWith('https://') ||
-        typeof identity.name !== 'string' ||
-        identity.name.length > 128 ||
-        identity.authenticatedWith !== 'evm' ||
-        !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') ||
-        !Number.isFinite(identity.expiresAt) ||
-        identity.expiresAt <= this.now())
+      (this.requireIdentity && !this.allowGuests && !identity) ||
+      (identity &&
+        (identity.userId !== sessionId ||
+          typeof identity.issuer !== 'string' ||
+          !identity.issuer.startsWith('https://') ||
+          typeof identity.name !== 'string' ||
+          identity.name.length > 128 ||
+          identity.authenticatedWith !== 'evm' ||
+          !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') ||
+          !Number.isFinite(identity.expiresAt) ||
+          identity.expiresAt <= this.now()))
     )
       throw new Error('admission_identity_required')
     if (!/^[a-zA-Z0-9_-]{16,100}$/.test(sessionId || '')) throw new Error('admission_invalid_session')
@@ -57,7 +64,8 @@ export class Admission {
     const seat = [...this.seats.values()].find(s => s.ticket === ticket && typeof ticket === 'string')
     if (
       !seat ||
-      (this.requireIdentity && (!seat.identity || seat.identity.expiresAt <= this.now())) ||
+      (this.requireIdentity && !this.allowGuests && !seat.identity) ||
+      (seat.identity && seat.identity.expiresAt <= this.now()) ||
       !['pending', 'grace'].includes(seat.state)
     )
       throw new Error('admission_invalid_ticket')

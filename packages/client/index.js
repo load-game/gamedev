@@ -1,7 +1,6 @@
 /* global env */
 
 import { createIdentityAuthBridge } from './identity-auth.js'
-import { IdentityGate } from './components/IdentityGate.js'
 import 'ses'
 import '@gamedev/core/lockdown.js'
 import { getAddress } from 'ethers'
@@ -587,7 +586,10 @@ async function getConnectionUrl(onStatus) {
     return buildWsUrl(baseWsUrl)
   }
 
-  if (hasValue(env.PUBLIC_IDENTITY_URL)) return buildWsUrl(baseWsUrl)
+  if (hasValue(env.PUBLIC_IDENTITY_URL)) {
+    await globalThis.__runtimeAuth.initialize()
+    return buildWsUrl(baseWsUrl)
+  }
 
   if (usesExternalIdentity) {
     const authBaseUrl = env.PUBLIC_AUTH_URL
@@ -1083,13 +1085,7 @@ function App() {
 
 function RootApp() {
   if (!privyAppId || !privyBridgeState) {
-    return hasValue(env.PUBLIC_IDENTITY_URL) ? (
-      <IdentityGate>
-        <App />
-      </IdentityGate>
-    ) : (
-      <App />
-    )
+    return <App />
   }
   return (
     <PrivyProvider

@@ -3,6 +3,28 @@ import { test } from 'vite-plus/test'
 
 import { RuntimeWalletAdapter } from '@gamedev/client/wallet-adapter.js'
 
+test('world connect requests Identity login and cannot continue a guest action during reconnection', async () => {
+  let requested = 0
+  const adapter = new RuntimeWalletAdapter({
+    authBridge: {
+      ensureWalletSession: async () => {
+        requested++
+        return false
+      },
+      allowsUnscopedWalletAccess: () => false,
+      getSessionUser: async () => null,
+    },
+    refreshIntervalMs: 0,
+  })
+  try {
+    await assert.rejects(adapter.connect(), error => error.skipAuth && /Rejoining/.test(error.message))
+    assert.equal(requested, 1)
+    assert.equal(adapter.getSnapshot().connected, false)
+  } finally {
+    adapter.destroy()
+  }
+})
+
 function makeProvider({
   accounts = [],
   chainId = '0x1',

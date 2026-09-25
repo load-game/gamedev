@@ -28,6 +28,7 @@ export class WalletBindings {
     return {
       challenge: (playerId, address) => {
         const socket = live(playerId)
+        if (this.network.requiresIdentityWallet && !socket?.identity) throw new Error('authentication_required')
         if (!socket || typeof address !== 'string' || !/^0x[\da-f]{40}$/i.test(address))
           throw new Error('invalid_identity')
         if (socket.identity && socket.identity.walletAddress.toLowerCase() !== address.toLowerCase())

@@ -9,6 +9,7 @@ import { RightPanel } from './RightPanel.js'
 import { BottomPanel } from './BottomPanel.js'
 import { HintContext, HintProvider } from '../Hint.js'
 import { useRank } from '../useRank.js'
+import { IdentityOverlay } from '../IdentityOverlay.js'
 import { useWalletAuth } from '../useWalletAuth.js'
 
 export function EditorLayout({ world, ui, children }) {
@@ -95,6 +96,10 @@ export function EditorLayout({ world, ui, children }) {
       return
     }
     setUserMenuOpen(false)
+    if (walletAuth.mode === 'identity') {
+      world.emit('identity-login')
+      return
+    }
     setWalletPickerOpen(prev => !prev)
   }
   const connectWalletWithSelection = selection => {
@@ -169,6 +174,7 @@ export function EditorLayout({ world, ui, children }) {
                 onDisconnectWallet={disconnectWallet}
               />
             )}
+            {ready && walletAuth.mode === 'identity' && <IdentityOverlay world={world} />}
             {ready && <ExploreMenu open={exploreMenuOpen} onClose={() => setExploreMenuOpen(false)} />}
           </div>
 
