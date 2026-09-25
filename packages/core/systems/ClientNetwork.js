@@ -219,6 +219,7 @@ export class ClientNetwork extends System {
 
   onSnapshot(data) {
     this.id = data.id
+    this.identity = data.identity || null
     this.serverTimeOffset = data.serverTime - performance.now()
     this.apiUrl = data.apiUrl
     this.maxUploadSize = data.maxUploadSize

@@ -373,6 +373,7 @@ export class RuntimeWalletAdapter {
         request,
       })
       if (injectedSession) return injectedSession
+      if (!this._allowsUnscopedWalletAccess()) return null
     }
 
     return this._resolveInjectedContext({ request })

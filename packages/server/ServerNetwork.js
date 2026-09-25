@@ -182,7 +182,11 @@ export class ServerNetwork extends System {
     this.sockets = new Map()
     this.pendingAdmissions = 0
     this.admission = process.env.ADMISSION_SECRET
-      ? new Admission({ capacity: getWorldMaxPlayers(), graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000) })
+      ? new Admission({
+          requireIdentity: process.env.IDENTITY_REQUIRED === 'true',
+          capacity: getWorldMaxPlayers(),
+          graceMs: Number(process.env.ADMISSION_GRACE_MS || 60000),
+        })
       : null
     this.walletBindings = new WalletBindings(this)
     this.companions = new Companions(this)
@@ -224,12 +228,12 @@ export class ServerNetwork extends System {
     return service
   }
 
-  async reserveFriend(token, sessionId) {
+  async reserveFriend(token, sessionId, identity) {
     const value = readFriendJoin(token, process.env.ADMISSION_SECRET)
     const service = this.friendServices.get(value.appId)
     if (!service) throw new Error('friend_offline')
     await service.authorizeJoin(token, sessionId)
-    return this.admission.reserve(sessionId)
+    return this.admission.reserve(sessionId, identity)
   }
 
   init({ db, authConfig } = {}) {
@@ -329,6 +333,9 @@ export class ServerNetwork extends System {
   }
 
   checkSockets() {
+    for (const socket of this.sockets.values()) {
+      if (socket.identity && socket.identity.expiresAt <= Date.now()) socket.disconnect()
+    }
     // see: https://www.npmjs.com/package/ws#how-to-detect-and-close-broken-connections
     const dead = []
     this.sockets.forEach(socket => {
@@ -495,6 +502,8 @@ export class ServerNetwork extends System {
     let admissionComplete = false
     try {
       if (this.admission) admittedId = this.admission.consume(params?.admissionTicket)
+      const identity = admittedId ? this.admission.seats.get(admittedId)?.identity : null
+      if (process.env.IDENTITY_REQUIRED === 'true' && !identity) throw new Error('authentication_required')
       // check player limit
       const playerLimit = this.world.settings.playerLimit
       if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size + this.pendingAdmissions >= playerLimit) {
@@ -523,8 +532,18 @@ export class ServerNetwork extends System {
       if (admittedId) {
         user = await this.db('users').where('id', admittedId).first()
         if (!user) {
-          user = { id: admittedId, name: 'Anonymous', avatar: null, rank: 0, createdAt: moment().toISOString() }
+          user = {
+            id: admittedId,
+            name: identity?.name || 'Anonymous',
+            avatar: null,
+            rank: 0,
+            createdAt: moment().toISOString(),
+          }
           await this.db('users').insert(user).onConflict('id').ignore()
+        }
+        if (identity) {
+          user.name = identity.name
+          await this.db('users').where('id', user.id).update({ name: identity.name })
         }
         authToken = null
       } else if (authToken) {
@@ -593,7 +612,8 @@ export class ServerNetwork extends System {
       }
       // create socket
       const socket = new Socket({ id: user.id, ws, network: this })
-      const playerName = name || user.name
+      socket.identity = identity
+      const playerName = identity ? user.name : name || user.name
 
       // spawn player
       socket.player = this.world.entities.add(
@@ -618,6 +638,7 @@ export class ServerNetwork extends System {
       const adminUrl = deriveAdminUrlFromRequest(req) || PUBLIC_ADMIN_URL || deriveAdminUrlFromEnv()
       const apiUrl = deriveApiUrlFromAdminUrl(adminUrl) || process.env.PUBLIC_API_URL
       socket.send('snapshot', {
+        identity,
         id: socket.id,
         serverTime: performance.now(),
         assetsUrl: process.env.ASSETS_BASE_URL,

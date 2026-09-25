@@ -1,5 +1,7 @@
 /* global env */
 
+import { createIdentityAuthBridge } from './identity-auth.js'
+import { IdentityGate } from './components/IdentityGate.js'
 import 'ses'
 import '@gamedev/core/lockdown.js'
 import { getAddress } from 'ethers'
@@ -585,6 +587,8 @@ async function getConnectionUrl(onStatus) {
     return buildWsUrl(baseWsUrl)
   }
 
+  if (hasValue(env.PUBLIC_IDENTITY_URL)) return buildWsUrl(baseWsUrl)
+
   if (usesExternalIdentity) {
     const authBaseUrl = env.PUBLIC_AUTH_URL
     onStatus?.('auth', 'Authorizing...')
@@ -1049,6 +1053,8 @@ if (typeof globalThis !== 'undefined') {
   globalThis.__runtimeAuth = privyBridgeState
     ? createPrivyRuntimeAuthBridge(privyBridgeState)
     : createInjectedRuntimeAuthBridge(authBaseUrl)
+  if (hasValue(env.PUBLIC_IDENTITY_URL))
+    globalThis.__runtimeAuth = createIdentityAuthBridge(env.PUBLIC_IDENTITY_URL, createInjectedRuntimeAuthBridge(null))
   globalThis.__runtimeWalletBridge = runtimeWalletBridge
 }
 
@@ -1077,7 +1083,13 @@ function App() {
 
 function RootApp() {
   if (!privyAppId || !privyBridgeState) {
-    return <App />
+    return hasValue(env.PUBLIC_IDENTITY_URL) ? (
+      <IdentityGate>
+        <App />
+      </IdentityGate>
+    ) : (
+      <App />
+    )
   }
   return (
     <PrivyProvider
