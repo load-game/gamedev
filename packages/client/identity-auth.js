@@ -5,24 +5,17 @@ const normalize = value => (typeof value === 'string' ? value.toLowerCase() : ''
 export function createIdentityAuthBridge(
   baseUrl,
   walletBridge,
-  {
-    fetcher = fetch,
-    provider = () => globalThis.ethereum,
-    storage = globalThis.localStorage,
-    reload = () => globalThis.location.reload(),
-  } = {}
+  { fetcher = fetch, provider = () => globalThis.ethereum, storage = globalThis.localStorage } = {}
 ) {
-  let initialized
-  let login
-  let loginController
-  let selectingWallet = false
-  let reconnecting = false
-  let observedAddress = ''
-  let tracking = false
-  let connectionIdentity
-  let connectionKnown = false
-  let trackedProvider
-  const transitionListeners = new Set()
+  let initialized, login, loginController, verification, invalidating, transport, trackedProvider
+  let selectingWallet = false,
+    observedAddress = '',
+    tracking = false,
+    epoch = 0
+  let connectionIdentity = null,
+    connectionKnown = false
+  let state = { phase: 'idle', error: '' }
+  const listeners = new Set()
   const read = key => {
     try {
       return storage?.getItem(key)
@@ -36,15 +29,15 @@ export function createIdentityAuthBridge(
       else storage?.setItem(key, value)
     } catch {}
   }
-  function transition() {
-    if (reconnecting) return false
-    reconnecting = true
-    walletBridge.clearRuntimeAuthState?.()
-    for (const listener of transitionListeners) listener()
-    return true
+  function publish(phase, error = '') {
+    state = { phase, error }
+    for (const listener of listeners) listener(state)
   }
-  function rejoin() {
-    if (transition()) reload()
+  function suspend() {
+    walletBridge.clearRuntimeAuthState?.()
+    transport?.suspend()
+    connectionIdentity = null
+    publish('switching')
   }
   async function request(path, body, signal) {
     const response = await fetcher(`${baseUrl}/${path}`, {
@@ -55,11 +48,7 @@ export function createIdentityAuthBridge(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     })
     const data = await response.json()
-    if (!response.ok) {
-      const error = new Error(data.error || 'Unable to sign in')
-      error.status = response.status
-      throw error
-    }
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Unable to sign in'), { status: response.status })
     return data
   }
   async function readSession() {
@@ -70,35 +59,48 @@ export function createIdentityAuthBridge(
       throw error
     }
   }
-  async function invalidateAndReload() {
-    if (!transition()) return
+  async function resume(version = epoch) {
+    if (connectionKnown) {
+      if (!transport) throw new Error('The world connection is not ready. Try again.')
+      await transport.reconnect()
+    }
+    if (version === epoch) publish('idle')
+  }
+  function invalidateSession() {
+    if (invalidating) return invalidating
+    epoch++
     write(PENDING_SIGN_OUT, '1')
     write(GUEST_CHOICE, null)
     loginController?.abort()
-    try {
-      await request('logout', {})
-      write(PENDING_SIGN_OUT, null)
-    } catch {
-      /* Retry logout before reconnecting after the reload. */
-    } finally {
-      reload()
-    }
+    suspend()
+    if (!invalidating)
+      invalidating = (async () => {
+        // Let an in-flight verification response finish before clearing its cookie.
+        await verification?.catch(() => {})
+        await request('logout', {})
+        write(PENDING_SIGN_OUT, null)
+        await resume()
+      })()
+        .catch(error => {
+          publish('error', error.message)
+          throw error
+        })
+        .finally(() => {
+          invalidating = null
+        })
+    return invalidating
   }
   const accountChanged = accounts => {
     const next = normalize(accounts?.[0])
-    if (!tracking || selectingWallet) {
-      observedAddress = next
-      return
-    }
     if (next === observedAddress) return
     observedAddress = next
-    void invalidateAndReload()
+    if (!tracking || selectingWallet) return
+    void invalidateSession().catch(() => {})
   }
   const disconnected = () => accountChanged([])
   async function initialize() {
     if (initialized) return initialized
     initialized = (async () => {
-      // A failed logout must never restore the previous wallet's session.
       if (read(PENDING_SIGN_OUT)) {
         await request('logout', {})
         write(PENDING_SIGN_OUT, null)
@@ -113,8 +115,8 @@ export function createIdentityAuthBridge(
       observedAddress = normalize(accounts?.[0])
       tracking = true
       if (session?.user?.wallet?.address && normalize(session.user.wallet.address) !== observedAddress) {
-        await invalidateAndReload()
-        throw Object.assign(new Error('Wallet changed. Rejoining as guest.'), { skipAuth: true })
+        await invalidateSession()
+        return null
       }
       return session
     })().catch(error => {
@@ -123,11 +125,23 @@ export function createIdentityAuthBridge(
     })
     return initialized
   }
+  async function rejoin() {
+    const version = epoch
+    suspend()
+    try {
+      await resume(version)
+    } catch (error) {
+      if (version === epoch) publish('error', error.message)
+      throw error
+    }
+  }
   async function performLogin() {
     await initialize()
-    if (reconnecting) return null
+    if (invalidating) await invalidating
+    if (state.phase !== 'idle') throw new Error('Reconnect to the world before signing in.')
     const wallet = provider()
     if (!wallet?.request) throw new Error('Open this page in a browser with an EVM wallet installed.')
+    const version = epoch
     loginController = new AbortController()
     let address
     selectingWallet = true
@@ -144,14 +158,19 @@ export function createIdentityAuthBridge(
     const message = `0x${Array.from(new TextEncoder().encode(challenge.message), byte => byte.toString(16).padStart(2, '0')).join('')}`
     const signature = await wallet.request({ method: 'personal_sign', params: [message, address] })
     const current = await wallet.request({ method: 'eth_accounts' })
-    if (reconnecting || normalize(current?.[0]) !== normalize(address)) {
-      await invalidateAndReload()
+    if (version !== epoch || normalize(current?.[0]) !== normalize(address)) {
+      if (version === epoch) await invalidateSession()
       throw Object.assign(new Error('Wallet changed. Sign in again.'), { skipAuth: true })
     }
-    await request('verify', { signature }, loginController.signal)
-    const session = await request('me', undefined, loginController.signal)
+    // Do not abort verify: logout must run after the response that sets the cookie.
+    verification = request('verify', { signature })
+    await verification
+    verification = null
+    if (version !== epoch) throw Object.assign(new Error('Wallet changed. Sign in again.'), { skipAuth: true })
+    const session = await request('me')
+    if (version !== epoch) throw Object.assign(new Error('Wallet changed. Sign in again.'), { skipAuth: true })
     write(GUEST_CHOICE, null)
-    rejoin()
+    await rejoin()
     return session
   }
   const bridge = {
@@ -160,20 +179,28 @@ export function createIdentityAuthBridge(
     enabled: true,
     initialize,
     allowsUnscopedWalletAccess: () => false,
-    isReconnecting: () => reconnecting,
+    isReconnecting: () => state.phase !== 'idle',
+    getState: () => state,
     shouldOfferSignIn: () => !read(GUEST_CHOICE),
     continueAsGuest: () => write(GUEST_CHOICE, '1'),
     setConnectionIdentity(identity) {
       connectionIdentity = identity
       connectionKnown = true
     },
-    onTransition(listener) {
-      transitionListeners.add(listener)
-      return () => transitionListeners.delete(listener)
+    attachTransport(value) {
+      transport = value
+      return () => {
+        if (transport === value) transport = null
+      }
+    },
+    onStateChange(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
     },
     async getSessionUser() {
-      if (reconnecting || (connectionKnown && !connectionIdentity)) return null
+      if (state.phase !== 'idle' || (connectionKnown && !connectionIdentity)) return null
       const session = await readSession().catch(() => null)
+      if (state.phase !== 'idle') return null
       return connectionKnown && connectionIdentity?.userId !== session?.user?.id ? null : session
     },
     connectWalletSession() {
@@ -186,33 +213,28 @@ export function createIdentityAuthBridge(
     },
     async ensureWalletSession() {
       await initialize()
-      if (reconnecting) return false
+      if (state.phase !== 'idle') return false
       const session = await readSession()
       const accounts = await provider()
         ?.request?.({ method: 'eth_accounts' })
         .catch(() => [])
       if (session?.user?.id && normalize(session.user.wallet?.address) === normalize(accounts?.[0])) {
         if (connectionKnown && connectionIdentity?.userId === session.user.id) return true
-        rejoin()
+        await rejoin()
       } else {
         await bridge.connectWalletSession()
       }
-      return false
+      return state.phase === 'idle' && !!connectionIdentity
     },
-    async logoutAndClearSession() {
-      write(PENDING_SIGN_OUT, '1')
-      await request('logout', {})
-      write(PENDING_SIGN_OUT, null)
-      write(GUEST_CHOICE, null)
-      walletBridge.clearRuntimeAuthState?.()
-    },
+    retrySession: () => (read(PENDING_SIGN_OUT) ? invalidateSession() : rejoin()),
+    logoutAndClearSession: invalidateSession,
     async updateProfile() {
       throw new Error('Manage your profile in your account settings.')
     },
     dispose() {
       trackedProvider?.removeListener?.('accountsChanged', accountChanged)
       trackedProvider?.removeListener?.('disconnect', disconnected)
-      transitionListeners.clear()
+      listeners.clear()
     },
   }
   return bridge

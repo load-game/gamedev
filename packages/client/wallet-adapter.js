@@ -382,6 +382,7 @@ export class RuntimeWalletAdapter {
   async _requireWalletContext({ request = true } = {}) {
     if (this.authBridge?.isReconnecting?.()) throw new Error('Rejoining with your account…')
     const context = await this._resolveWalletContext({ request })
+    if (this.authBridge?.isReconnecting?.()) throw new Error('Switching accounts…')
     if (!context) {
       throw new Error('Wallet not connected')
     }
@@ -413,6 +414,14 @@ export class RuntimeWalletAdapter {
     return this.getSnapshot()
   }
 
+  resetSession() {
+    this.disconnected = false
+    this.sessionWalletFetchedAt = 0
+    this.sessionWallet = null
+    this.refreshVersion++
+    this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })
+  }
+
   async connect() {
     if (this.authBridge?.ensureWalletSession) {
       const ready = await this.authBridge.ensureWalletSession()
@@ -426,6 +435,7 @@ export class RuntimeWalletAdapter {
   }
 
   disconnect() {
+    if (this.authBridge?.mode === 'identity') void this.authBridge.logoutAndClearSession().catch(() => {})
     this.disconnected = true
     this.refreshVersion++
     this._updateSnapshot({ source: null, address: null, connected: false, chainId: null })

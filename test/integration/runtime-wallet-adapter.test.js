@@ -379,3 +379,24 @@ test('wallet adapter writes contracts using provider chain context', async () =>
     adapter.destroy()
   }
 })
+
+test('disconnecting an Identity wallet ends the shared account session', () => {
+  let signedOut = 0
+  const adapter = new RuntimeWalletAdapter({
+    authBridge: {
+      mode: 'identity',
+      getSessionUser: async () => null,
+      logoutAndClearSession: async () => {
+        signedOut++
+      },
+    },
+    refreshIntervalMs: 0,
+  })
+  try {
+    adapter.disconnect()
+    assert.equal(signedOut, 1)
+    assert.equal(adapter.getSnapshot().connected, false)
+  } finally {
+    adapter.destroy()
+  }
+})

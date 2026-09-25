@@ -130,6 +130,8 @@ function matchesWalletAddress(chain, expectedAddress, nextAddress) {
 }
 
 export function useWalletAuth(world) {
+  const [sessionRevision, setSessionRevision] = useState(0)
+  useEffect(() => globalThis.__runtimeAuth?.onStateChange?.(() => setSessionRevision(value => value + 1)), [world])
   const [walletAuth, setWalletAuth] = useState(defaultWalletAuthState)
   const sessionWalletRef = useRef({
     type: '',
@@ -327,7 +329,7 @@ export function useWalletAuth(world) {
         clearInterval(verifyTimerId)
       }
     }
-  }, [world])
+  }, [world, sessionRevision])
 
   const connectWallet = async (options = {}) => {
     const auth = globalThis.__runtimeAuth
@@ -365,9 +367,10 @@ export function useWalletAuth(world) {
     try {
       await auth.logoutAndClearSession?.()
     } catch {
-      // always reload to force a clean guest state
+      if (auth.mode === 'identity') world.emit('toast', auth.getState().error)
     } finally {
-      window.location.reload()
+      if (auth.mode !== 'identity') window.location.reload()
+      setWalletAuth(prev => ({ ...prev, pending: false }))
     }
   }
 

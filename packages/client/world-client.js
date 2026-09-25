@@ -24,14 +24,22 @@ export function Client({ wsUrl, apiUrl, authUrl, connectionStatus, onSetup }) {
   const [apiBaseUrl, setApiBaseUrl] = useState(null)
   const [authBaseUrl, setAuthBaseUrl] = useState(null)
   const [entered] = useState(true)
-  useEffect(
-    () =>
-      globalThis.__runtimeAuth?.onTransition?.(() => {
-        world.network._intentionalOffline = true
-        world.network.ws?.close()
-      }),
-    [world]
-  )
+  useEffect(() => {
+    const auth = globalThis.__runtimeAuth
+    if (auth?.mode !== 'identity') return
+    const detach = auth.attachTransport({
+      suspend: () => world.network.suspendSession(),
+      reconnect: () => world.network.reconnectSession(),
+    })
+    const unsubscribe = auth.onStateChange(() => {
+      walletAdapter.resetSession()
+      void walletAdapter.refresh()
+    })
+    return () => {
+      detach()
+      unsubscribe()
+    }
+  }, [world, walletAdapter])
   useEffect(() => {
     world.on('ui', setUI)
     return () => {

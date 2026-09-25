@@ -72,10 +72,14 @@ export class Entities extends System {
 
   remove(id) {
     const entity = this.items.get(id)
-    if (!entity) return console.warn(`tried to remove entity that did not exist: ${id}`)
+    if (!entity) return
     if (entity.isPlayer) this.players.delete(entity.data.id)
-    entity.destroy()
     this.items.delete(id)
+    if (this.player === entity) {
+      this.player = null
+      this.world.emit('player', null)
+    }
+    entity.destroy()
     this.removed.push(id)
     this.emit('removed', entity)
   }

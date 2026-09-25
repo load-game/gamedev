@@ -12,7 +12,8 @@ function fixture({ signedIn = false, accounts = [], storage = new Map() } = {}) 
   let currentAccounts = accounts
   let failLogout = false
   let signature
-  let reloads = 0
+  let verificationGate
+  let reconnects = 0
   const wallet = {
     on(name, fn) {
       events.set(name, fn)
@@ -43,10 +44,6 @@ function fixture({ signedIn = false, accounts = [], storage = new Map() } = {}) 
         setItem: (key, value) => storage.set(key, value),
         removeItem: key => storage.delete(key),
       },
-      reload: () => {
-        calls.push('reload')
-        reloads++
-      },
       fetcher: async (url, init) => {
         const path = url.split('/').at(-1)
         calls.push(path)
@@ -57,17 +54,29 @@ function fixture({ signedIn = false, accounts = [], storage = new Map() } = {}) 
           if (failLogout) throw new Error('offline')
           signedIn = false
         }
-        if (path === 'verify') signedIn = true
+        if (path === 'verify') {
+          await verificationGate
+          signedIn = true
+        }
         return Response.json(path === 'challenge' ? { message: 'Sign this nonce' } : {})
       },
     }
   )
+  bridge.setConnectionIdentity(signedIn ? { userId: session.user.id } : null)
+  bridge.attachTransport({
+    suspend: () => calls.push('close-world'),
+    reconnect: async () => {
+      calls.push('reconnect')
+      reconnects++
+      bridge.setConnectionIdentity(signedIn ? { userId: session.user.id } : null)
+    },
+  })
   return {
     bridge,
     calls,
     storage,
-    get reloads() {
-      return reloads
+    get reconnects() {
+      return reconnects
     },
     change(next) {
       currentAccounts = next
@@ -75,6 +84,13 @@ function fixture({ signedIn = false, accounts = [], storage = new Map() } = {}) 
     },
     failLogout() {
       failLogout = true
+    },
+    holdVerification() {
+      let resolve
+      verificationGate = new Promise(r => {
+        resolve = r
+      })
+      return resolve
     },
     holdSignature() {
       let resolve
@@ -89,7 +105,7 @@ function fixture({ signedIn = false, accounts = [], storage = new Map() } = {}) 
 test('guest initialization never prompts; guest choice survives a new page', async () => {
   const f = fixture()
   assert.equal(await f.bridge.initialize(), null)
-  assert.equal(f.reloads, 0)
+  assert.equal(f.reconnects, 0)
   assert.equal(f.calls.includes('eth_requestAccounts'), false)
   assert.equal(f.bridge.shouldOfferSignIn(), true)
   f.bridge.continueAsGuest()
@@ -101,13 +117,13 @@ test('matching saved wallet session restores without signing; a guest socket can
   assert.deepEqual(await f.bridge.initialize(), session)
   f.bridge.setConnectionIdentity(null)
   assert.equal(await f.bridge.getSessionUser(), null)
-  assert.equal(await f.bridge.ensureWalletSession(), false)
-  assert.equal(f.reloads, 1)
+  assert.equal(await f.bridge.ensureWalletSession(), true)
+  assert.equal(f.reconnects, 1)
   assert.equal(f.calls.includes('personal_sign'), false)
   const live = fixture({ signedIn: true, accounts: [address] })
   live.bridge.setConnectionIdentity({ userId: session.user.id })
   assert.equal(await live.bridge.ensureWalletSession(), true)
-  assert.equal(live.reloads, 0)
+  assert.equal(live.reconnects, 0)
 })
 
 test('wallet login is single-flight and reconnects only after verification', async () => {
@@ -115,27 +131,26 @@ test('wallet login is single-flight and reconnects only after verification', asy
   const first = f.bridge.connectWalletSession()
   assert.equal(first, f.bridge.connectWalletSession())
   assert.deepEqual(await first, session)
-  assert.equal(f.reloads, 1)
+  assert.equal(f.reconnects, 1)
   assert.equal(f.calls.filter(x => x === 'personal_sign').length, 1)
   assert.equal(f.calls.includes('logout'), false)
-  assert.ok(f.calls.indexOf('verify') < f.calls.indexOf('reload'))
-  assert.equal(await f.bridge.getSessionUser(), null)
+  assert.ok(f.calls.indexOf('verify') < f.calls.indexOf('reconnect'))
+  assert.deepEqual(await f.bridge.getSessionUser(), session)
 })
 
-test('account changes and disconnects close the world before logout and reload, including guests', async () => {
+test('account changes and disconnects close the world before logout and reconnect, including guests', async () => {
   for (const signedIn of [false, true]) {
     for (const accounts of [[otherAddress], []]) {
       const f = fixture({ signedIn, accounts: [address] })
       await f.bridge.initialize()
-      f.bridge.onTransition(() => f.calls.push('close-world'))
       f.change([address.toUpperCase()])
-      assert.equal(f.reloads, 0)
+      assert.equal(f.reconnects, 0)
       f.change(accounts)
       f.change(accounts)
       await tick()
-      assert.equal(f.reloads, 1)
+      assert.equal(f.reconnects, 1)
       assert.ok(f.calls.indexOf('close-world') < f.calls.indexOf('logout'))
-      assert.ok(f.calls.indexOf('logout') < f.calls.indexOf('reload'))
+      assert.ok(f.calls.indexOf('logout') < f.calls.indexOf('reconnect'))
     }
   }
 })
@@ -149,7 +164,7 @@ test('switching wallets during signature cannot verify or expose the old account
   finishSignature('0xsignature')
   await assert.rejects(login, /Wallet changed/)
   assert.equal(f.calls.includes('verify'), false)
-  assert.equal(f.reloads, 1)
+  assert.equal(f.reconnects, 1)
 })
 
 test('failed wallet-change logout is retried before restoring a session on the next page', async () => {
@@ -158,16 +173,64 @@ test('failed wallet-change logout is retried before restoring a session on the n
   f.failLogout()
   f.change([otherAddress])
   await tick()
-  assert.equal(f.reloads, 1)
+  assert.equal(f.reconnects, 0)
+  assert.equal(f.bridge.getState().phase, 'error')
   const next = fixture({ signedIn: true, accounts: [otherAddress], storage: f.storage })
   assert.equal(await next.bridge.initialize(), null)
   assert.equal(next.calls[0], 'logout')
-  assert.equal(next.reloads, 0)
+  assert.equal(next.reconnects, 0)
 })
 
 test('a changed wallet detected on page load invalidates the remembered identity before joining', async () => {
   const f = fixture({ signedIn: true, accounts: [otherAddress] })
-  await assert.rejects(f.bridge.initialize(), /Wallet changed/)
-  assert.equal(f.reloads, 1)
+  assert.equal(await f.bridge.initialize(), null)
+  assert.equal(f.reconnects, 1)
   assert.equal(f.calls.includes('logout'), true)
+})
+
+test('wallet changes during verification wait for its cookie before logout', async () => {
+  const f = fixture()
+  const finish = f.holdVerification()
+  const login = f.bridge.connectWalletSession()
+  while (!f.calls.includes('verify')) await tick()
+  f.change([otherAddress])
+  await tick()
+  assert.equal(f.calls.includes('logout'), false)
+  finish()
+  await assert.rejects(login, /Wallet changed/)
+  await tick()
+  assert.equal(f.calls.includes('logout'), true)
+  assert.equal(await f.bridge.getSessionUser(), null)
+  assert.equal(f.bridge.getState().phase, 'idle')
+})
+
+test('failed handoff blocks wallet use and can retry without signing again', async () => {
+  const f = fixture()
+  let fail = true
+  f.bridge.attachTransport({
+    suspend() {},
+    async reconnect() {
+      if (fail) throw new Error('Instance unavailable')
+      f.bridge.setConnectionIdentity({ userId: session.user.id })
+    },
+  })
+  await assert.rejects(f.bridge.connectWalletSession(), /Instance unavailable/)
+  assert.equal(f.bridge.getState().phase, 'error')
+  assert.equal(await f.bridge.getSessionUser(), null)
+  fail = false
+  await f.bridge.retrySession()
+  assert.deepEqual(await f.bridge.getSessionUser(), session)
+  assert.equal(f.calls.filter(call => call === 'personal_sign').length, 1)
+})
+
+test('rapid wallet changes share one logout and guest handoff', async () => {
+  const f = fixture({ signedIn: true, accounts: [address] })
+  await f.bridge.initialize()
+  f.change([otherAddress])
+  f.change([])
+  f.change(['0x' + 'c'.repeat(40)])
+  await tick()
+  assert.equal(f.calls.filter(call => call === 'logout').length, 1)
+  assert.equal(f.reconnects, 1)
+  assert.equal(f.bridge.getState().phase, 'idle')
 })

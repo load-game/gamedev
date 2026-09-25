@@ -7,13 +7,24 @@ import { editorTheme as theme } from './editor/editorTheme.js'
 export function IdentityOverlay({ world }) {
   const auth = globalThis.__runtimeAuth
   const [open, setOpen] = useState(() => !world.network.identity && auth.shouldOfferSignIn())
+  const [sessionState, setSessionState] = useState(auth.getState())
+  useEffect(
+    () =>
+      auth.onStateChange(state => {
+        setSessionState(state)
+        setOpen(state.phase !== 'idle' || (!world.network.identity && auth.shouldOfferSignIn()))
+        setError(state.error)
+      }),
+    [auth, world]
+  )
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const panel = useRef(null)
   const continueAsGuest = useCallback(() => {
+    if (sessionState.phase !== 'idle') return
     auth.continueAsGuest()
     setOpen(false)
-  }, [auth])
+  }, [auth, sessionState.phase])
   useEffect(() => {
     const show = () => {
       setError('')
@@ -30,7 +41,7 @@ export function IdentityOverlay({ world }) {
     control.onButtonPress = () => true
     control.pointer.unlock()
     control.hideReticle()
-    panel.current?.querySelector('button')?.focus()
+    panel.current?.focus()
     return () => {
       control.release()
       previousFocus?.focus?.()
@@ -41,7 +52,8 @@ export function IdentityOverlay({ world }) {
     setPending(true)
     setError('')
     try {
-      await auth.connectWalletSession()
+      if (sessionState.phase === 'error') await auth.retrySession()
+      else await auth.connectWalletSession()
     } catch (error) {
       if (!error.skipAuth) setError(error.message || 'Sign-in cancelled. Try again.')
     } finally {
@@ -155,6 +167,7 @@ export function IdentityOverlay({ world }) {
     >
       <section
         ref={panel}
+        tabIndex={-1}
         className='identity-panel'
         role='dialog'
         aria-modal='true'
@@ -167,7 +180,7 @@ export function IdentityOverlay({ world }) {
           <button
             className='identity-close'
             aria-label='Continue as guest'
-            disabled={pending}
+            disabled={pending || sessionState.phase !== 'idle'}
             onClick={continueAsGuest}
           >
             <XIcon size={18} />
@@ -176,10 +189,24 @@ export function IdentityOverlay({ world }) {
         <div className='identity-body'>
           <h2 id='identity-title'>Welcome to the city</h2>
           <p>Explore as a guest, or connect your wallet to use your account.</p>
-          <button className='identity-action identity-primary' onClick={signIn} disabled={pending}>
-            {pending ? 'Confirm in your wallet…' : 'Connect wallet'}
+          <button
+            className='identity-action identity-primary'
+            onClick={signIn}
+            disabled={pending || sessionState.phase === 'switching'}
+          >
+            {sessionState.phase === 'switching'
+              ? 'Switching accounts…'
+              : sessionState.phase === 'error'
+                ? 'Retry connection'
+                : pending
+                  ? 'Confirm in your wallet…'
+                  : 'Connect wallet'}
           </button>
-          <button className='identity-action' onClick={continueAsGuest} disabled={pending}>
+          <button
+            className='identity-action'
+            onClick={continueAsGuest}
+            disabled={pending || sessionState.phase !== 'idle'}
+          >
             Continue as guest
           </button>
           <p className='identity-note'>You can sign in anytime. No transaction or gas fee.</p>
