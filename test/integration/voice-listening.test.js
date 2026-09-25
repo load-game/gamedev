@@ -219,3 +219,17 @@ test('voice distance settings round-trip and reject unsafe values on load and li
   restored.set('voiceRefDistance', 0)
   assert.equal(restored.voiceRefDistance, 4)
 })
+
+test('session switch cancels old voice callbacks and queued microphone intent', async () => {
+  const { voice, ready, participant, room } = fixture()
+  await voice.deserialize(opts())
+  await voice.connect()
+  const pending = voice.setMicrophoneEnabled(true)
+  voice.resetSession()
+  await pending
+  await ready.shift()()
+  assert.equal(room.disconnected, true)
+  assert.equal(voice.room, null)
+  assert.deepEqual(participant.calls, [])
+  voice.destroy()
+})

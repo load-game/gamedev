@@ -831,7 +831,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
 export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet }) {
   const apiBaseUrl = useMemo(resolveWorldServiceApiBase, [])
   const isPrivyMode = auth?.mode === 'privy'
-  const canManageWorld = !!auth?.authenticated
+  const canManageWorld = !!auth?.authenticated && auth?.mode !== 'identity'
 
   const [loadingWorld, setLoadingWorld] = useState(false)
   const [ownedWorlds, setOwnedWorlds] = useState([])
@@ -1739,7 +1739,17 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
             <XIcon size='1rem' />
           </div>
         </div>
-        {isPrivyMode ? (
+        {auth?.mode === 'identity' ? (
+          <div className='usermenu-hero'>
+            <div className='usermenu-section-label'>Signed in as {world.network.identity?.name}</div>
+            <div className='usermenu-muted'>
+              {auth.address?.slice(0, 6)}…{auth.address?.slice(-4)}
+            </div>
+            <button className='usermenu-btn' disabled={auth.pending} onClick={onDisconnectWallet}>
+              Sign out
+            </button>
+          </div>
+        ) : isPrivyMode ? (
           <PrivyAccountSection world={world} onDisconnectWallet={onDisconnectWallet}>
             {renderWorldSection()}
           </PrivyAccountSection>

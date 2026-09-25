@@ -20,6 +20,7 @@ export class ClientLiveKit extends System {
     this.leaving = false
     this.pendingMicEnable = false
     this.destroyed = false
+    this.sessionGeneration = 0
     this.micQueue = Promise.resolve()
     this.status = {
       available: false,
@@ -62,6 +63,16 @@ export class ClientLiveKit extends System {
     }
   }
 
+  resetSession() {
+    this.sessionGeneration++
+    const room = this.room
+    this.pendingMicEnable = false
+    this.opts = null
+    this.onDisconnected('session-changed')
+    this.status.available = false
+    void room?.disconnect()
+  }
+
   async deserialize(opts) {
     if (!opts) return
     this.opts = opts
@@ -72,8 +83,9 @@ export class ClientLiveKit extends System {
     this.emit('status', this.status)
     // Listening never requests microphone permission. Wait for the game's audio gesture.
     if (this.externalAudio) return
+    const generation = this.sessionGeneration
     this.world.audio.ready(() => {
-      if (!this.destroyed) void this.connect()
+      if (!this.destroyed && generation === this.sessionGeneration) void this.connect()
     })
   }
 
@@ -89,9 +101,11 @@ export class ClientLiveKit extends System {
     this.connecting = true
     this.status.connecting = true
     this.emit('status', this.status)
+    const generation = this.sessionGeneration
+    const opts = this.opts
     this.connectingPromise = new Promise(resolve => {
       this.world.audio.ready(async () => {
-        if (this.destroyed) return resolve()
+        if (this.destroyed || generation !== this.sessionGeneration || !opts) return resolve()
         let room
         try {
           room = this.room = new Room({
@@ -111,7 +125,7 @@ export class ClientLiveKit extends System {
           this.room.on(RoomEvent.TrackSubscribed, this.onTrackSubscribed)
           this.room.on(RoomEvent.TrackUnsubscribed, this.onTrackUnsubscribed)
           this.room.localParticipant.on(ParticipantEvent.IsSpeakingChanged, this.onLocalSpeakingChanged)
-          await room.connect(this.opts.wsUrl, this.opts.token)
+          await room.connect(opts.wsUrl, opts.token)
           if (this.destroyed || this.room !== room) {
             await room.disconnect()
             return resolve()
@@ -123,6 +137,10 @@ export class ClientLiveKit extends System {
           this.connectingPromise = null
           this.emit('status', this.status)
         } catch (err) {
+          if (generation !== this.sessionGeneration) {
+            await room?.disconnect()
+            return resolve()
+          }
           if (this.room === room) this.onDisconnected('connection-failed')
           await room?.disconnect()
           this.status.connecting = false
@@ -184,12 +202,14 @@ export class ClientLiveKit extends System {
   }
 
   setMicrophoneEnabled(value) {
-    const request = this.micQueue.then(() => this.applyMicrophoneEnabled(value))
+    const generation = this.sessionGeneration
+    const request = this.micQueue.then(() => this.applyMicrophoneEnabled(value, generation))
     this.micQueue = request.catch(() => {})
     return request
   }
 
-  async applyMicrophoneEnabled(value) {
+  async applyMicrophoneEnabled(value, generation = this.sessionGeneration) {
+    if (generation !== this.sessionGeneration) return
     value = isBoolean(value) ? value : !this.status.mic
     if (value && this.status.muted) throw new Error('muted_by_moderator')
     if (value && this.leaving) {
@@ -199,6 +219,7 @@ export class ClientLiveKit extends System {
     if (value && !this.status.connected) {
       await this.connect()
     }
+    if (generation !== this.sessionGeneration) return
     if (!this.room || !this.status.connected) {
       throw new Error('livekit_not_connected')
     }
@@ -206,7 +227,12 @@ export class ClientLiveKit extends System {
       throw new Error('muted_by_moderator')
     }
     if (this.status.mic === value) return
-    await this.room.localParticipant.setMicrophoneEnabled(value)
+    const room = this.room
+    await room.localParticipant.setMicrophoneEnabled(value)
+    if (generation !== this.sessionGeneration) {
+      await room.localParticipant.setMicrophoneEnabled(false)
+      return
+    }
     // A moderator may mute us while a microphone permission prompt is open.
     if (value && this.status.muted) {
       await this.room?.localParticipant.setMicrophoneEnabled(false)
@@ -214,9 +240,11 @@ export class ClientLiveKit extends System {
   }
 
   async setScreenShareTarget(targetId = null) {
+    const generation = this.sessionGeneration
     if (targetId && !this.status.connected) {
       await this.connect()
     }
+    if (generation !== this.sessionGeneration) return
     if (!this.room) return console.error('[livekit] setScreenShareTarget failed (not connected)')
     if (this.status.screenshare === targetId) return
     const metadata = JSON.stringify({

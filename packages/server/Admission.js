@@ -7,9 +7,16 @@ export function authorizedAdmission(request, secret) {
 }
 
 export class Admission {
-  constructor({ capacity, graceMs = 60_000, ticketMs = 30_000, now = Date.now } = {}) {
+  constructor({
+    capacity,
+    graceMs = 60_000,
+    ticketMs = 30_000,
+    now = Date.now,
+    requireIdentity = false,
+    allowGuests = false,
+  } = {}) {
     if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error('admission_invalid_capacity')
-    Object.assign(this, { capacity, graceMs, ticketMs, now })
+    Object.assign(this, { capacity, graceMs, ticketMs, now, requireIdentity, allowGuests })
     this.generation = randomUUID()
     this.seats = new Map()
     this.draining = false
@@ -21,7 +28,21 @@ export class Admission {
     }
   }
 
-  reserve(sessionId) {
+  reserve(sessionId, identity) {
+    if (
+      (this.requireIdentity && !this.allowGuests && !identity) ||
+      (identity &&
+        (identity.userId !== sessionId ||
+          typeof identity.issuer !== 'string' ||
+          !identity.issuer.startsWith('https://') ||
+          typeof identity.name !== 'string' ||
+          identity.name.length > 128 ||
+          identity.authenticatedWith !== 'evm' ||
+          !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') ||
+          !Number.isFinite(identity.expiresAt) ||
+          identity.expiresAt <= this.now()))
+    )
+      throw new Error('admission_identity_required')
     if (!/^[a-zA-Z0-9_-]{16,100}$/.test(sessionId || '')) throw new Error('admission_invalid_session')
     this.expire()
     let seat = this.seats.get(sessionId)
@@ -32,6 +53,7 @@ export class Admission {
       seat = { sessionId, state: 'pending', until: this.now() + this.ticketMs }
       this.seats.set(sessionId, seat)
     }
+    seat.identity = identity ? { ...identity } : null
     // Retries return the same ticket and do not prolong abandoned reservations.
     if (!seat.ticket) seat.ticket = randomBytes(32).toString('base64url')
     return { ticket: seat.ticket, sessionId, generation: this.generation, expiresAt: seat.until }
@@ -40,7 +62,13 @@ export class Admission {
   consume(ticket) {
     this.expire()
     const seat = [...this.seats.values()].find(s => s.ticket === ticket && typeof ticket === 'string')
-    if (!seat || !['pending', 'grace'].includes(seat.state)) throw new Error('admission_invalid_ticket')
+    if (
+      !seat ||
+      (this.requireIdentity && !this.allowGuests && !seat.identity) ||
+      (seat.identity && seat.identity.expiresAt <= this.now()) ||
+      !['pending', 'grace'].includes(seat.state)
+    )
+      throw new Error('admission_invalid_ticket')
     seat.previousState = seat.state
     seat.previousUntil = seat.until
     seat.until = Math.min(seat.until, this.now() + 15000)

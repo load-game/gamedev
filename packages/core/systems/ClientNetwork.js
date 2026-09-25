@@ -1,5 +1,6 @@
 import { reserveFriendTravel, takeFriendTravel } from '../friendTravel.js'
 import moment from 'moment'
+import { isEqual } from 'lodash-es'
 import { emoteUrls } from '../extras/playerEmotes.js'
 import { readPacket, writePacket } from '../packets.js'
 import { storage } from '../storage.js'
@@ -77,7 +78,76 @@ export class ClientNetwork extends System {
     }
   }
 
+  suspendSession() {
+    this._intentionalOffline = true
+    this.sessionEpoch = (this.sessionEpoch || 0) + 1
+    this.sessionWaiter?.reject(new Error('Session changed'))
+    this.sessionWaiter = null
+    this.destroy()
+    this.queue = []
+    this.identity = null
+    this.world.events.emit('session-changing')
+    this.world.emit('session-changing')
+    this.world.agentControl?.stop('session_changed')
+    this.world.companions?.destroy()
+    this.world.livekit?.resetSession()
+    for (const entity of this.world.entities.items.values()) {
+      for (const proxy of entity.playerProxies?.values() || []) proxy.$cleanup?.()
+      entity.playerProxies?.clear()
+    }
+    if (this.world.entities.player) this.world.entities.remove(this.world.entities.player.data.id)
+  }
+
+  reconnectSession() {
+    const epoch = this.sessionEpoch
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.suspendSession()
+        reject(new Error('Connection timed out. Try again.'))
+      }, 45000)
+      this.sessionWaiter = {
+        epoch,
+        resolve: () => {
+          clearTimeout(timer)
+          this.sessionWaiter = null
+          resolve()
+        },
+        reject: error => {
+          clearTimeout(timer)
+          this.sessionWaiter = null
+          reject(error)
+        },
+      }
+      void this.connect()
+    })
+  }
+
+  reconcileEntities(data) {
+    const incoming = new Map(data.map(item => [item.id, item]))
+    const sameInstance = this.activeInstance === this.nextInstance
+    const previousEntities = [...this.world.entities.items.values()]
+    for (const entity of previousEntities) {
+      const next = incoming.get(entity.data.id)
+      if (entity.isPlayer || !next || !sameInstance || next.blueprint !== entity.data.blueprint) {
+        this.world.entities.remove(entity.data.id)
+      }
+    }
+    for (const item of data) {
+      const entity = this.world.entities.get(item.id)
+      if (!entity) this.world.entities.add(item)
+      else {
+        // Script state is authoritative, but receiving it again must not restart
+        // every app, including ambient audio and the city, on a session switch.
+        const { state, ...properties } = item
+        const { state: _previousState, ...previous } = entity.data
+        entity.data.state = state
+        if (!isEqual(previous, properties)) entity.modify(properties)
+      }
+    }
+  }
+
   async connect() {
+    const epoch = this.sessionEpoch
     if (globalThis.env?.PUBLIC_JOIN_URL) {
       try {
         const tabId = globalThis.sessionStorage.getItem('lobbyTab') || globalThis.crypto.randomUUID()
@@ -86,17 +156,27 @@ export class ClientNetwork extends System {
         if (!assignment) {
           const response = await fetch(globalThis.env.PUBLIC_JOIN_URL, {
             method: 'POST',
-            headers: { 'x-lobby-tab': tabId },
+            headers: {
+              'x-lobby-tab': tabId,
+              ...(this.activeInstance ? { 'x-lobby-instance': this.activeInstance } : {}),
+            },
             credentials: 'include',
             signal: AbortSignal.timeout(45000),
           })
           assignment = await response.json()
           if (!response.ok || !assignment.wsUrl || !assignment.ticket) throw new Error('Instance unavailable')
         }
+        if (epoch !== this.sessionEpoch) return
+        this.nextInstance = assignment.instanceId
         const target = new URL(assignment.wsUrl)
         target.searchParams.set('admissionTicket', assignment.ticket)
         this.wsUrl = target.toString()
       } catch {
+        if (epoch !== this.sessionEpoch) return
+        if (this.sessionWaiter) {
+          this.sessionWaiter.reject(new Error('Unable to join the world. Try again.'))
+          return
+        }
         this.world.emit('connectionStatus', { status: 'offline' })
         this._scheduleReconnect()
         return
@@ -219,6 +299,8 @@ export class ClientNetwork extends System {
 
   onSnapshot(data) {
     this.id = data.id
+    this.identity = data.identity || null
+    globalThis.__runtimeAuth?.setConnectionIdentity?.(this.identity)
     this.serverTimeOffset = data.serverTime - performance.now()
     this.apiUrl = data.apiUrl
     this.maxUploadSize = data.maxUploadSize
@@ -271,7 +353,21 @@ export class ClientNetwork extends System {
     this.world.chat.authenticated = data.authenticatedChat === 1
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
-    this.world.entities.deserialize(data.entities)
+    if (this.activeInstance) this.reconcileEntities(data.entities)
+    else this.world.entities.deserialize(data.entities)
+    this.activeInstance = this.nextInstance
+    const waiter = this.sessionWaiter
+    if (waiter) {
+      Promise.resolve(this.world.entities.player?.ready)
+        .then(() => {
+          if (waiter !== this.sessionWaiter) return
+          this.world.emit('disconnect', false)
+          this.world.events.emit('session-changed', { playerId: this.id, account: this.identity })
+          this.world.emit('session-changed')
+          waiter.resolve()
+        })
+        .catch(error => waiter.reject(error))
+    }
     this.world.livekit?.deserialize(data.livekit)
     this.world.companions?.deserialize(data.companions, data.companionProtocol)
     this.world.ai?.deserialize?.(data.ai)
@@ -383,6 +479,10 @@ export class ClientNetwork extends System {
   }
 
   onClose = code => {
+    if (this.sessionWaiter) {
+      this.sessionWaiter.reject(new Error('Connection closed. Try again.'))
+      return
+    }
     this.isOffline = true
     if (this.wasConnected) {
       this.world.chat.add({

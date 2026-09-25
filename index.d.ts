@@ -1216,6 +1216,15 @@ interface WorldAPI {
     approach?: [number, number, number] | null
   }): void
   clearAgentLandmarks(): void
+  /** Verified account for the current client connection; null in guest worlds. */
+  account(): {
+    userId: string
+    issuer: string
+    name: string
+    walletAddress: string
+    authenticatedWith: 'evm'
+    expiresAt: number
+  } | null
   walletAuth(): {
     challenge(playerId: string, address: string): { message: string }
     verify(playerId: string, signature: string): Promise<string>
