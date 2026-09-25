@@ -2,6 +2,7 @@ import { Friends, readFriendJoin } from './Friends.js'
 import moment from 'moment'
 import { Admission } from './Admission.js'
 import { Companions } from './Companions.js'
+import { authenticatedChatMessage } from './authenticatedChat.js'
 import { WalletBindings } from './WalletBindings.js'
 import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
@@ -633,6 +634,7 @@ export class ServerNetwork extends System {
         authToken,
         companions: this.companions.list(),
         companionProtocol: 1,
+        authenticatedChat: 1,
         hasAdminCode: !!process.env.ADMIN_CODE,
         adminCodeAuthSupported: hasSupportedAdminCode(process.env),
       })
@@ -667,8 +669,11 @@ export class ServerNetwork extends System {
   }
 
   onChatAdded = async (socket, msg) => {
-    this.world.chat.add(msg, false)
-    this.send('chatAdded', msg, socket.id)
+    if (this.sockets.get(socket.id) !== socket) return
+    const message = authenticatedChatMessage(socket, msg)
+    if (!message) return
+    this.world.chat.add(message, false)
+    this.send('chatAdded', message, socket.id)
   }
 
   onCommand = async (socket, data) => {
