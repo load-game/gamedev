@@ -168,3 +168,92 @@ test('moving a translated room carries only occupants and preserves local coordi
     /scope/
   )
 })
+
+test('mouse preview, key rotation, grid, UI exclusion and single valid commit', async () => {
+  const { createFurnishingAPI } = await import('../../packages/core/extras/furnishing.js')
+  const THREE = await import('../../packages/core/extras/three.js')
+  const listeners = new Map(),
+    commits = [],
+    errors = [],
+    grids = []
+  let point = new THREE.Vector3(1.2, 0, 2.3),
+    released = 0,
+    finish
+  const control = new Proxy(
+    {
+      pointer: { position: new THREE.Vector3(100, 100, 0), unlock() {} },
+      camera: { position: new THREE.Vector3(), quaternion: new THREE.Quaternion() },
+      mouseLeft: { down: true, pressed: true },
+      release() {
+        released++
+      },
+    },
+    {
+      get(target, key) {
+        return (target[key] ||= {})
+      },
+    }
+  )
+  const world = {
+    network: { isClient: true },
+    controls: { bind: () => control },
+    pointer: {},
+    stage: { raycastPointer: () => [{ point, distance: 1 }] },
+  }
+  const entity = { world, on: (n, f) => listeners.set(n, f), off: n => listeners.delete(n) }
+  const node = { ctx: { entity }, position: new THREE.Vector3(), rotation: new THREE.Euler() }
+  const session = createFurnishingAPI(entity).begin({
+    room,
+    frame: () => ({ position: [0, 0, 0], yaw: 0 }),
+    node,
+    item: chair,
+    transform: t(),
+    onGridChange: step => grids.push(step),
+    onError: error => errors.push(error),
+    onCommit: transform => {
+      commits.push(transform)
+      return new Promise(resolve => {
+        finish = resolve
+      })
+    },
+  })
+  const tick = () => listeners.get('update')()
+  tick()
+  assert.equal(commits.length, 0)
+  control.mouseLeft.down = control.mouseLeft.pressed = false
+  tick()
+  tick()
+  assert.deepEqual(session.transform.position, [1.2, 0, 2.3])
+  assert.deepEqual(control.camera.position.toArray(), [0, 10, 9])
+  control.keyR.onPress()
+  assert.ok(Math.abs(session.transform.yaw - Math.PI / 12) < 1e-10)
+  control.shiftLeft.down = true
+  control.keyR.onPress()
+  assert.ok(Math.abs(session.transform.yaw) < 1e-10)
+  control.keyG.onPress()
+  tick()
+  assert.deepEqual(session.transform.position, [1, 0, 2.5])
+  assert.deepEqual(grids, [0.5])
+  world.pointer.screenHit = {}
+  point = new THREE.Vector3(3, 0, 3)
+  control.pointer.position.x++
+  control.mouseLeft.pressed = true
+  tick()
+  assert.equal(commits.length, 0)
+  assert.deepEqual(session.transform.position, [1, 0, 2.5])
+  world.pointer.screenHit = null
+  point = new THREE.Vector3(5.9, 0, 0)
+  tick()
+  assert.equal(commits.length, 0)
+  point = new THREE.Vector3(2, 0, 2)
+  tick()
+  tick()
+  control.keyR.onPress()
+  control.keyG.onPress()
+  assert.equal(commits.length, 1)
+  finish()
+  await new Promise(resolve => setTimeout(resolve, 0))
+  assert.equal(released, 1)
+  assert.deepEqual(errors, [])
+  assert.deepEqual(node.position.toArray(), [2, 0, 2])
+})
