@@ -227,6 +227,7 @@ export class App extends Entity {
   unbuild() {
     // notify any running script
     this.emit('destroy')
+    this.world.ui?.setMenuTheme?.(this, null)
     // cancel any control
     this.control?.release()
     this.control = null
