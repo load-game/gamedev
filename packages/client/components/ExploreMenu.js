@@ -1,7 +1,7 @@
 import { css } from '@firebolt-dev/css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CheckIcon, GlobeIcon, LoaderIcon, SearchIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react'
-import { editorTheme as theme } from './editor/editorTheme.js'
+import { PlayerPanel } from './PlayerPanel.js'
 
 function resolveWorldServiceApiBase() {
   const configuredAuthUrl =
@@ -52,7 +52,7 @@ async function fetchPlayerCount(apiBase, slug) {
   }
 }
 
-export function ExploreMenu({ open, onClose }) {
+export function ExploreMenu({ world, open, onClose }) {
   const [tab, setTab] = useState('worlds')
 
   const [worlds, setWorlds] = useState([])
@@ -189,15 +189,6 @@ export function ExploreMenu({ open, onClose }) {
     const timer = setTimeout(() => searchRef.current?.focus(), 50)
     return () => clearTimeout(timer)
   }, [open, tab])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = e => {
-      if (e.code === 'Escape') onClose?.()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -346,409 +337,175 @@ export function ExploreMenu({ open, onClose }) {
   if (!open) return null
 
   return (
-    <div
-      className='explore-menu'
-      css={css`
-        position: absolute;
-        inset: 0;
-        z-index: 100;
-        pointer-events: auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        .explore-backdrop {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(15px);
-        }
-        .explore-panel {
-          position: relative;
-          z-index: 1;
-          width: 52rem;
-          max-width: calc(100% - 2rem);
-          max-height: calc(100% - 2rem);
+    <PlayerPanel world={world} title='Explore!' icon={GlobeIcon} onClose={onClose}>
+      <div
+        className='explore-menu'
+        css={css`
           display: flex;
           flex-direction: column;
-          background: ${theme.bgPanel};
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radius};
-          overflow: hidden;
-        }
-        .explore-head {
-          min-height: 3.5rem;
-          padding: 0.65rem 0.75rem 0.65rem 1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          border-bottom: 1px solid ${theme.borderLight};
-          flex-shrink: 0;
-          color: rgba(255, 255, 255, 0.6);
-        }
-        .explore-head-left {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex-shrink: 0;
-        }
-        .explore-head-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.95);
-        }
-        .explore-tabs {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          padding: 0.2rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: ${theme.bgInput};
-          flex-shrink: 0;
-        }
-        .explore-tab {
-          border: none;
-          cursor: pointer;
-          padding: 0.35rem 0.6rem;
-          border-radius: calc(${theme.radiusSmall} - 2px);
-          color: rgba(255, 255, 255, 0.55);
-          background: transparent;
-          font-size: 0.75rem;
-          font-weight: 600;
-          font-family: inherit;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-        }
-        .explore-tab:hover {
-          color: rgba(255, 255, 255, 0.85);
-          background: ${theme.bgHover};
-        }
-        .explore-tab.active {
-          color: rgba(255, 255, 255, 0.95);
-          background: rgba(255, 255, 255, 0.1);
-        }
-        .explore-search {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: ${theme.bgInput};
-          padding: 0 0.6rem;
-          height: 2rem;
-          color: rgba(255, 255, 255, 0.4);
-        }
-        .explore-search:focus-within {
-          border-color: ${theme.borderHover};
-          color: rgba(255, 255, 255, 0.6);
-        }
-        .explore-search-input {
-          flex: 1;
-          background: none;
-          border: none;
-          outline: none;
-          font-size: 0.82rem;
-          color: rgba(255, 255, 255, 0.9);
-          font-family: inherit;
-        }
-        .explore-search-input::placeholder {
-          color: rgba(255, 255, 255, 0.25);
-        }
-        .explore-head-spacer {
-          flex: 1;
-        }
-        .explore-close {
-          width: 2rem;
-          height: 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: ${theme.radiusSmall};
-          color: rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-        .explore-close:hover {
-          color: white;
-          background: ${theme.bgHover};
-        }
-        .explore-body {
-          flex: 1;
-          min-height: 0;
-          overflow-y: auto;
-          padding: 1rem;
-        }
-        .explore-status {
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.4);
-          padding: 2rem 0;
-          text-align: center;
-        }
-        .explore-error {
-          font-size: 0.85rem;
-          color: #ff8e8e;
-          padding: 0.5rem 0;
-          text-align: left;
-        }
-        .explore-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
-        }
-        @media (max-width: 640px) {
-          .explore-head {
-            padding: 0.65rem;
-            gap: 0.45rem;
-            flex-wrap: wrap;
-          }
-          .explore-head-left {
-            width: 100%;
+          gap: 1.25rem;
+          .explore-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
           }
           .explore-tabs {
-            order: 2;
+            display: flex;
+            gap: 0.75rem;
           }
-          .explore-search,
-          .explore-head-spacer {
-            width: calc(100% - 2.45rem);
-            order: 3;
+          .explore-tab {
+            flex: 1;
           }
-          .explore-close {
-            margin-left: auto;
-            order: 1;
+          .explore-tab svg {
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+          .explore-search {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+          }
+          .explore-search > svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex: none;
+          }
+          .explore-clear {
+            display: flex;
+            background: none;
+            border: 0;
+            padding: 0.75rem;
           }
           .explore-grid {
-            grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
           }
-        }
-        .explore-card {
-          position: relative;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          overflow: hidden;
-          cursor: pointer;
-          background: ${theme.bgInput};
-          aspect-ratio: 16 / 9;
-          display: flex;
-          flex-direction: column;
-        }
-        .explore-card:hover {
-          border-color: ${theme.borderHover};
-        }
-        .explore-card:hover .explore-card-img {
-          transform: scale(1.03);
-        }
-        .explore-card:hover .explore-card-overlay {
-          background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.18) 55%, transparent 100%);
-        }
-        .explore-card-img-wrap {
-          position: absolute;
-          inset: 0;
-          overflow: hidden;
-        }
-        .explore-card-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.25s ease;
-        }
-        .explore-card-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
-          transition: background 0.2s ease;
-        }
-        .explore-card-info {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: 0.65rem 0.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-        }
-        .explore-card-name {
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          line-height: 1.2;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .explore-card-footer {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 0.5rem;
-        }
-        .explore-card-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-          min-width: 0;
-        }
-        .explore-card-players {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          font-size: 0.72rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .explore-card-players-dot {
-          width: 0.4rem;
-          height: 0.4rem;
-          border-radius: 50%;
-          background: #6dea8a;
-          flex-shrink: 0;
-        }
-        .friends-layout {
-          display: flex;
-          flex-direction: column;
-          gap: 0.9rem;
-        }
-        .friends-add-card,
-        .friends-section {
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: ${theme.bgInput};
-          padding: 0.75rem;
-        }
-        .friends-add-title,
-        .friends-section-title {
-          font-size: 0.78rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.82);
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          margin-bottom: 0.55rem;
-        }
-        .friends-add-row {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .friends-add-input {
-          flex: 1;
-          border: 1px solid ${theme.border};
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: ${theme.radiusSmall};
-          height: 2rem;
-          padding: 0 0.6rem;
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 0.82rem;
-          outline: none;
-        }
-        .friends-add-input:focus {
-          border-color: ${theme.borderHover};
-        }
-        .friends-add-btn,
-        .friends-action-btn {
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: ${theme.bgHover};
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 0.76rem;
-          font-weight: 600;
-          padding: 0 0.65rem;
-          height: 2rem;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-          cursor: pointer;
-        }
-        .friends-add-btn:hover,
-        .friends-action-btn:hover {
-          border-color: ${theme.borderHover};
-          color: #fff;
-        }
-        .friends-add-btn:disabled,
-        .friends-action-btn:disabled {
-          opacity: 0.5;
-          cursor: default;
-        }
-        .friends-action-btn.secondary {
-          background: transparent;
-        }
-        .friends-notice {
-          font-size: 0.8rem;
-          color: #9ad5ff;
-          padding: 0.1rem 0;
-        }
-        .friends-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-        .friends-row {
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: rgba(0, 0, 0, 0.2);
-          padding: 0.55rem 0.6rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.6rem;
-        }
-        .friends-row-main {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-          min-width: 0;
-        }
-        .friends-row-name {
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.93);
-          font-weight: 600;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .friends-row-meta {
-          font-size: 0.72rem;
-          color: rgba(255, 255, 255, 0.45);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .friends-empty {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.45);
-          padding: 0.45rem 0.1rem 0.15rem;
-        }
-        .friends-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
-        }
-        @media (max-width: 640px) {
+          .explore-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+            min-width: 0;
+            padding: 1rem;
+            border: 2px solid var(--menu-border, #343846);
+            border-radius: var(--menu-radius, 8px);
+            background: var(--menu-card, #101820);
+            color: inherit;
+            text-decoration: none;
+          }
+          .explore-card:hover {
+            border-color: var(--menu-muted, #82919e);
+          }
+          .explore-card-img-wrap {
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-radius: 6px;
+            background: #264c43;
+          }
+          .explore-card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .explore-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+          }
+          .explore-card-name {
+            font-size: 1.65rem;
+            overflow-wrap: anywhere;
+          }
+          .explore-card-players,
+          .friends-notice {
+            color: var(--menu-primary-top, #92c0fa);
+          }
+          .explore-status,
+          .friends-empty {
+            padding: 1rem 0;
+            color: var(--menu-muted, #bed0db);
+          }
+          .explore-error {
+            color: #ffb4aa;
+            font-family: sans-serif;
+            text-transform: none;
+            overflow-wrap: anywhere;
+          }
+          .friends-layout,
+          .friends-section,
+          .friends-list,
+          .friends-add-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+          }
+          .friends-add-row,
+          .friends-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+          }
+          .friends-add-input {
+            flex: 1;
+          }
+          .friends-row {
+            padding: 1rem;
+            background: var(--menu-card, #101820);
+            border: 2px solid var(--menu-border, #343846);
+            border-radius: var(--menu-radius, 8px);
+            flex-wrap: wrap;
+          }
+          .friends-row-main {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+          }
+          .friends-row-name {
+            font-size: 1.25rem;
+          }
+          .friends-row-meta {
+            color: var(--menu-muted, #bed0db);
+            margin-top: 0.25rem;
+          }
+          .friends-action-btn {
+            min-height: 2.75rem;
+            font-size: 1.125rem;
+          }
+          .friends-add-title,
+          .friends-section-title {
+            color: var(--menu-header-top, #bed0db);
+            font-size: 1.5rem;
+          }
           .friends-grid {
-            grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
           }
-        }
-      `}
-    >
-      <div className='explore-backdrop' onClick={onClose} />
-      <div className='explore-panel'>
-        <div className='explore-head'>
-          <div className='explore-head-left'>
-            {tab === 'worlds' && <GlobeIcon size='1rem' />}
-            {tab === 'friends' && <UsersIcon size='1rem' />}
-            <div className='explore-head-title'>Explore</div>
-          </div>
-
+          @media (max-width: 640px) {
+            .explore-grid,
+            .friends-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}
+      >
+        <div className='explore-controls'>
           <div className='explore-tabs'>
-            <button className={`explore-tab ${tab === 'worlds' ? 'active' : ''}`} onClick={() => setTab('worlds')}>
+            <button
+              className='explore-tab menu-button menu-label'
+              aria-pressed={tab === 'worlds'}
+              onClick={() => setTab('worlds')}
+            >
               <GlobeIcon size='0.75rem' />
               Worlds
             </button>
-            <button className={`explore-tab ${tab === 'friends' ? 'active' : ''}`} onClick={() => setTab('friends')}>
+            <button
+              className='explore-tab menu-button menu-label'
+              aria-pressed={tab === 'friends'}
+              onClick={() => setTab('friends')}
+            >
               <UsersIcon size='0.75rem' />
               Friends
             </button>
@@ -759,24 +516,22 @@ export function ExploreMenu({ open, onClose }) {
               <SearchIcon size='0.8rem' />
               <input
                 ref={searchRef}
-                className='explore-search-input'
+                className='explore-search-input menu-input'
+                aria-label='Search worlds'
                 placeholder='Search worlds...'
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
               {query && (
-                <XIcon size='0.8rem' style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => setQuery('')} />
+                <button className='explore-clear' aria-label='Clear search' onClick={() => setQuery('')}>
+                  <XIcon size='1rem' />
+                </button>
               )}
             </div>
           ) : (
             <div className='explore-head-spacer' />
           )}
-
-          <div className='explore-close' onClick={onClose}>
-            <XIcon size='1rem' />
-          </div>
         </div>
-
         <div className='explore-body'>
           {tab === 'worlds' && (
             <>
@@ -786,7 +541,11 @@ export function ExploreMenu({ open, onClose }) {
                   Loading worlds...
                 </div>
               )}
-              {!loading && error && <div className='explore-error'>{error}</div>}
+              {!loading && error && (
+                <div className='explore-error' role='alert'>
+                  {error}
+                </div>
+              )}
               {!loading && !error && worlds.length === 0 && <div className='explore-status'>No worlds found.</div>}
               {!loading && !error && worlds.length > 0 && filtered.length === 0 && (
                 <div className='explore-status'>No results for "{query}".</div>
@@ -794,18 +553,17 @@ export function ExploreMenu({ open, onClose }) {
               {!loading && !error && filtered.length > 0 && (
                 <div className='explore-grid'>
                   {filtered.map(world => (
-                    <div
+                    <a
                       key={world.id || world.slug}
                       className='explore-card'
-                      onClick={() => {
-                        window.location.href = `/${world.slug}`
-                      }}
+                      href={`/${world.slug}`}
+                      aria-label={`Play ${world.name || world.slug}`}
                     >
                       <div className='explore-card-img-wrap'>
                         <img
                           className='explore-card-img'
                           src={world.image || '/placeholder-room.png'}
-                          alt={world.name || world.slug}
+                          alt=''
                           onError={e => {
                             e.currentTarget.src = '/placeholder-room.png'
                           }}
@@ -815,17 +573,18 @@ export function ExploreMenu({ open, onClose }) {
                       <div className='explore-card-info'>
                         <div className='explore-card-footer'>
                           <div className='explore-card-meta'>
-                            <div className='explore-card-name'>{world.name || world.slug}</div>
+                            <div className='explore-card-name menu-label'>{world.name || world.slug}</div>
                           </div>
                           {playerCounts[world.slug] != null && (
                             <div className='explore-card-players'>
                               <div className='explore-card-players-dot' />
-                              {playerCounts[world.slug]}
+                              {playerCounts[world.slug]} online
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
+                      <span className='menu-button primary menu-label'>Play</span>
+                    </a>
                   ))}
                 </div>
               )}
@@ -842,7 +601,7 @@ export function ExploreMenu({ open, onClose }) {
               )}
 
               {!friendsLoading && !friendsAuthed && (
-                <div className='explore-status'>Sign in from the user menu to manage friends.</div>
+                <div className='explore-status'>Sign in from Account to manage friends.</div>
               )}
 
               {!friendsLoading && friendsAuthed && (
@@ -851,7 +610,8 @@ export function ExploreMenu({ open, onClose }) {
                     <div className='friends-add-title'>Add Friend By Name</div>
                     <div className='friends-add-row'>
                       <input
-                        className='friends-add-input'
+                        className='friends-add-input menu-input'
+                        aria-label='Friend name'
                         placeholder='friend name'
                         value={friendName}
                         onChange={e => setFriendName(e.target.value)}
@@ -863,7 +623,7 @@ export function ExploreMenu({ open, onClose }) {
                         }}
                       />
                       <button
-                        className='friends-add-btn'
+                        className='friends-add-btn menu-button primary menu-label'
                         disabled={!friendName.trim() || addingFriend}
                         onClick={() => {
                           void handleAddFriend()
@@ -873,8 +633,16 @@ export function ExploreMenu({ open, onClose }) {
                         {addingFriend ? 'Adding...' : 'Add'}
                       </button>
                     </div>
-                    {friendsNotice && <div className='friends-notice'>{friendsNotice}</div>}
-                    {friendsError && <div className='explore-error'>{friendsError}</div>}
+                    {friendsNotice && (
+                      <div className='friends-notice' role='status'>
+                        {friendsNotice}
+                      </div>
+                    )}
+                    {friendsError && (
+                      <div className='explore-error' role='alert'>
+                        {friendsError}
+                      </div>
+                    )}
                   </div>
 
                   <div className='friends-section'>
@@ -886,10 +654,9 @@ export function ExploreMenu({ open, onClose }) {
                           <div className='friends-row' key={`friend:${friend.user_id}`}>
                             <div className='friends-row-main'>
                               <div className='friends-row-name'>{friend.name}</div>
-                              <div className='friends-row-meta'>ID: {friend.user_id}</div>
                             </div>
                             <button
-                              className='friends-action-btn secondary'
+                              className='friends-action-btn menu-button menu-label'
                               disabled={unfriendingUserId === friend.user_id}
                               onClick={() => {
                                 void handleUnfriend(friend.user_id)
@@ -913,10 +680,9 @@ export function ExploreMenu({ open, onClose }) {
                             <div className='friends-row' key={`incoming:${request.request_id}`}>
                               <div className='friends-row-main'>
                                 <div className='friends-row-name'>{request.name}</div>
-                                <div className='friends-row-meta'>Request: {request.request_id}</div>
                               </div>
                               <button
-                                className='friends-action-btn'
+                                className='friends-action-btn menu-button primary menu-label'
                                 disabled={acceptingRequestId === request.request_id}
                                 onClick={() => {
                                   void handleAcceptRequest(request.request_id)
@@ -958,6 +724,6 @@ export function ExploreMenu({ open, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </PlayerPanel>
   )
 }

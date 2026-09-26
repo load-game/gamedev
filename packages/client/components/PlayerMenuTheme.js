@@ -189,4 +189,17 @@ export const menuStyles = css`
   .menu-status {
     color: var(--menu-primary-top, #92c0fa);
   }
+  .menu-spinner {
+    animation: menu-spin 1s linear infinite;
+  }
+  @keyframes menu-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-spinner {
+      animation: none;
+    }
+  }
 `

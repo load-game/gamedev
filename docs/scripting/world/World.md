@@ -636,7 +636,8 @@ Notes:
 
 ### `.setMenuTheme(options: ?Object)`
 
-Sets app-owned presentation tokens for the player toolbar and Settings menu (client only).
+Sets app-owned presentation tokens for the player toolbar, Settings, Explore/Friends,
+Account, and wallet sign-in panels (client only).
 Pass `null` to release this app's theme; unloading the app also releases it. If several apps
 set themes, the most recent active theme wins and releasing it restores the previous theme.
 

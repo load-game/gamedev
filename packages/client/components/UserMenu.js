@@ -1,8 +1,8 @@
 import { css } from '@firebolt-dev/css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronDownIcon, LoaderIcon, LogOutIcon, UserIcon, XIcon } from 'lucide-react'
+import { ChevronDownIcon, LoaderIcon, LogOutIcon, UserIcon } from 'lucide-react'
 import { useActiveWallet, useLinkAccount, useLogin, usePrivy, useWallets } from '@privy-io/react-auth'
-import { editorTheme as theme } from './editor/editorTheme.js'
+import { PlayerPanel } from './PlayerPanel.js'
 import { cls } from './cls.js'
 
 const WORLD_SLUG_REGEX = /^[a-z0-9-]+$/
@@ -556,7 +556,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                     <span className='usermenu-chip active'>Active</span>
                     {row.chainLabel === 'EVM' && (
                       <button
-                        className='usermenu-chipbtn'
+                        className='usermenu-chipbtn menu-button menu-label'
                         disabled={!world?.evm}
                         onClick={() => {
                           openTransferPanel()
@@ -566,7 +566,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                       </button>
                     )}
                     <button
-                      className='usermenu-chipbtn'
+                      className='usermenu-chipbtn menu-button menu-label'
                       onClick={() => {
                         void copyWalletAddress(row.key)
                       }}
@@ -585,7 +585,11 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
           <div className='usermenu-transfer-panel'>
             <div className='usermenu-transfer-head'>
               <div className='usermenu-transfer-title'>Send From {truncateAddress(activeEvmWallet.address)}</div>
-              <button className='usermenu-linkbtn' disabled={transferPending} onClick={closeTransferPanel}>
+              <button
+                className='usermenu-linkbtn menu-button menu-label'
+                disabled={transferPending}
+                onClick={closeTransferPanel}
+              >
                 Close
               </button>
             </div>
@@ -626,7 +630,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
               <label className='usermenu-field'>
                 <div className='usermenu-label'>Amount</div>
                 <input
-                  className='usermenu-input'
+                  className='usermenu-input menu-input'
                   placeholder='0.0'
                   value={transferAmount}
                   disabled={transferPending}
@@ -646,7 +650,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                 <div className='usermenu-transfer-tx-value mono'>{truncateAddress(transferTxHash)}</div>
                 <div className='usermenu-inlineactions'>
                   <button
-                    className='usermenu-linkbtn'
+                    className='usermenu-linkbtn menu-button menu-label'
                     onClick={() => {
                       void copyTransferTxHash()
                     }}
@@ -654,7 +658,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                     {copiedTxHash ? 'Copied' : 'Copy Tx'}
                   </button>
                   <a
-                    className='usermenu-linkbtn'
+                    className='usermenu-linkbtn menu-button menu-label'
                     href={`https://arbiscan.io/tx/${transferTxHash}`}
                     target='_blank'
                     rel='noreferrer'
@@ -666,7 +670,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
             )}
             <div className='usermenu-inlineactions'>
               <button
-                className='usermenu-linkbtn'
+                className='usermenu-linkbtn menu-button menu-label'
                 disabled={transferPending}
                 onClick={() => {
                   void submitTransfer()
@@ -702,7 +706,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
               <div className='usermenu-row-label usermenu-muted'>Add wallet</div>
               <div className='usermenu-inlineactions'>
                 <button
-                  className='usermenu-linkbtn'
+                  className='usermenu-linkbtn menu-button menu-label'
                   disabled={linkingEvm}
                   onClick={() => {
                     if (linkingEvm) return
@@ -712,7 +716,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                   {linkingEvm ? 'Linking...' : 'EVM'}
                 </button>
                 <button
-                  className='usermenu-linkbtn'
+                  className='usermenu-linkbtn menu-button menu-label'
                   disabled={linkingSolana}
                   onClick={() => {
                     if (linkingSolana) return
@@ -750,7 +754,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
                       </span>
                     ) : (
                       <button
-                        className='usermenu-linkbtn'
+                        className='usermenu-linkbtn menu-button menu-label'
                         disabled={isBusy}
                         onClick={() => {
                           if (isBusy) return
@@ -774,7 +778,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
     if (!isAuthenticated) {
       return (
         <div className='usermenu-footer'>
-          <button className='usermenu-btn' onClick={runLogin}>
+          <button className='usermenu-btn menu-button menu-label' onClick={runLogin}>
             Sign In
           </button>
         </div>
@@ -791,7 +795,8 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
           {primaryEmail && <span className='usermenu-footer-email'>{primaryEmail}</span>}
         </div>
         <button
-          className={cls('usermenu-btn danger', { disabled: signingOut })}
+          className={cls('usermenu-btn menu-button menu-label danger', { disabled: signingOut })}
+          disabled={signingOut}
           onClick={() => {
             if (signingOut) return
             void runSignOut()
@@ -940,15 +945,6 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
     setWorldSlug(slugify(worldName))
   }, [worldName, slugEdited])
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = event => {
-      if (event.code === 'Escape') onClose?.()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
-
   const createWorld = async () => {
     if (creatingWorld || loadingWorld || loadingWorldRegions) return
     if (!apiBaseUrl) {
@@ -1073,7 +1069,11 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
                       ) : null}
                     </div>
                     <div className='usermenu-hero-actions'>
-                      <button className='usermenu-btn-enter' disabled={!slug} onClick={() => openWorld(slug)}>
+                      <button
+                        className='usermenu-btn-enter menu-button menu-label primary'
+                        disabled={!slug}
+                        onClick={() => openWorld(slug)}
+                      >
                         Enter
                       </button>
                     </div>
@@ -1091,7 +1091,8 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
           <div className='usermenu-hero-actions'>
             {!createWorldOpen ? (
               <button
-                className={cls('usermenu-btn-primary', { disabled: loadingWorld })}
+                className={cls('usermenu-btn-primary menu-button menu-label primary', { disabled: loadingWorld })}
+                disabled={loadingWorld}
                 onClick={() => {
                   if (loadingWorld) return
                   setCreateError('')
@@ -1103,9 +1104,10 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
             ) : (
               <>
                 <button
-                  className={cls('usermenu-btn-primary', {
+                  className={cls('usermenu-btn-primary menu-button menu-label primary', {
                     disabled: creatingWorld || loadingWorld || loadingWorldRegions,
                   })}
+                  disabled={creatingWorld || loadingWorld || loadingWorldRegions}
                   onClick={() => {
                     if (creatingWorld || loadingWorld || loadingWorldRegions) return
                     void createWorld()
@@ -1115,7 +1117,8 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
                   {creatingWorld ? 'Creating...' : 'Create World'}
                 </button>
                 <button
-                  className={cls('usermenu-btn-secondary', { disabled: creatingWorld })}
+                  className={cls('usermenu-btn-secondary menu-button menu-label', { disabled: creatingWorld })}
+                  disabled={creatingWorld}
                   onClick={() => {
                     if (creatingWorld) return
                     setCreateWorldOpen(false)
@@ -1132,7 +1135,7 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
               <label className='usermenu-field'>
                 <div className='usermenu-label'>Name</div>
                 <input
-                  className='usermenu-input'
+                  className='usermenu-input menu-input'
                   value={worldName}
                   maxLength={100}
                   placeholder='My World'
@@ -1142,7 +1145,7 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
               <label className='usermenu-field'>
                 <div className='usermenu-label'>Slug</div>
                 <input
-                  className='usermenu-input'
+                  className='usermenu-input menu-input'
                   value={worldSlug}
                   maxLength={32}
                   placeholder='my-world'
@@ -1155,7 +1158,7 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
               <label className='usermenu-field'>
                 <div className='usermenu-label'>Description (optional)</div>
                 <textarea
-                  className='usermenu-textarea'
+                  className='usermenu-textarea menu-input'
                   value={worldDescription}
                   maxLength={1000}
                   placeholder='What this world is for'
@@ -1202,550 +1205,209 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
   if (!open) return null
 
   return (
-    <div
-      className='usermenu'
-      css={css`
-        position: absolute;
-        inset: 0;
-        z-index: 100;
-        pointer-events: auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        .usermenu-backdrop {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(15px);
-        }
-        .usermenu-panel {
-          position: relative;
-          z-index: 1;
-          width: 26rem;
-          max-width: calc(100% - 2rem);
-          max-height: calc(100% - 2rem);
+    <PlayerPanel world={world} title='Account!' icon={UserIcon} compact onClose={onClose}>
+      <div
+        className='usermenu'
+        css={css`
           display: flex;
           flex-direction: column;
-          background: ${theme.bgPanel};
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radius};
-          overflow: hidden;
-        }
-        .usermenu-head {
-          height: 3.5rem;
-          padding: 0 0.75rem 0 1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          border-bottom: 1px solid ${theme.borderLight};
-          flex-shrink: 0;
-        }
-        .usermenu-head-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.95);
-        }
-        .usermenu-head-spacer {
-          flex: 1;
-        }
-        .usermenu-close {
-          width: 2rem;
-          height: 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: ${theme.radiusSmall};
-          color: rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-          &:hover {
+          gap: 1rem;
+          .usermenu-scroll,
+          .usermenu-section,
+          .usermenu-hero {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 0;
+          }
+          .usermenu-divider {
+            height: 2px;
+            background: var(--menu-border, #343846);
+          }
+          .usermenu-section-label {
+            font-size: 1.5rem;
+            color: var(--menu-header-top, #bed0db);
+          }
+          .usermenu-subsection-label {
+            color: var(--menu-muted, #bed0db);
+            font-size: 1rem;
+          }
+          .usermenu-hero-name {
+            font-size: 1.375rem;
+            overflow-wrap: anywhere;
+          }
+          .usermenu-world-list,
+          .usermenu-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+          .usermenu-world-card,
+          .usermenu-row,
+          .usermenu-transfer-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 1rem;
+            border: 2px solid var(--menu-border, #343846);
+            border-radius: var(--menu-radius, 8px);
+            background: var(--menu-card, #101820);
+          }
+          .usermenu-world-copy,
+          .usermenu-footer-identity {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+          }
+          .usermenu-world-description,
+          .usermenu-feedback,
+          .usermenu-error,
+          .usermenu-muted {
+            overflow-wrap: anywhere;
+          }
+          .usermenu-hero-actions,
+          .usermenu-inlineactions,
+          .usermenu-wallet-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+          }
+          .usermenu-row-value {
+            min-width: 0;
+          }
+          .usermenu-row-label,
+          .usermenu-footer-name {
+            font-size: 1.25rem;
+            overflow-wrap: anywhere;
+          }
+          .usermenu-btn,
+          .usermenu-linkbtn,
+          .usermenu-chipbtn {
+            min-height: 2.75rem;
+            font-size: 1.125rem;
+            text-decoration: none;
+          }
+          .usermenu-chip {
+            padding: 0.375rem 0.5rem;
+            color: var(--menu-muted, #bed0db);
+          }
+          .usermenu-chip.active {
+            color: var(--menu-primary-top, #92c0fa);
+          }
+          .usermenu-transfer-panel {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .usermenu-transfer-head,
+          .usermenu-transfer-tx,
+          .usermenu-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+          }
+          .usermenu-transfer-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+          }
+          .usermenu-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .usermenu-label {
+            color: var(--menu-muted, #bed0db);
+          }
+          .usermenu-select-wrap {
+            position: relative;
+          }
+          .usermenu-select {
+            appearance: none;
+            padding-right: 2.2rem;
+            cursor: pointer;
+          }
+          .usermenu-select option {
+            background: #15252e;
             color: white;
-            background: ${theme.bgHover};
           }
-        }
-        .usermenu-scroll {
-          flex: 1;
-          min-height: 0;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-        }
-        .usermenu-divider {
-          height: 1px;
-          background: ${theme.borderLight};
-          flex-shrink: 0;
-        }
-        .usermenu-section-label {
-          font-size: 0.68rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.35);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-bottom: 0.5rem;
-        }
-        .usermenu-subsection-label {
-          font-size: 0.66rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.42);
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          margin: 0.4rem 0 0.2rem;
-        }
-        .usermenu-hero {
-          padding: 1.1rem 1rem;
-          background: ${theme.bgInputSolid};
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
-          flex-shrink: 0;
-        }
-        .usermenu-hero--worlds {
-          gap: 0.75rem;
-          background: rgba(255, 255, 255, 0.02);
-          border-bottom: 1px solid ${theme.borderLight};
-        }
-        .usermenu-hero-name {
-          font-size: 1.05rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          line-height: 1.2;
-        }
-        .usermenu-hero-slug {
-          font-size: 0.78rem;
-          color: rgba(255, 255, 255, 0.4);
-          font-family:
-            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-        }
-        .usermenu-world-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.55rem;
-        }
-        .usermenu-world-card {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          padding: 0.8rem 0.9rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          background: rgba(0, 0, 0, 0.16);
-        }
-        .usermenu-world-copy {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-        .usermenu-world-card .usermenu-hero-actions {
-          margin-top: 0;
-          margin-left: auto;
-          flex-shrink: 0;
-        }
-        .usermenu-world-description {
-          max-width: 100%;
-          line-height: 1.4;
-        }
-        .usermenu-hero-actions {
-          display: flex;
-          gap: 0.5rem;
-          margin-top: 0.35rem;
-        }
-        .usermenu-btn-primary {
-          height: 2.25rem;
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: ${theme.radiusSmall};
-          padding: 0 1rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.4rem;
-          font-size: 0.8rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          background: rgba(255, 255, 255, 0.08);
-          cursor: pointer;
-          &:hover {
-            background: rgba(255, 255, 255, 0.13);
-            border-color: rgba(255, 255, 255, 0.25);
+          .usermenu-select-icon {
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            pointer-events: none;
           }
-          &.disabled {
+          .usermenu-textarea {
+            min-height: 5rem;
+            resize: vertical;
+          }
+          .usermenu-footer {
+            border-top: 2px solid var(--menu-border, #343846);
+            padding-top: 1rem;
+          }
+          .usermenu-muted,
+          .usermenu-hero-slug,
+          .usermenu-linked-handle,
+          .usermenu-transfer-meta,
+          .usermenu-footer-email {
+            color: var(--menu-muted, #bed0db);
+          }
+          .mono,
+          .usermenu-hero-slug,
+          .usermenu-footer-email,
+          .usermenu-linked-handle,
+          .usermenu-transfer-meta {
+            font-family: ui-monospace, monospace;
+            font-size: 1rem;
+            text-transform: none;
+            overflow-wrap: anywhere;
+          }
+          .usermenu-feedback,
+          .usermenu-error,
+          .usermenu-world-description {
+            font-family: sans-serif;
+            text-transform: none;
+          }
+          .usermenu-feedback.success {
+            color: var(--menu-primary-top, #92c0fa);
+          }
+          .usermenu-feedback.error,
+          .usermenu-error {
+            color: #ffb4aa;
+          }
+          .menu-button.disabled {
+            opacity: 0.5;
             cursor: default;
-            color: rgba(255, 255, 255, 0.4);
-            background: transparent;
-            border-color: ${theme.border};
           }
-        }
-        .usermenu-btn-enter {
-          height: 2.25rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          padding: 0 1.5rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.82rem;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          color: rgba(255, 255, 255, 0.9);
-          background: rgba(255, 255, 255, 0.06);
-          cursor: pointer;
-          &:hover {
-            background: ${theme.bgHover};
-            border-color: ${theme.borderHover};
-            color: rgba(255, 255, 255, 0.98);
+          @media (max-width: 600px) {
+            .usermenu-wallet-row {
+              justify-content: flex-start;
+            }
+            .usermenu-row,
+            .usermenu-world-card {
+              padding: 0.75rem;
+            }
           }
-          &:disabled {
-            cursor: default;
-            color: rgba(255, 255, 255, 0.4);
-            background: transparent;
-            border-color: ${theme.border};
-          }
-        }
-        .usermenu-btn-secondary {
-          height: 2.25rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          padding: 0 1rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.4rem;
-          font-size: 0.8rem;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.72);
-          background: transparent;
-          cursor: pointer;
-          &:hover {
-            background: ${theme.bgHover};
-            border-color: ${theme.borderHover};
-            color: rgba(255, 255, 255, 0.94);
-          }
-          &.disabled {
-            cursor: default;
-            color: rgba(255, 255, 255, 0.4);
-            border-color: ${theme.border};
-          }
-        }
-        .usermenu-section {
-          padding: 0.85rem 1rem;
-          display: flex;
-          flex-direction: column;
-          flex-shrink: 0;
-        }
-        .usermenu-rows {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-        }
-        .usermenu-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.6rem;
-          padding: 0.4rem 0;
-        }
-        .usermenu-row-label {
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.75);
-        }
-        .usermenu-row-value {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.55);
-        }
-        .usermenu-wallet-row {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          flex-wrap: wrap;
-          gap: 0.3rem;
-        }
-        .usermenu-wallet-address {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 0.74rem;
-        }
-        .usermenu-chip {
-          border: 1px solid ${theme.borderLight};
-          border-radius: 999px;
-          padding: 0.12rem 0.38rem;
-          font-size: 0.66rem;
-          font-weight: 700;
-          line-height: 1;
-          color: rgba(255, 255, 255, 0.62);
-          background: rgba(255, 255, 255, 0.03);
-          white-space: nowrap;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-        .usermenu-chip.active {
-          border-color: rgba(110, 255, 163, 0.45);
-          color: rgba(156, 255, 193, 0.96);
-          background: rgba(58, 130, 84, 0.22);
-        }
-        .usermenu-chipbtn {
-          border: 1px solid ${theme.borderLight};
-          border-radius: 999px;
-          padding: 0.12rem 0.38rem;
-          font-size: 0.66rem;
-          font-weight: 700;
-          line-height: 1;
-          color: rgba(255, 255, 255, 0.78);
-          background: rgba(255, 255, 255, 0.04);
-          white-space: nowrap;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-          cursor: pointer;
-          &:hover {
-            color: rgba(255, 255, 255, 0.96);
-            border-color: ${theme.borderHover};
-            background: rgba(255, 255, 255, 0.08);
-          }
-          &:disabled {
-            cursor: default;
-            color: rgba(255, 255, 255, 0.4);
-            border-color: ${theme.borderLight};
-            background: rgba(255, 255, 255, 0.02);
-          }
-        }
-        .usermenu-transfer-panel {
-          margin-top: 0.5rem;
-          border: 1px solid ${theme.borderLight};
-          border-radius: ${theme.radiusSmall};
-          background: rgba(0, 0, 0, 0.16);
-          padding: 0.55rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
-        }
-        .usermenu-transfer-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.5rem;
-        }
-        .usermenu-transfer-title {
-          font-size: 0.74rem;
-          color: rgba(255, 255, 255, 0.74);
-          font-weight: 600;
-        }
-        .usermenu-transfer-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-        .usermenu-transfer-meta {
-          font-size: 0.74rem;
-          color: rgba(255, 255, 255, 0.52);
-        }
-        .usermenu-transfer-tx {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-        .usermenu-transfer-tx-value {
-          color: rgba(255, 255, 255, 0.72);
-          font-size: 0.74rem;
-        }
-        .usermenu-row-value.mono {
-          font-family:
-            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-          font-size: 0.75rem;
-        }
-        .usermenu-linked-handle {
-          font-size: 0.78rem;
-          color: rgba(255, 255, 255, 0.45);
-        }
-        .usermenu-inlineactions {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-        }
-        .usermenu-linkbtn {
-          height: 1.9rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          padding: 0 0.55rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.75);
-          background: transparent;
-          cursor: pointer;
-          white-space: nowrap;
-          &:hover {
-            background: ${theme.bgHover};
-            color: rgba(255, 255, 255, 0.95);
-          }
-          &:disabled {
-            cursor: default;
-            color: rgba(255, 255, 255, 0.35);
-            border-color: ${theme.borderLight};
-          }
-        }
-        .usermenu-muted {
-          font-size: 0.82rem;
-          color: rgba(255, 255, 255, 0.35);
-        }
-        .usermenu-error {
-          font-size: 0.8rem;
-          color: #ff8e8e;
-        }
-        .usermenu-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-        }
-        .usermenu-label {
-          font-size: 0.68rem;
-          color: rgba(255, 255, 255, 0.4);
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-        }
-        .usermenu-input,
-        .usermenu-textarea {
-          width: 100%;
-          border: 1px solid ${theme.border};
-          background: rgba(0, 0, 0, 0.2);
-          color: rgba(255, 255, 255, 0.95);
-          font-size: 0.85rem;
-          border-radius: ${theme.radiusSmall};
-          padding: 0.5rem 0.6rem;
-          &:focus {
-            border-color: ${theme.borderHover};
-            outline: none;
-          }
-          &::placeholder {
-            color: rgba(255, 255, 255, 0.28);
-          }
-        }
-        .usermenu-select-wrap {
-          position: relative;
-        }
-        .usermenu-select {
-          appearance: none;
-          padding-right: 2.2rem;
-          cursor: pointer;
-        }
-        .usermenu-select:disabled {
-          cursor: default;
-        }
-        .usermenu-select-icon {
-          position: absolute;
-          top: 50%;
-          right: 0.7rem;
-          transform: translateY(-50%);
-          color: rgba(255, 255, 255, 0.42);
-          pointer-events: none;
-        }
-        .usermenu-textarea {
-          min-height: 4rem;
-          resize: vertical;
-        }
-        .usermenu-footer {
-          padding: 0.75rem 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.75rem;
-          border-top: 1px solid ${theme.borderLight};
-          flex-shrink: 0;
-        }
-        .usermenu-footer-identity {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-          min-width: 0;
-        }
-        .usermenu-footer-name {
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.8);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .usermenu-footer-email {
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.35);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .usermenu-btn {
-          height: 2.1rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          padding: 0 0.8rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.4rem;
-          font-size: 0.78rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.8);
-          background: transparent;
-          cursor: pointer;
-          white-space: nowrap;
-          flex-shrink: 0;
-          &:hover {
-            background: ${theme.bgHover};
-          }
-          &.danger {
-            border-color: rgba(255, 125, 125, 0.35);
-            color: rgba(255, 175, 175, 0.9);
-          }
-          &.disabled {
-            cursor: default;
-            color: rgba(255, 255, 255, 0.35);
-            background: transparent;
-          }
-        }
-        .usermenu-feedback {
-          margin: 0 1rem 0.75rem;
-          font-size: 0.8rem;
-          border: 1px solid ${theme.border};
-          border-radius: ${theme.radiusSmall};
-          padding: 0.5rem 0.6rem;
-          background: rgba(255, 255, 255, 0.03);
-          color: rgba(255, 255, 255, 0.7);
-          flex-shrink: 0;
-        }
-        .usermenu-feedback.success {
-          border-color: rgba(102, 240, 150, 0.35);
-          color: rgba(164, 255, 194, 0.95);
-          background: rgba(49, 122, 74, 0.2);
-        }
-        .usermenu-feedback.error {
-          border-color: rgba(255, 110, 110, 0.35);
-          color: rgba(255, 180, 180, 0.95);
-          background: rgba(122, 49, 49, 0.2);
-        }
-      `}
-    >
-      <div className='usermenu-backdrop' onClick={onClose} />
-      <div className='usermenu-panel'>
-        <div className='usermenu-head'>
-          <UserIcon size='1rem' />
-          <div className='usermenu-head-title'>Account</div>
-          <div className='usermenu-head-spacer' />
-          <div className='usermenu-close' onClick={onClose}>
-            <XIcon size='1rem' />
-          </div>
-        </div>
+        `}
+      >
         {auth?.mode === 'identity' ? (
           <div className='usermenu-hero'>
-            <div className='usermenu-section-label'>Signed in as {world.network.identity?.name}</div>
-            <div className='usermenu-muted'>
+            <div className='usermenu-section-label'>{world.network.identity?.name || 'Player'}</div>
+            <div className='usermenu-muted mono'>
               {auth.address?.slice(0, 6)}…{auth.address?.slice(-4)}
             </div>
-            <button className='usermenu-btn' disabled={auth.pending} onClick={onDisconnectWallet}>
+            <button
+              className='usermenu-btn menu-button menu-label'
+              disabled={auth.pending}
+              onClick={onDisconnectWallet}
+            >
               Sign out
             </button>
           </div>
@@ -1757,6 +1419,6 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
           <div className='usermenu-scroll'>{renderWorldSection()}</div>
         )}
       </div>
-    </div>
+    </PlayerPanel>
   )
 }

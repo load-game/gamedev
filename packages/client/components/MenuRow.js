@@ -284,13 +284,20 @@ function MicBtn({ world }) {
     <button
       type='button'
       className='editor-mic menu-button menu-icon-button'
-      aria-label={livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
-      title={livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
+      aria-label={livekit.connecting ? 'Connecting microphone' : livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
+      aria-busy={!!livekit.connecting}
+      title={livekit.connecting ? 'Connecting microphone' : livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
       aria-pressed={!!livekit.mic}
       disabled={livekit.connecting}
       onClick={toggle}
     >
-      {livekit.connecting ? <LoaderIcon /> : livekit.mic ? <MicIcon /> : <MicOffIcon />}
+      {livekit.connecting ? (
+        <LoaderIcon className='menu-spinner' aria-hidden='true' />
+      ) : livekit.mic ? (
+        <MicIcon />
+      ) : (
+        <MicOffIcon />
+      )}
     </button>
   )
 }
