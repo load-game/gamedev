@@ -1,15 +1,16 @@
 import { css } from '@firebolt-dev/css'
-import { useContext, useEffect, useMemo, useState } from 'react'
-import { XIcon, CircleArrowRightIcon, HammerIcon, UserXIcon, Volume2Icon, SettingsIcon, UsersIcon } from 'lucide-react'
-import { FieldBtn, FieldRange, FieldSwitch, FieldText, FieldToggle } from './Fields.js'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { CircleArrowRightIcon, HammerIcon, UserXIcon, Volume2Icon, SettingsIcon } from 'lucide-react'
+import { MenuButton, SettingsRange, SettingsSelect, SettingsText, SettingsToggle } from './SettingsFields.js'
+import { menuStyles, useMenuTheme } from './PlayerMenuTheme.js'
+import { ControlPriorities } from '@gamedev/core/extras/ControlPriorities.js'
 import { useFullscreen } from './useFullscreen.js'
 import { useRank } from './useRank.js'
-import { assetPath, isTouch } from '../utils.js'
-import { Group } from './sidebar/Group.js'
+import { isTouch } from '../utils.js'
 import { cls } from './cls.js'
 import { theme } from './theme.js'
 import { HintContext, HintProvider } from './Hint.js'
-import { MicIcon, MicOffIcon, VRIcon } from './Icons.js'
+import { MicIcon, MicOffIcon } from './Icons.js'
 import { sortBy } from 'lodash-es'
 import * as THREE from '@gamedev/core/extras/three.js'
 import { Ranks } from '@gamedev/core/extras/ranks.js'
@@ -41,7 +42,9 @@ export function MainMenu({ world, open, onClose }) {
   const [canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
   const [actions, setActions] = useState(world.prefs.actions)
   const [stats, setStats] = useState(world.prefs.stats)
-  const [tab, setTab] = useState('settings')
+  const [tab, setTab] = useState('audio')
+  const dialogRef = useRef(null)
+  const menuTheme = useMenuTheme(world)
   const changeName = async name => {
     if (!name) return setName(player.data.name)
     const result = await syncLobbyProfilePatch({ name })
@@ -85,18 +88,55 @@ export function MainMenu({ world, open, onClose }) {
   }, [])
   useEffect(() => {
     if (!open) return
-    const onKeyDown = e => {
-      if (e.code === 'Escape') onClose()
+    setTab('audio')
+    const previousFocus = document.activeElement
+    const controls = world.controls.bind({ priority: ControlPriorities.CORE_UI })
+    controls.escape.capture = true
+    controls.escape.onPress = onClose
+    controls.pointer.unlock()
+    const dialog = dialogRef.current
+    dialog?.querySelector('.settings-close')?.focus()
+    return () => {
+      controls.release()
+      previousFocus?.focus?.()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open])
+  }, [open, world])
+  const handleKeyDown = event => {
+    // Keep browser focus/range keys out of the world's Tab and movement handlers.
+    event.stopPropagation()
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onClose()
+    }
+    if (event.key === 'Tab') {
+      const focusable = [...dialogRef.current.querySelectorAll('button:not(:disabled), input, select')]
+      const first = focusable[0]
+      const last = focusable.at(-1)
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last?.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first?.focus()
+      }
+    }
+  }
   if (!open) return null
+  const tabs = [
+    ['audio', 'Audio'],
+    ['interface', 'Interface'],
+    ['graphics', 'Graphics'],
+    ['player', 'Player'],
+    ['connection', 'Connection'],
+  ]
+  if (isAdmin) tabs.push(['players', 'Players'])
   return (
     <HintProvider>
       <div
         className='mainmenu'
+        style={menuTheme}
         css={css`
+          ${menuStyles}
           position: absolute;
           inset: 0;
           z-index: 100;
@@ -107,278 +147,248 @@ export function MainMenu({ world, open, onClose }) {
           .mainmenu-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
+            background: #05071366;
           }
-          .mainmenu-panel {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 22rem;
-            max-width: calc(100% - 2rem);
-            max-height: calc(100% - 4rem);
-            min-height: 30rem;
-            background: ${theme.bgPanel};
-            border: 1px solid ${theme.border};
-            border-radius: ${theme.radius};
+          .settings-dialog {
+            position: relative;
+            width: min(69rem, calc(100% - 3rem));
+            max-height: calc(100% - 3rem);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            gap: 1rem;
           }
-          .mainmenu-head {
-            flex-shrink: 0;
+          .settings-head {
             display: flex;
-            flex-direction: column;
-            border-bottom: 1px solid ${theme.borderLight};
+            gap: 1rem;
+            flex: none;
           }
-          .mainmenu-head-top {
-            height: 3.5rem;
-            padding: 0 0.75rem 0 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-          }
-          .mainmenu-logo {
-            width: 2rem;
-            height: 2rem;
-            object-fit: contain;
-          }
-          .mainmenu-head-spacer {
+          .settings-title {
             flex: 1;
-          }
-          .mainmenu-actions {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 1rem;
+            min-height: 5.5rem;
+            padding: 0.75rem 1.5rem;
+            margin: 0;
+            font-size: clamp(1.8rem, 4vw, 3.5rem);
+            font-weight: inherit;
+            border: var(--menu-border-width, 1px) solid var(--menu-outline, #303744);
+            border-radius: var(--menu-radius, 6px);
+            background: linear-gradient(var(--menu-header-top, #354457), var(--menu-header-bottom, #202a38));
+            box-shadow: inset 0 4px 0 #ffffffaa;
           }
-          .mainmenu-action {
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: ${theme.radiusSmall};
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            &:hover {
-              color: white;
-              background: ${theme.bgHover};
-            }
-            &.muted {
-              color: #ff4b4b;
-            }
+          .settings-title svg {
+            width: 2.75rem;
+            height: 2.75rem;
+            flex: none;
           }
-          .mainmenu-close {
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            &:hover {
-              color: white;
-            }
+          .settings-close {
+            width: 5.5rem;
+            min-height: 5.5rem;
+            flex: none;
+            font-size: 3.5rem;
+            background: linear-gradient(var(--menu-close-top, #b93838), var(--menu-close-bottom, #8b2929));
+            box-shadow: inset 0 calc(-1 * var(--menu-button-depth, 0px)) 0 var(--menu-close-shadow, #621818);
           }
-          .mainmenu-tabs {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            padding: 0 0.5rem;
-          }
-          .mainmenu-tab {
-            flex: 1;
-            height: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            &:hover {
-              color: rgba(255, 255, 255, 0.8);
-            }
-            &.active {
-              color: white;
-              border-bottom-color: white;
-              background: ${theme.bgHover};
-            }
-          }
-          .mainmenu-content {
-            flex: 1;
+          .settings-body {
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 14rem minmax(0, 1fr);
+            align-items: start;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            border: 3px solid var(--menu-border, #303744);
+            border-radius: var(--menu-radius, 6px);
+            background: var(--menu-panel, #141923ee);
             overflow-y: auto;
-            padding: 0.6rem 0;
+            scrollbar-width: thin;
           }
-          .mainmenu-note {
-            padding: 0.05rem 1rem 0.65rem;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.55);
-            line-height: 1.35;
+          .settings-nav,
+          .settings-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+            min-width: 0;
           }
-          .mainmenu-note.warn {
-            color: #ffb4b4;
+          .settings-nav .menu-button {
+            width: 100%;
+          }
+          .settings-content {
+            min-height: 22rem;
+          }
+          .settings-done {
+            width: 100%;
+            margin-top: 0.125rem;
+          }
+          @media (max-width: 680px) {
+            .settings-dialog {
+              width: calc(100% - 1.25rem);
+              max-height: calc(100% - 1.25rem);
+              gap: 0.6rem;
+            }
+            .settings-head {
+              gap: 0.6rem;
+            }
+            .settings-title {
+              min-height: 4rem;
+              padding: 0.5rem 0.75rem;
+              gap: 0.5rem;
+            }
+            .settings-title svg {
+              width: 1.75rem;
+              height: 1.75rem;
+            }
+            .settings-close {
+              width: 4rem;
+              min-height: 4rem;
+              font-size: 2.5rem;
+            }
+            .settings-body {
+              grid-template-columns: minmax(0, 1fr);
+              padding: 0.75rem;
+              gap: 0.75rem;
+            }
+            .settings-nav {
+              flex-direction: row;
+              overflow-x: auto;
+              padding-bottom: 0.3rem;
+              gap: 0.5rem;
+            }
+            .settings-nav .menu-button {
+              width: auto;
+              flex: none;
+              font-size: 1rem;
+              min-height: 2.75rem;
+              padding-inline: 0.7rem;
+            }
+            .settings-content {
+              min-height: 0;
+              gap: 0.75rem;
+            }
+            .menu-card {
+              font-size: 1rem;
+              padding: 0.75rem;
+            }
+            .menu-card .menu-button {
+              min-width: 5rem;
+              font-size: 1rem;
+            }
           }
         `}
       >
         <div className='mainmenu-backdrop' onClick={onClose} />
-        <div className='mainmenu-panel'>
-          <div className='mainmenu-head'>
-            <div className='mainmenu-head-top'>
-              <img className='mainmenu-logo' src={assetPath('/logo.png')} />
-              <div className='mainmenu-head-spacer' />
-              <div className='mainmenu-actions'>
-                {world.xr.isSupported && (
-                  <div className='mainmenu-action' onClick={() => world.xr.start()}>
-                    <VRIcon size='1.125rem' />
-                  </div>
-                )}
-              </div>
-              <div className='mainmenu-close' onClick={onClose}>
-                <XIcon size='1.125rem' />
-              </div>
-            </div>
-            <div className='mainmenu-tabs'>
-              <div className={cls('mainmenu-tab', { active: tab === 'settings' })} onClick={() => setTab('settings')}>
-                <SettingsIcon size='0.875rem' />
-                Settings
-              </div>
-              {isAdmin && (
-                <div className={cls('mainmenu-tab', { active: tab === 'players' })} onClick={() => setTab('players')}>
-                  <UsersIcon size='0.875rem' />
-                  Players
-                </div>
+        <section
+          ref={dialogRef}
+          className='settings-dialog'
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby='settings-title'
+          onKeyDown={handleKeyDown}
+        >
+          <header className='settings-head'>
+            <h1 id='settings-title' className='settings-title'>
+              <SettingsIcon aria-hidden='true' />
+              <span className='menu-label'>Settings!</span>
+            </h1>
+            <MenuButton className='settings-close' aria-label='Close settings' onClick={onClose}>
+              X
+            </MenuButton>
+          </header>
+          <div className='settings-body'>
+            <nav className='settings-nav' aria-label='Settings categories'>
+              {tabs.map(([id, label]) => (
+                <MenuButton key={id} primary={tab === id} aria-pressed={tab === id} onClick={() => setTab(id)}>
+                  {label}
+                </MenuButton>
+              ))}
+              {world.xr.isSupported && <MenuButton onClick={() => world.xr.start()}>Enter VR</MenuButton>}
+            </nav>
+            <div className='settings-content' aria-label={tabs.find(([id]) => id === tab)?.[1]}>
+              {tab === 'audio' && (
+                <>
+                  <SettingsRange label='Music' value={music} onChange={value => world.prefs.setMusic(value)} />
+                  <SettingsRange label='Sound Effects' value={sfx} onChange={value => world.prefs.setSFX(value)} />
+                  <SettingsRange label='Voice' value={voice} onChange={value => world.prefs.setVoice(value)} />
+                </>
               )}
+              {tab === 'interface' && (
+                <>
+                  <SettingsRange
+                    label='Interface Scale'
+                    min={0.5}
+                    max={1.5}
+                    step={0.1}
+                    value={ui}
+                    onChange={value => world.prefs.setUI(value)}
+                  />
+                  <SettingsToggle
+                    label='Fullscreen'
+                    value={isFullscreen}
+                    disabled={!canFullscreen}
+                    onChange={toggleFullscreen}
+                  />
+                  {isBuilder && (
+                    <SettingsToggle
+                      label='Build Prompts'
+                      value={actions}
+                      onChange={value => world.prefs.setActions(value)}
+                    />
+                  )}
+                  <SettingsToggle
+                    label='Performance Stats'
+                    value={stats}
+                    onChange={value => world.prefs.setStats(value)}
+                  />
+                  {!isTouch && (
+                    <div className='menu-card'>
+                      <span className='menu-label'>Hide Interface</span>
+                      <MenuButton
+                        aria-label='Hide interface (Z to show again)'
+                        onClick={() => {
+                          world.ui.toggleVisible()
+                          onClose()
+                        }}
+                      >
+                        Z
+                      </MenuButton>
+                    </div>
+                  )}
+                </>
+              )}
+              {tab === 'graphics' && (
+                <>
+                  <SettingsSelect
+                    label='Resolution'
+                    options={dprOptions}
+                    value={dpr}
+                    onChange={value => world.prefs.setDPR(value)}
+                  />
+                  <SettingsSelect
+                    label='Shadows'
+                    options={shadowOptions}
+                    value={shadows}
+                    onChange={value => world.prefs.setShadows(value)}
+                  />
+                  <SettingsToggle
+                    label='Post-processing'
+                    value={postprocessing}
+                    onChange={value => world.prefs.setPostprocessing(value)}
+                  />
+                  <SettingsToggle label='Bloom' value={bloom} onChange={value => world.prefs.setBloom(value)} />
+                  {world.settings.ao && (
+                    <SettingsToggle label='Ambient Occlusion' value={ao} onChange={value => world.prefs.setAO(value)} />
+                  )}
+                </>
+              )}
+              {tab === 'player' && <SettingsText label='Name' value={name} onChange={changeName} />}
+              {tab === 'connection' && <ConnectionSection world={world} onClose={onClose} />}
+              {tab === 'players' && isAdmin && <PlayersSection world={world} />}
+              <MenuButton className='settings-done' primary onClick={onClose}>
+                Done
+              </MenuButton>
             </div>
           </div>
-          <div className='mainmenu-content noscrollbar'>
-            {tab === 'settings' && (
-              <>
-                <FieldText label='Name' hint='Change your name' value={name} onChange={changeName} />
-                <ConnectionSection world={world} onClose={onClose} />
-                <Group label='Interface' />
-                <FieldRange
-                  label='Scale'
-                  hint='Change the scale of the user interface'
-                  min={0.5}
-                  max={1.5}
-                  step={0.1}
-                  value={ui}
-                  onChange={ui => world.prefs.setUI(ui)}
-                />
-                <FieldToggle
-                  label='Fullscreen'
-                  hint='Toggle fullscreen. Not supported in some browsers'
-                  value={isFullscreen}
-                  onChange={value => toggleFullscreen(value)}
-                  trueLabel='Enabled'
-                  falseLabel='Disabled'
-                />
-                {isBuilder && (
-                  <FieldToggle
-                    label='Build Prompts'
-                    hint='Show or hide action prompts when in build mode'
-                    value={actions}
-                    onChange={actions => world.prefs.setActions(actions)}
-                    trueLabel='Visible'
-                    falseLabel='Hidden'
-                  />
-                )}
-                <FieldToggle
-                  label='Stats'
-                  hint='Show or hide performance stats'
-                  value={world.prefs.stats}
-                  onChange={stats => world.prefs.setStats(stats)}
-                  trueLabel='Visible'
-                  falseLabel='Hidden'
-                />
-                {!isTouch && (
-                  <FieldBtn
-                    label='Hide Interface'
-                    note='Z'
-                    hint='Hide the user interface. Press Z to re-enable.'
-                    onClick={() => {
-                      world.ui.toggleVisible()
-                      onClose()
-                    }}
-                  />
-                )}
-                <Group label='Graphics' />
-                <FieldSwitch
-                  label='Resolution'
-                  hint='Change your display resolution'
-                  options={dprOptions}
-                  value={dpr}
-                  onChange={dpr => world.prefs.setDPR(dpr)}
-                />
-                <FieldSwitch
-                  label='Shadows'
-                  hint='Change the quality of shadows in the world'
-                  options={shadowOptions}
-                  value={shadows}
-                  onChange={shadows => world.prefs.setShadows(shadows)}
-                />
-                <FieldToggle
-                  label='Post-processing'
-                  hint='Enable or disable all postprocessing effects'
-                  trueLabel='On'
-                  falseLabel='Off'
-                  value={postprocessing}
-                  onChange={postprocessing => world.prefs.setPostprocessing(postprocessing)}
-                />
-                <FieldToggle
-                  label='Bloom'
-                  hint='Enable or disable the bloom effect'
-                  trueLabel='On'
-                  falseLabel='Off'
-                  value={bloom}
-                  onChange={bloom => world.prefs.setBloom(bloom)}
-                />
-                {world.settings.ao && (
-                  <FieldToggle
-                    label='Ambient Occlusion'
-                    hint='Enable or disable the ambient occlusion effect'
-                    trueLabel='On'
-                    falseLabel='Off'
-                    value={ao}
-                    onChange={ao => world.prefs.setAO(ao)}
-                  />
-                )}
-                <Group label='Audio' />
-                <FieldRange
-                  label='Music'
-                  hint='Adjust general music volume'
-                  min={0}
-                  max={2}
-                  step={0.05}
-                  value={music}
-                  onChange={music => world.prefs.setMusic(music)}
-                />
-                <FieldRange
-                  label='SFX'
-                  hint='Adjust sound effects volume'
-                  min={0}
-                  max={2}
-                  step={0.05}
-                  value={sfx}
-                  onChange={sfx => world.prefs.setSFX(sfx)}
-                />
-                <FieldRange
-                  label='Voice'
-                  hint='Adjust global voice chat volume'
-                  min={0}
-                  max={2}
-                  step={0.05}
-                  value={voice}
-                  onChange={voice => world.prefs.setVoice(voice)}
-                />
-              </>
-            )}
-            {tab === 'players' && isAdmin && <PlayersSection world={world} />}
-          </div>
-        </div>
+        </section>
       </div>
     </HintProvider>
   )
@@ -434,33 +444,21 @@ function ConnectionSection({ world, onClose }) {
 
   return (
     <>
-      <Group label='Connection' />
       {showServerUrl && (
-        <FieldText
+        <SettingsText
           label='Server'
-          hint='Set the websocket URL to connect to another server'
           placeholder='wss://your-world.example/ws'
           value={serverUrl}
-          onChange={value => setServerUrl(value)}
+          onChange={setServerUrl}
         />
       )}
-      <FieldBtn
-        label='Status'
-        hint='Current connection state'
-        note={isOffline ? 'Offline' : `Online${ping != null ? ` (${ping}ms)` : ''}`}
-        onClick={() => {}}
-      />
-      <FieldBtn
-        label={isOffline ? 'Connect to Server' : 'Disconnect from Server'}
-        hint={
-          isOffline
-            ? showServerUrl
-              ? 'Reload using the server URL above'
-              : 'Reload using the configured server'
-            : 'Close the current websocket connection'
-        }
-        onClick={isOffline ? handleConnect : handleDisconnect}
-      />
+      <div className='menu-card'>
+        <span className='menu-label'>Status</span>
+        <span className='menu-status'>{isOffline ? 'Offline' : `Online${ping != null ? ` (${ping}ms)` : ''}`}</span>
+      </div>
+      <MenuButton onClick={isOffline ? handleConnect : handleDisconnect}>
+        {isOffline ? 'Connect' : 'Disconnect'}
+      </MenuButton>
     </>
   )
 }

@@ -1,7 +1,8 @@
 import { css } from '@firebolt-dev/css'
-import { GlobeIcon, HammerIcon, LoaderIcon, UserIcon } from 'lucide-react'
+import { GlobeIcon, HammerIcon, LoaderIcon, UserIcon, SettingsIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { editorTheme as theme } from './editor/editorTheme.js'
+import { menuStyles, useMenuTheme } from './PlayerMenuTheme.js'
 import { MicIcon, MicOffIcon } from './Icons.js'
 
 const onboardingSteps = [
@@ -144,6 +145,7 @@ function OnboardingTarget({ step, name, onNext, onSkip, children }) {
 }
 
 export function MenuRow({ world, open, onToggle, buildMode, auth, onUserClick, onExploreClick }) {
+  const menuTheme = useMenuTheme(world)
   const [onboardingStep, setOnboardingStep] = useState(getInitialStep)
 
   const dismissOnboarding = () => {
@@ -164,7 +166,9 @@ export function MenuRow({ world, open, onToggle, buildMode, auth, onUserClick, o
   return (
     <div
       className='menu-row'
+      style={menuTheme}
       css={css`
+        ${menuStyles}
         position: absolute;
         top: calc(1rem + env(safe-area-inset-top));
         left: calc(1rem + env(safe-area-inset-left));
@@ -180,7 +184,7 @@ export function MenuRow({ world, open, onToggle, buildMode, auth, onUserClick, o
       `}
     >
       <OnboardingTarget step={onboardingStep} name='editor-logo' onNext={advanceOnboarding} onSkip={dismissOnboarding}>
-        <LogoBtn onClick={() => world.emit('open-menu')} />
+        <SettingsBtn onClick={() => world.emit('open-menu')} />
       </OnboardingTarget>
       {buildMode && (
         <div
@@ -225,60 +229,31 @@ export function MenuRow({ world, open, onToggle, buildMode, auth, onUserClick, o
   )
 }
 
-function LogoBtn({ onClick }) {
+function SettingsBtn({ onClick }) {
   return (
-    <div
-      className='editor-logo'
-      css={css`
-        width: 2.75rem;
-        height: 2.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid ${theme.border};
-        border-radius: ${theme.radius};
-        cursor: pointer;
-        &:hover {
-          background: ${theme.bgHover};
-        }
-        img {
-          width: 1.75rem;
-          height: 1.75rem;
-          object-fit: contain;
-        }
-      `}
+    <button
+      type='button'
+      className='editor-logo menu-button menu-icon-button'
+      aria-label='Settings'
+      title='Settings'
       onClick={onClick}
     >
-      <img src='/logo.png' />
-    </div>
+      <SettingsIcon aria-hidden='true' />
+    </button>
   )
 }
 
 function ExploreBtn({ onClick }) {
   return (
-    <div
-      className='editor-explore'
-      css={css`
-        width: 2.75rem;
-        height: 2.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid ${theme.border};
-        border-radius: ${theme.radius};
-        color: rgba(255, 255, 255, 0.9);
-        cursor: pointer;
-        user-select: none;
-        &:hover {
-          background: ${theme.bgHover};
-        }
-      `}
+    <button
+      type='button'
+      className='editor-explore menu-button menu-icon-button'
+      aria-label='Explore worlds'
+      title='Explore worlds'
       onClick={() => onClick?.()}
     >
-      <GlobeIcon size='1.1rem' />
-    </div>
+      <GlobeIcon aria-hidden='true' />
+    </button>
   )
 }
 
@@ -308,46 +283,20 @@ function MicBtn({ world }) {
   return (
     <button
       type='button'
-      aria-label={livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
-      aria-pressed={livekit.mic}
-      title={livekit.mic ? 'Mute microphone and keep listening' : 'Unmute microphone'}
-      className='editor-mic'
-      css={css`
-        width: 2.75rem;
-        height: 2.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: ${livekit.mic ? 'rgba(255,255,255,0.15)' : 'transparent'};
-        border: 1px solid ${livekit.mic ? 'rgba(255,255,255,0.4)' : theme.border};
-        border-radius: ${theme.radius};
-        color: ${livekit.mic ? 'white' : 'rgba(255, 255, 255, 0.6)'};
-        cursor: pointer;
-        user-select: none;
-        &:hover {
-          background: ${theme.bgHover};
-          color: white;
-        }
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        .spinning {
-          animation: spin 1s linear infinite;
-        }
-      `}
+      className='editor-mic menu-button menu-icon-button'
+      aria-label={livekit.connecting ? 'Connecting microphone' : livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
+      aria-busy={!!livekit.connecting}
+      title={livekit.connecting ? 'Connecting microphone' : livekit.mic ? 'Mute microphone' : 'Unmute microphone'}
+      aria-pressed={!!livekit.mic}
+      disabled={livekit.connecting}
       onClick={toggle}
     >
       {livekit.connecting ? (
-        <LoaderIcon size='1.1rem' className='spinning' />
+        <LoaderIcon className='menu-spinner' aria-hidden='true' />
       ) : livekit.mic ? (
-        <MicIcon size='1.1rem' />
+        <MicIcon />
       ) : (
-        <MicOffIcon size='1.1rem' />
+        <MicOffIcon />
       )}
     </button>
   )
@@ -356,28 +305,15 @@ function MicBtn({ world }) {
 function UserBtn({ auth, onClick }) {
   const pending = !!auth?.pending
   return (
-    <div
-      className='editor-user'
-      css={css`
-        width: 2.75rem;
-        height: 2.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid ${theme.border};
-        border-radius: ${theme.radius};
-        color: rgba(255, 255, 255, 0.9);
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-        &:hover {
-          background: ${theme.bgHover};
-        }
-      `}
+    <button
+      type='button'
+      className='editor-user menu-button menu-icon-button'
+      aria-label='Player account'
+      title='Player account'
+      disabled={pending}
       onClick={() => onClick?.()}
     >
-      {pending ? <LoaderIcon size='1.1rem' /> : <UserIcon size='1.1rem' />}
-    </div>
+      {pending ? <LoaderIcon /> : <UserIcon aria-hidden='true' />}
+    </button>
   )
 }

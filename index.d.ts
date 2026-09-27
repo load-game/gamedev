@@ -1198,6 +1198,35 @@ interface WorldAPI {
   readonly isServer: boolean
   readonly isClient: boolean
 
+  /** Client-only presentation tokens for the player toolbar/settings. Released when this app unloads. */
+  setMenuTheme(
+    theme: {
+      panel?: string
+      card?: string
+      border?: string
+      text?: string
+      muted?: string
+      outline?: string
+      headerTop?: string
+      headerBottom?: string
+      primaryTop?: string
+      primaryBottom?: string
+      primaryShadow?: string
+      secondaryTop?: string
+      secondaryBottom?: string
+      secondaryShadow?: string
+      closeTop?: string
+      closeBottom?: string
+      closeShadow?: string
+      radius?: number
+      borderWidth?: number
+      textOutline?: number
+      buttonDepth?: number
+      uppercase?: boolean
+      fontUrl?: string
+    } | null
+  ): void
+
   furnishing(): FurnishingAPI
   /** Client-only companion pairing for the current game connection. */
   companions(): {

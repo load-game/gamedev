@@ -1,6 +1,7 @@
 import { isBoolean } from 'lodash-es'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { validateReticle } from '../extras/ReticleTheme.js'
+import { validateMenuTheme } from '../extras/MenuTheme.js'
 import { System } from './System.js'
 
 const appPanes = ['app', 'script', 'nodes', 'meta']
@@ -15,9 +16,11 @@ export class ClientUI extends System {
       pane: null,
       reticleSuppressors: 0,
       reticle: null,
+      menuTheme: null,
     }
     this.lastAppPane = 'app'
     this.control = null
+    this.menuThemes = new Map()
   }
 
   start() {
@@ -98,6 +101,15 @@ export class ClientUI extends System {
     this.world.emit('reticle', this.state.reticle)
   }
 
+  setMenuTheme(owner, options) {
+    const next = validateMenuTheme(options)
+    if (!next && !this.menuThemes.has(owner)) return
+    this.menuThemes.delete(owner)
+    if (next) this.menuThemes.set(owner, next)
+    this.state.menuTheme = [...this.menuThemes.values()].at(-1) || null
+    this.world.emit('menu-theme', this.state.menuTheme)
+  }
+
   confirm(options) {
     const promise = new Promise(resolve => {
       options.confirm = () => {
@@ -133,6 +145,7 @@ export class ClientUI extends System {
   }
 
   destroy() {
+    this.menuThemes.clear()
     this.control?.release()
     this.control = null
   }

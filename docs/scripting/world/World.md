@@ -634,6 +634,25 @@ Notes:
 - Defaults to connected wallet address when `destination` is omitted.
 
 
+### `.setMenuTheme(options: ?Object)`
+
+Sets app-owned presentation tokens for the player toolbar, Settings, Explore/Friends,
+Account, and wallet sign-in panels (client only).
+Pass `null` to release this app's theme; unloading the app also releases it. If several apps
+set themes, the most recent active theme wins and releasing it restores the previous theme.
+
+Colors accept hex (`#rgb`, `#rrggbb`, `#rrggbbaa`): `panel`, `card`, `border`, `text`, `muted`,
+`outline`, `headerTop`, `headerBottom`, `primaryTop`, `primaryBottom`, `primaryShadow`,
+`secondaryTop`, `secondaryBottom`, `secondaryShadow`, `closeTop`, `closeBottom`, `closeShadow`.
+Numeric pixel tokens are bounded: `radius` (0–24), `borderWidth` (0–4), `textOutline` (0–3),
+and `buttonDepth` (0–8). `uppercase` is a boolean. `fontUrl` accepts an uploaded `asset://`
+font, same-origin path, or HTTP(S) URL. Fonts fall back to the client's normal font if unavailable.
+Unknown tokens and invalid values are ignored. No CSS, HTML, or control behavior can be supplied.
+
+```js
+world.setMenuTheme({ panel: '#101522ee', primaryTop: '#527cc2', radius: 8 })
+```
+
 ### `.setReticle(options: ?Object)`
 
 Customizes the center-screen reticle. Pass `null` to reset to default.

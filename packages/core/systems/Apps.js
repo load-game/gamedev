@@ -517,6 +517,9 @@ export class Apps extends System {
         if (!world.ui) return
         world.ui.setReticle(options)
       },
+      setMenuTheme(entity, options) {
+        world.ui?.setMenuTheme(entity, options)
+      },
       setQueryParam(entity, key, value) {
         if (!isBrowser) {
           console.error('getQueryParam() must be called in the browser')
