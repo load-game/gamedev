@@ -1140,7 +1140,8 @@ interface RoomFrame {
 interface FurnitureTransform {
   position: [number, number, number]
   yaw: number
-  surface: 'floor' | 'wall'
+  surface: 'floor' | 'wall' | 'support'
+  supportId?: string
 }
 interface FurnitureRule {
   size: [number, number, number]
@@ -1148,6 +1149,7 @@ interface FurnitureRule {
   surfaces: string[]
   orientations?: number[]
   collision?: 'solid' | 'overlap'
+  support?: { size: [number, number]; height: number; center?: [number, number] }
 }
 interface FurniturePlacement {
   id: string
@@ -1166,6 +1168,7 @@ interface FurnitureSession {
   dispose(): void
 }
 interface FurnishingAPI {
+  relocate(before: FurnitureTransform, after: FurnitureTransform, transform: FurnitureTransform): FurnitureTransform
   validate(
     room: { size: [number, number, number] },
     item: FurnitureRule,
@@ -1183,6 +1186,8 @@ interface FurnishingAPI {
     item: FurnitureRule
     transform: FurnitureTransform
     placed?: () => FurniturePlacement[]
+    camera?: 'overhead' | 'player'
+    gridStep?: number
     authorized: () => boolean
     onPreview?: (transform: FurnitureTransform, result: { ok: boolean; reason?: string }) => void
     onCommit: (transform: FurnitureTransform) => Promise<unknown>

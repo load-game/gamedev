@@ -269,3 +269,69 @@ test('mouse preview, key rotation, grid, UI exclusion and single valid commit', 
   assert.deepEqual(errors, [])
   assert.deepEqual(node.position.toArray(), [2, 0, 2])
 })
+
+test('tabletop placement requires a real support, full footprint and matching height', () => {
+  const stand = { size: [2, 1, 1], surfaces: ['floor'], support: { size: [2, 1], height: 1 } }
+  const globe = { size: [0.4, 0.4, 0.4], surfaces: ['floor', 'support'] }
+  const placed = [{ id: 'stand', item: stand, transform: t() }]
+  const pose = { ...t([0, 1, 0], 0, 'support'), supportId: 'stand' }
+  assert.equal(validatePlacement(room, globe, pose, placed).ok, true)
+  assert.equal(validatePlacement(room, globe, { ...pose, supportId: 'missing' }, placed).reason, 'support')
+  assert.equal(validatePlacement(room, globe, { ...pose, position: [0.9, 1, 0] }, placed).reason, 'support')
+  assert.equal(validatePlacement(room, globe, { ...pose, position: [0, 1.1, 0] }, placed).reason, 'support')
+  assert.equal(
+    validatePlacement(room, globe, pose, [...placed, { id: 'globe', item: globe, transform: pose }]).reason,
+    'collision'
+  )
+  const rotated = [{ ...placed[0], transform: t([2, 0, 1], Math.PI / 2) }]
+  assert.equal(validatePlacement(room, globe, { ...pose, position: [2, 1, 1.5] }, rotated).ok, true)
+  assert.equal(validatePlacement(room, globe, { ...pose, position: [2.4, 1, 1] }, rotated).reason, 'support')
+})
+
+test('moving and turning a support preserves the supported object pose relative to it', async () => {
+  const { relocatePlacement } = await import('../../packages/core/extras/furnishing.js')
+  const pose = { ...t([0.5, 1, 0], 0, 'support'), supportId: 'stand' }
+  const moved = relocatePlacement(t(), t([2, 0, 3], Math.PI / 2), pose)
+  assert.deepEqual(moved.position, [2, 1, 2.5])
+  assert.equal(moved.supportId, 'stand')
+  assert.ok(Math.abs(moved.yaw - Math.PI / 2) < 1e-10)
+})
+
+test('player-camera placement leaves the camera and walking controls with the player', async () => {
+  const { createFurnishingAPI } = await import('../../packages/core/extras/furnishing.js')
+  const THREE = await import('../../packages/core/extras/three.js')
+  const callbacks = new Map()
+  const control = new Proxy(
+    {
+      pointer: { position: new THREE.Vector3(), unlock() {} },
+      camera: { position: new THREE.Vector3(1, 2, 3), quaternion: new THREE.Quaternion() },
+      release() {},
+    },
+    {
+      get(o, k) {
+        return (o[k] ||= {})
+      },
+    }
+  )
+  const entity = {
+    world: { network: { isClient: true }, controls: { bind: () => control }, stage: { raycastPointer: () => [] } },
+    on: (n, f) => callbacks.set(n, f),
+    off: n => callbacks.delete(n),
+  }
+  const node = { ctx: { entity }, position: new THREE.Vector3(), rotation: new THREE.Euler() }
+  const edit = createFurnishingAPI(entity).begin({
+    room,
+    frame: () => ({ position: [0, 0, 0], yaw: 0 }),
+    node,
+    item: chair,
+    transform: t(),
+    camera: 'player',
+    onCommit() {},
+  })
+  callbacks.get('update')()
+  assert.equal(control.camera.write, undefined)
+  assert.equal(control.keyW.capture, undefined)
+  assert.equal(control.space.capture, undefined)
+  assert.deepEqual(control.camera.position.toArray(), [1, 2, 3])
+  edit.dispose()
+})
