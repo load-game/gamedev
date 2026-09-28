@@ -30,6 +30,33 @@ function bounds(item, transform) {
     .add(new THREE.Vector3().fromArray(transform.position))
   return new OBB(center, new THREE.Vector3().fromArray(item.size).multiplyScalar(0.5), rotation)
 }
+// Rebase a supported object's room-local pose when its stand moves or turns.
+export function relocatePlacement(before, after, transform) {
+  const local = transformPoint({ position: before.position, yaw: before.yaw }, transform.position, true)
+  return {
+    ...copy(transform),
+    position: transformPoint({ position: after.position, yaw: after.yaw }, local),
+    yaw: ((transform.yaw + after.yaw - before.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI,
+  }
+}
+function supportContains(item, transform, support) {
+  const plane = support.item.support
+  if (!plane || !finite(plane.size, 2) || plane.size.some(v => v <= 0) || !Number.isFinite(plane.height)) return false
+  const frame = { position: support.transform.position, yaw: support.transform.yaw }
+  const box = bounds(item, transform)
+  for (const x of [-1, 1])
+    for (const z of [-1, 1]) {
+      const corner = new THREE.Vector3(x, -1, z).multiply(box.halfSize).applyMatrix3(box.rotation).add(box.center)
+      const local = transformPoint(frame, corner.toArray(), true)
+      if (
+        Math.abs(local[1] - plane.height) > 0.015 ||
+        Math.abs(local[0] - (plane.center?.[0] || 0)) > plane.size[0] / 2 + 0.001 ||
+        Math.abs(local[2] - (plane.center?.[1] || 0)) > plane.size[1] / 2 + 0.001
+      )
+        return false
+    }
+  return true
+}
 export function validatePlacement(room, item, transform, placed = []) {
   if (!item || !finite(item.size, 3) || item.size.some(v => v <= 0)) return { ok: false, reason: 'invalid_item' }
   if (
@@ -65,9 +92,14 @@ export function validatePlacement(room, item, transform, placed = []) {
       (Math.abs(Math.abs(box.center.z) + box.halfSize.z - half[2]) < 0.03 && Math.abs(Math.sin(transform.yaw)) < 0.001)
     if (!wall) return { ok: false, reason: 'wall' }
   }
+  if (transform.surface === 'support') {
+    const support = placed.find(p => p.id === transform.supportId && p.transform && p.id !== transform.id)
+    if (!support || !supportContains(item, transform, support)) return { ok: false, reason: 'support' }
+  }
   for (const other of placed) {
     if (
       other.id === transform.id ||
+      (item.support && other.transform?.supportId === transform.id) ||
       !other.transform ||
       item.collision === 'overlap' ||
       other.item.collision === 'overlap'
@@ -78,7 +110,15 @@ export function validatePlacement(room, item, transform, placed = []) {
     candidate.halfSize.addScalar(-0.005)
     if (box.intersectsOBB(candidate)) return { ok: false, reason: 'collision' }
   }
-  return { ok: true, transform: { position: [...transform.position], yaw: transform.yaw, surface: transform.surface } }
+  return {
+    ok: true,
+    transform: {
+      position: [...transform.position],
+      yaw: transform.yaw,
+      surface: transform.surface,
+      ...(transform.surface === 'support' ? { supportId: transform.supportId } : {}),
+    },
+  }
 }
 
 export function createFurnishingAPI(entity) {
@@ -86,6 +126,7 @@ export function createFurnishingAPI(entity) {
   let active = null
   const api = {
     validate: validatePlacement,
+    relocate: relocatePlacement,
     toWorld: (frame, p) => transformPoint(frame, p),
     toLocal: (frame, p) => transformPoint(frame, p, true),
     contains(frame, size, point) {
@@ -113,6 +154,8 @@ export function createFurnishingAPI(entity) {
       item,
       transform,
       placed = () => [],
+      camera = 'overhead',
+      gridStep = 0.5,
       onPreview = () => {},
       onCommit,
       onError = () => {},
@@ -121,6 +164,8 @@ export function createFurnishingAPI(entity) {
       authorized = () => true,
     }) {
       if (!world.network.isClient) throw new Error('client_only')
+      if (!['overhead', 'player'].includes(camera)) throw new Error('invalid_placement_camera')
+      if (!Number.isFinite(gridStep) || gridStep <= 0 || gridStep > 2) throw new Error('invalid_grid')
       active?.dispose()
       const node = getRef(nodeProxy)
       if (!node || node.ctx?.entity !== entity) throw new Error('item_scope')
@@ -141,19 +186,20 @@ export function createFurnishingAPI(entity) {
       control.keyR.capture = true
       control.keyG.capture = true
       control.escape.capture = true
-      control.keyW.capture = true
-      control.keyA.capture = true
-      control.keyS.capture = true
-      control.keyD.capture = true
-      control.space.capture = true
-      control.camera.write = true
-      const cameraPosition = transformPoint(frame(), [0, 10, 9])
-      const look = new THREE.PerspectiveCamera()
-      look.position.fromArray(cameraPosition)
-      look.lookAt(new THREE.Vector3().fromArray(transformPoint(frame(), [0, 0, 0])))
-      control.camera.position.copy(look.position)
-      control.camera.quaternion.copy(look.quaternion)
-      control.camera.zoom = 0
+      if (camera === 'overhead') {
+        control.keyW.capture = true
+        control.keyA.capture = true
+        control.keyS.capture = true
+        control.keyD.capture = true
+        control.space.capture = true
+        control.camera.write = true
+        const look = new THREE.PerspectiveCamera()
+        look.position.fromArray(transformPoint(frame(), [0, 10, 9]))
+        look.lookAt(new THREE.Vector3().fromArray(transformPoint(frame(), [0, 0, 0])))
+        control.camera.position.copy(look.position)
+        control.camera.quaternion.copy(look.quaternion)
+        control.camera.zoom = 0
+      }
       function assertActive() {
         if (disposed || pending || !authorized()) throw new Error('edit_revoked')
       }
@@ -234,7 +280,7 @@ export function createFurnishingAPI(entity) {
       }
       function update() {
         if (!authorized()) return session.dispose()
-        control.camera.position.fromArray(transformPoint(frame(), [0, 10, 9]))
+        if (camera === 'overhead') control.camera.position.fromArray(transformPoint(frame(), [0, 10, 9]))
         if (pending) return
         // A menu click that starts a session must never also place the item.
         if (!armed) {
@@ -244,7 +290,8 @@ export function createFurnishingAPI(entity) {
         if (world.pointer?.screenHit) return
         const pointer = control.pointer.position
         const moved = !lastPointer.equals(pointer)
-        if (!moved && !control.mouseLeft.pressed) return
+        if (camera === 'overhead' && !moved && !control.mouseLeft.pressed) return
+        if (world.controls.pointer?.rightDragging) return
         const hits = world.stage.raycastPointer(control.pointer.position)
         const inItem = candidate => {
           for (let n = candidate; n; n = n.parent) if (n === node) return true
@@ -254,12 +301,24 @@ export function createFurnishingAPI(entity) {
         for (let n = hits[0]?.node; n; n = n.parent) {
           if (typeof n.onPointerDown === 'function') return
         }
+        const supports = item.surfaces.includes('support') ? placed().filter(p => p.item.support && p.transform) : []
+        const supportAt = p =>
+          supports.find(s => {
+            const local = transformPoint({ position: s.transform.position, yaw: s.transform.yaw }, p, true)
+            const plane = s.item.support
+            return (
+              Math.abs(local[1] - plane.height) < 0.04 &&
+              Math.abs(local[0] - (plane.center?.[0] || 0)) <= plane.size[0] / 2 &&
+              Math.abs(local[2] - (plane.center?.[1] || 0)) <= plane.size[1] / 2
+            )
+          })
         const hit = hits
           .sort((a, b) => a.distance - b.distance)
           .find(h => {
             if (!h.point || inItem(h.node)) return false
             const p = transformPoint(frame(), h.point.toArray(), true)
-            return current.surface === 'floor'
+            if (supportAt(p)) return true
+            return item.surfaces.includes('floor')
               ? Math.abs(p[1]) < 0.3
               : p[1] >= 0 &&
                   p[1] <= room.size[1] &&
@@ -270,7 +329,11 @@ export function createFurnishingAPI(entity) {
         const local = transformPoint(frame(), hit.point.toArray(), true)
         let position = local.map(v => snapScalar(v, grid)),
           yaw = current.yaw
-        if (current.surface === 'floor') {
+        const support = supportAt(local)
+        const surface = support ? 'support' : item.surfaces.includes('floor') ? 'floor' : 'wall'
+        if (support) {
+          position[1] = support.transform.position[1] + support.item.support.height
+        } else if (surface === 'floor') {
           position[1] = 0
           // Reuse registered engine snap points, never maintain a world-local index.
           if (grid && world.snaps) {
@@ -290,7 +353,7 @@ export function createFurnishingAPI(entity) {
         }
         lastPointer.copy(pointer)
         // Hover does not consume the bounded undo history every animation frame.
-        const result = show({ ...current, position, yaw }, false)
+        const result = show({ ...current, position, yaw, surface, supportId: support?.id }, false)
         if (control.mouseLeft.pressed && result.ok) void session.confirm().catch(onError)
       }
       control.escape.onPress = () => session.dispose()
@@ -299,7 +362,7 @@ export function createFurnishingAPI(entity) {
           session.rotate(control.shiftLeft.down || control.shiftRight.down ? -Math.PI / 12 : Math.PI / 12)
       }
       control.keyG.onPress = () => {
-        if (!pending && !disposed) session.setGrid(grid ? 0 : 0.5)
+        if (!pending && !disposed) session.setGrid(grid ? 0 : gridStep)
       }
       entity.on('update', update)
       active = session

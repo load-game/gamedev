@@ -741,7 +741,14 @@ A room has `size: [width, clearance, depth]`; its local origin is the floor cent
 An item declares `size`, optional local `center`, `surfaces`, optional allowed
 `orientations` in radians, and `collision: 'solid' | 'overlap'`. Transforms contain
 `position`, `yaw`, and `surface: 'floor' | 'wall'`. Rugs can allow overlap. Wall
-pieces must touch an actual room wall. Invalid numbers, bounds and surfaces fail.
+pieces must touch an actual room wall. Display furniture can declare
+`support: {size: [width, depth], height, center?: [x, z]}` in its own local frame.
+An item with `surfaces: ['floor', 'support']` may use `surface: 'support'` and
+`supportId` referencing a placed display. Its complete footprint must fit on the
+support plane at the declared height. The server must supply the owned item's
+actual `id` when validating, never trust a request's claimed identity.
+`relocate(before, after, transform)` carries a supported pose with a moved or
+rotated display; games must validate the resulting layout and save it atomically. Invalid numbers, bounds and surfaces fail.
 
 `toWorld(frame, point)`, `toLocal(frame, point)` and `contains(frame, size, point)`
 use `{position: [x,y,z], yaw}`. `moveRoom(node, previousFrame, nextFrame, size)`
@@ -754,7 +761,10 @@ Client `begin({room, frame, node, item, transform, placed, authorized, onPreview
 onCommit, onEnd, onError, onGridChange})` creates one edit session per capability. `frame` and `placed`
 are functions, so a moving room and concurrent authoritative layout remain current.
 The engine captures camera and movement input and uses stage pointer raycasts and
-registered snap points. The overhead camera stays fixed while the preview follows
+registered snap points by default. `camera: 'player'` preserves the player camera
+and walking controls; right-drag still looks around. Placement updates as the
+player moves, even with a stationary cursor. `gridStep` sets the G-key grid
+(default 0.5 m), for example 0.05 m for tabletop collectibles. The overhead camera stays fixed while the preview follows
 the mouse over room surfaces. Left click commits a valid placement; R and Shift+R
 rotate by 15 degrees in opposite directions, G toggles a 0.5 m grid, and Escape
 cancels. UI hover and clicks do not move or place furniture. Wall items align to
