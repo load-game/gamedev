@@ -130,7 +130,14 @@ export function createPlayerProxy(entity, player) {
       return !!player.data.effect
     },
     applyEffect(opts) {
-      if (!opts) return
+      if (!opts) {
+        if (activeEffectConfig) activeEffectConfig.onEnd()
+        else {
+          player.setEffect(null)
+          if (world.network.isServer) world.network.send('entityModified', { id: player.data.id, ef: null })
+        }
+        return
+      }
       const effect = {}
       // effect.id = uuid()
       if (opts.anchor) effect.anchorId = opts.anchor.anchorId
@@ -149,6 +156,7 @@ export function createPlayerProxy(entity, player) {
           if (activeEffectConfig !== config) return
           activeEffectConfig = null
           player.setEffect(null)
+          if (world.network.isServer) world.network.send('entityModified', { id: player.data.id, ef: null })
           opts.onEnd?.()
         },
       }
