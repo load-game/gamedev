@@ -2280,7 +2280,7 @@ test('Hyperliquid deposit uses wallet adapter contract operations', async () => 
     },
     async waitForTransactionReceipt({ hash }) {
       calls.push(['waitForTransactionReceipt', hash])
-      return { transactionHash: `${hash}-receipt` }
+      return { transactionHash: `${hash}-receipt`, status: 'success' }
     },
     async signTypedData() {
       return '0x'
@@ -2333,7 +2333,7 @@ test('Hyperliquid deposit switches to Arbitrum when needed', async () => {
       return '0xtransfer'
     },
     async waitForTransactionReceipt() {
-      return { transactionHash: '0xtransfer' }
+      return { transactionHash: '0xtransfer', status: 'success' }
     },
     async signTypedData() {
       return '0x'
@@ -2353,6 +2353,8 @@ test('Hyperliquid deposit switches to Arbitrum when needed', async () => {
 
 test('Hyperliquid sets hardcoded referrer when none exists', async () => {
   const hl = new Hyperliquid({})
+  hl.walletAdapter = {}
+  hl.exchangeClient = {}
   hl.address = '0x00000000000000000000000000000000000000AA'
   hl.wallet = {
     address: hl.address,
@@ -2380,6 +2382,8 @@ test('Hyperliquid sets hardcoded referrer when none exists', async () => {
 
 test('Hyperliquid does not set hardcoded referrer when already referred', async () => {
   const hl = new Hyperliquid({})
+  hl.walletAdapter = {}
+  hl.exchangeClient = {}
   hl.address = '0x00000000000000000000000000000000000000AA'
   hl.wallet = {
     address: hl.address,
