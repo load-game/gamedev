@@ -478,6 +478,10 @@ export class ClientNetwork extends System {
     this.world.emit('kick', code)
   }
 
+  onWorldAccess = data => {
+    this.world.emit('world-access', data)
+  }
+
   onClose = code => {
     if (this.sessionWaiter) {
       this.sessionWaiter.reject(new Error('Connection closed. Try again.'))

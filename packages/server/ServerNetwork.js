@@ -4,6 +4,7 @@ import { Admission } from './Admission.js'
 import { Companions } from './Companions.js'
 import { authenticatedChatMessage } from './authenticatedChat.js'
 import { WalletBindings } from './WalletBindings.js'
+import { WorldAccessPolicy, accessPolicyOptions } from './WorldAccessPolicy.js'
 import { writePacket } from '@gamedev/core/packets.js'
 import { Socket } from '@gamedev/core/Socket.js'
 import { uuid } from '@gamedev/core/utils.js'
@@ -191,6 +192,8 @@ export class ServerNetwork extends System {
         })
       : null
     this.requiresIdentityWallet = process.env.IDENTITY_REQUIRED === 'true'
+    const accessOptions = accessPolicyOptions()
+    this.accessPolicy = accessOptions ? new WorldAccessPolicy(accessOptions) : null
     this.walletBindings = new WalletBindings(this)
     this.companions = new Companions(this)
     this.friendServices = new Map()
@@ -338,6 +341,14 @@ export class ServerNetwork extends System {
   checkSockets() {
     for (const socket of this.sockets.values()) {
       if (socket.identity && socket.identity.expiresAt <= Date.now()) socket.disconnect()
+      else if (this.accessPolicy)
+        void this.accessPolicy
+          .check(
+            socket,
+            () => this.sockets.get(socket.id) === socket,
+            () => socket.disconnect()
+          )
+          .catch(() => socket.disconnect())
     }
     // see: https://www.npmjs.com/package/ws#how-to-detect-and-close-broken-connections
     const dead = []
@@ -519,6 +530,9 @@ export class ServerNetwork extends System {
 
       this.pendingAdmissions++
       reserved = true
+
+      // This runs before player creation, the world snapshot, chat and voice credentials.
+      await this.accessPolicy?.admit(identity)
 
       // check connection params
       const connectionParams = params && typeof params === 'object' ? params : {}
@@ -797,6 +811,10 @@ export class ServerNetwork extends System {
     const playerId = socket.player?.data?.id
     if (!playerId) return
     await this.world.livekit.removeParticipant(playerId)
+    if (this.accessPolicy) {
+      const decision = await this.accessPolicy.decide(socket.identity)
+      if (!decision.allowed || this.sockets.get(socket.id) !== socket) return
+    }
     const token = await this.world.livekit.generateToken(playerId)
     if (token) socket.send('livekitToken', { token })
   }
@@ -1322,6 +1340,7 @@ export class ServerNetwork extends System {
 
   onDisconnect = (socket, code) => {
     this.logSubscribers.delete(socket.id)
+    if (this.accessPolicy) void this.world.livekit.removeParticipant(socket.id)
     this.world.livekit.clearModifiers(socket.id)
     socket.player.destroy(true)
     this.sockets.delete(socket.id)
