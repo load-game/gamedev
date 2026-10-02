@@ -1079,6 +1079,7 @@ interface HyperliquidAccountSnapshot {
 }
 
 interface HyperliquidWatchOnlyAPI {
+  getCapabilities(): { orderSafety: number }
   getPrice(ticker: string): Promise<number>
   getBalance(): Promise<number>
   getPositions(): Promise<HyperliquidPosition[]>
@@ -1097,9 +1098,19 @@ interface HyperliquidWatchOnlyAPI {
 }
 
 interface HyperliquidAPI extends HyperliquidWatchOnlyAPI {
-  buy(ticker: string, amount: number, slippage?: number): Promise<any>
-  sell(ticker: string, amount: number, slippage?: number): Promise<any>
-  closePosition(ticker: string, slippage?: number): Promise<any>
+  buy(
+    ticker: string,
+    amount: number,
+    slippage?: number,
+    options?: { cloid?: string; reduceOnly?: boolean }
+  ): Promise<any>
+  sell(
+    ticker: string,
+    amount: number,
+    slippage?: number,
+    options?: { cloid?: string; reduceOnly?: boolean }
+  ): Promise<any>
+  closePosition(ticker: string, slippage?: number, options?: { cloid?: string }): Promise<any>
   updateLeverage(ticker: string, leverage: number, options?: HyperliquidLeverageUpdateOptions): Promise<any>
   hasAgentKey(): boolean
   setupAgentKey(name?: string): Promise<{ address: string }>

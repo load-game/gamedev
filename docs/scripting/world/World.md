@@ -587,17 +587,35 @@ Returns:
 
 The methods below are only available on the default connected-wallet runtime. On `world.hyperliquid(address)`, they throw a watch-only error.
 
-#### `buy(ticker, amount, slippage = 1, { cloid? }?)`
+#### `getCapabilities()`
+
+Returns `{ orderSafety: 1 }` on runtimes with wallet-change guards, live-price
+requirements and reduce-only perpetual closes. Worlds that require those
+guarantees should disable writes when this capability is absent.
+
+#### `buy(ticker, amount, slippage = 1, { cloid?, reduceOnly? }?)`
 
 Places an IOC buy order for a core perp, spot pair, or builder/HIP-3 perp.
 
-#### `sell(ticker, amount, slippage = 1, { cloid? }?)`
+#### `sell(ticker, amount, slippage = 1, { cloid?, reduceOnly? }?)`
 
 Places an IOC sell order for a core perp, spot pair, or builder/HIP-3 perp.
+
+For both methods, `amount` is base-asset quantity, not USD notional. Slippage
+must be finite and between zero (inclusive) and 100 (exclusive). A missing live
+mid-price throws; cached catalog prices do not supply order price bounds.
+`reduceOnly: true` sets the exchange order's reduce-only flag. Inspect every
+returned order status for fills, partial fills or errors; top-level `ok` alone
+does not establish that a trade filled. An uncertain submission should be
+looked up with its `cloid` before submitting another order.
 
 #### `closePosition(ticker, slippage = 1, { cloid? }?)`
 
 Closes the full open position or spot holding for a ticker.
+
+Perpetual closes always use reduce-only IOC orders, so a position changing
+between lookup and execution cannot turn a close into an opposite position.
+Spot holding sales retain ordinary spot order behavior.
 
 #### `updateLeverage(ticker, leverage, { type = 'cross' }?)`
 
@@ -624,6 +642,12 @@ Notes:
 - Minimum is 5 USDC.
 - Uses Arbitrum USDC (`0xaf88...5831`).
 - May require approval + transfer signatures.
+- A reverted transfer receipt throws instead of returning a successful deposit.
+
+Trading, leverage, agent approval, deposits and withdrawals reject if the
+connected wallet changes while preparing or signing the action. A transaction
+already submitted to the exchange or chain may still settle; reconcile its
+order ID or receipt before retrying after a transport error.
 
 #### `withdraw(amount, destination?)`
 
