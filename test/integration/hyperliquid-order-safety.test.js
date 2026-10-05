@@ -133,3 +133,18 @@ test('missing live mids cannot fall back to a cached catalog price for a trade',
   await assert.rejects(hl.buy('BTC', 1), /No price/)
   assert.equal(orders.length, 0)
 })
+
+test('reverted USDC approval cannot continue to a deposit transfer', async () => {
+  const { hl } = fixture()
+  const writes = []
+  hl._ensureArbitrum = async () => {}
+  hl.walletAdapter.readContract = async ({ functionName }) => (functionName === 'balanceOf' ? 20_000_000n : 0n)
+  hl.walletAdapter.writeContract = async ({ functionName }) => {
+    writes.push(functionName)
+    return '0x123'
+  }
+  hl.walletAdapter.waitForTransactionReceipt = async () => ({ status: 'reverted' })
+  await assert.rejects(hl.deposit(10), /approval did not succeed/)
+  assert.deepEqual(writes, ['approve'])
+  assert.equal(hl.pendingDeposit, false)
+})

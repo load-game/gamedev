@@ -2178,7 +2178,8 @@ export class Hyperliquid extends System {
           args: [BRIDGE_ADDRESS, amountInWei],
         })
 
-        await this.walletAdapter.waitForTransactionReceipt({ hash: approveTx })
+        const approval = await wallet.adapter.waitForTransactionReceipt({ hash: approveTx })
+        if (approval?.status !== 'success') throw new Error('USDC approval did not succeed')
         this._assertWallet(wallet)
         console.log('[Hyperliquid] USDC approved')
       }
