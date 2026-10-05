@@ -92,6 +92,7 @@ export class Hyperliquid extends System {
     this.address = null
     this.wallet = null
     this.walletAdapter = null
+    this.walletGeneration = 0
 
     this.agentKey = null
     this.agentAddress = null
@@ -232,6 +233,7 @@ export class Hyperliquid extends System {
     }
 
     const runtimeAPI = {
+      getCapabilities: () => ({ orderSafety: 1 }),
       getPrice: ticker => this.getPrice(ticker),
       getBalance: () => this.getBalance({ address: boundAddress }),
       getPositions: () => this.getPositions({ address: boundAddress }),
@@ -287,20 +289,31 @@ export class Hyperliquid extends System {
   }
 
   bind({ address, walletAdapter, isConnected } = {}) {
+    if (
+      (this.address || '').toLowerCase() !== (address || '').toLowerCase() ||
+      !!this.walletAdapter !== !!(walletAdapter && isConnected)
+    ) {
+      this.walletGeneration++
+    }
     this.address = address || null
     this.walletAdapter = walletAdapter || null
 
     if (this.address && this.walletAdapter && isConnected) {
+      const generation = this.walletGeneration
+      const adapter = this.walletAdapter
       this.wallet = {
         address: this.address,
         signTypedData: async params => {
           const { domain, types, primaryType, message } = params
-          return this.walletAdapter.signTypedData({
+          if (generation !== this.walletGeneration) throw new Error('Wallet changed before signing')
+          const signature = await adapter.signTypedData({
             domain,
             types,
             primaryType,
             message,
           })
+          if (generation !== this.walletGeneration) throw new Error('Wallet changed during signing')
+          return signature
         },
       }
 
@@ -315,6 +328,8 @@ export class Hyperliquid extends System {
         })
       } else {
         console.log('[Hyperliquid] No agent key found, using main wallet')
+        this.agentKey = null
+        this.agentAddress = null
         this.exchangeClient = new ExchangeClient({
           transport: this.httpTransport,
           wallet: this.wallet,
@@ -335,6 +350,18 @@ export class Hyperliquid extends System {
     }
   }
 
+  _captureWallet() {
+    this._requireWallet()
+    return { generation: this.walletGeneration, address: this.address, adapter: this.walletAdapter }
+  }
+
+  _assertWallet(snapshot) {
+    this._requireWallet()
+    if (snapshot.generation !== this.walletGeneration || snapshot.address !== this.address) {
+      throw new Error('Wallet changed. Review the action again.')
+    }
+  }
+
   _createUserExchangeClient() {
     if (!this.wallet) return null
     return new ExchangeClient({
@@ -346,6 +373,7 @@ export class Hyperliquid extends System {
   async _setConfiguredReferrerIfNeeded() {
     const code = 'LOBBY'
     if (!this.address) return
+    const wallet = this._captureWallet()
 
     try {
       const referral = await this.infoClient.referral({ user: this.address })
@@ -359,6 +387,7 @@ export class Hyperliquid extends System {
       console.warn('[Hyperliquid] Failed to read referral status, attempting to set referrer anyway', error)
     }
 
+    this._assertWallet(wallet)
     const userClient = this._createUserExchangeClient()
     if (!userClient || typeof userClient.setReferrer !== 'function') return
 
@@ -887,6 +916,7 @@ export class Hyperliquid extends System {
 
     return {
       cloid: this._normalizeOptionalCloid(options.cloid),
+      reduceOnly: options.reduceOnly === true,
     }
   }
 
@@ -899,8 +929,11 @@ export class Hyperliquid extends System {
       orderOptions = slippageOrOptions
     }
 
+    const value = Number(resolvedSlippage)
+    if (!Number.isFinite(value) || value < 0 || value >= 100)
+      throw new Error('Slippage must be between 0 and 100 percent')
     return {
-      slippage: this._parseHyperliquidNumber(resolvedSlippage, 1),
+      slippage: value,
       orderOptions: this._normalizeTradeOrderOptions(orderOptions),
     }
   }
@@ -1836,11 +1869,8 @@ export class Hyperliquid extends System {
       }
     }
 
-    const fallbackPrice = market.midPrice ?? market.markPrice ?? null
-    if (fallbackPrice !== null && fallbackPrice > 0) {
-      return fallbackPrice
-    }
-
+    // Catalog metadata may be cached. Do not present it as a live quote or use it
+    // to derive a market order's slippage bound when the live mid is missing.
     throw new Error(`No price for ${market.ticker}`)
   }
 
@@ -1890,7 +1920,7 @@ export class Hyperliquid extends System {
   }
 
   async buy(ticker, amount, slippage = 1, options = null) {
-    this._requireWallet()
+    const wallet = this._captureWallet()
     const { slippage: resolvedSlippage, orderOptions } = this._normalizeTradeRequestArgs(slippage, options)
 
     const market = await this._resolveMarketDescriptor(ticker)
@@ -1899,6 +1929,7 @@ export class Hyperliquid extends System {
     }
 
     const currentPrice = await this.getPrice(market.ticker)
+    this._assertWallet(wallet)
 
     const slippageMultiplier = 1 + resolvedSlippage / 100
     const price = this._formatOrderPrice(currentPrice * slippageMultiplier, market)
@@ -1913,7 +1944,7 @@ export class Hyperliquid extends System {
           b: true,
           p: price,
           s: size,
-          r: false,
+          r: orderOptions.reduceOnly === true,
           t: { limit: { tif: 'Ioc' } },
         },
       ],
@@ -1922,7 +1953,7 @@ export class Hyperliquid extends System {
   }
 
   async sell(ticker, amount, slippage = 1, options = null) {
-    this._requireWallet()
+    const wallet = this._captureWallet()
     const { slippage: resolvedSlippage, orderOptions } = this._normalizeTradeRequestArgs(slippage, options)
 
     const market = await this._resolveMarketDescriptor(ticker)
@@ -1931,6 +1962,7 @@ export class Hyperliquid extends System {
     }
 
     const currentPrice = await this.getPrice(market.ticker)
+    this._assertWallet(wallet)
 
     const slippageMultiplier = 1 - resolvedSlippage / 100
     const price = this._formatOrderPrice(currentPrice * slippageMultiplier, market)
@@ -1945,7 +1977,7 @@ export class Hyperliquid extends System {
           b: false,
           p: price,
           s: size,
-          r: false,
+          r: orderOptions.reduceOnly === true,
           t: { limit: { tif: 'Ioc' } },
         },
       ],
@@ -1954,29 +1986,33 @@ export class Hyperliquid extends System {
   }
 
   async closePosition(ticker, slippage = 1, options = null) {
+    const wallet = this._captureWallet()
     const { slippage: resolvedSlippage, orderOptions } = this._normalizeTradeRequestArgs(slippage, options)
     const market = await this._resolveMarketDescriptor(ticker)
     const positions = await this.getPositions()
+    this._assertWallet(wallet)
     const position = positions.find(p => p.ticker === market.ticker)
 
     if (!position) throw new Error(`No open position for ${market.ticker}`)
 
     console.log(`[Hyperliquid] closePosition: ${market.ticker} size=${position.size}`)
+    const closeOptions = { ...orderOptions, reduceOnly: market.marketType === 'perp' }
 
     if (position.size > 0) {
-      return this.sell(market.ticker, Math.abs(position.size), resolvedSlippage, orderOptions)
+      return this.sell(market.ticker, Math.abs(position.size), resolvedSlippage, closeOptions)
     }
-    return this.buy(market.ticker, Math.abs(position.size), resolvedSlippage, orderOptions)
+    return this.buy(market.ticker, Math.abs(position.size), resolvedSlippage, closeOptions)
   }
 
   async updateLeverage(ticker, leverage, options = null) {
-    this._requireWallet()
+    const wallet = this._captureWallet()
 
     if (typeof this.exchangeClient?.updateLeverage !== 'function') {
       throw new Error('Hyperliquid leverage updates are unavailable')
     }
 
     const market = await this._resolveMarketDescriptor(ticker)
+    this._assertWallet(wallet)
     if (market?.marketType !== 'perp') {
       throw new Error(`Leverage is only available for perpetual markets: ${market?.ticker || ticker}`)
     }
@@ -1997,9 +2033,9 @@ export class Hyperliquid extends System {
   }
 
   async withdraw(amount, destination) {
-    this._requireWallet()
+    const wallet = this._captureWallet()
 
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
       throw new Error('Amount must be greater than 0')
     }
 
@@ -2009,11 +2045,13 @@ export class Hyperliquid extends System {
     }
 
     const balance = await this.getBalance()
+    this._assertWallet(wallet)
     if (amount > balance) {
       throw new Error(`Insufficient balance. Have ${balance}, need ${amount}`)
     }
 
     await this._ensureArbitrum()
+    this._assertWallet(wallet)
 
     console.log(`[Hyperliquid] withdraw: ${amount} USDC to ${targetAddress}`)
 
@@ -2051,6 +2089,7 @@ export class Hyperliquid extends System {
     try {
       console.log('[Hyperliquid] Requesting signature...')
       const signature = await this.walletAdapter.signTypedData(typedData)
+      this._assertWallet(wallet)
 
       const r = `0x${signature.slice(2, 66)}`
       const s = `0x${signature.slice(66, 130)}`
@@ -2091,9 +2130,9 @@ export class Hyperliquid extends System {
   }
 
   async deposit(amount) {
-    this._requireWallet()
+    const wallet = this._captureWallet()
 
-    if (!amount || amount < MIN_DEPOSIT_AMOUNT) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) < MIN_DEPOSIT_AMOUNT) {
       throw new Error(`Minimum deposit is ${MIN_DEPOSIT_AMOUNT} USDC`)
     }
 
@@ -2107,6 +2146,7 @@ export class Hyperliquid extends System {
       console.log(`[Hyperliquid] deposit: ${amount} USDC from Arbitrum`)
 
       await this._ensureArbitrum()
+      this._assertWallet(wallet)
 
       const balance = await this.walletAdapter.readContract({
         address: USDC_ADDRESS,
@@ -2116,6 +2156,7 @@ export class Hyperliquid extends System {
       })
 
       const amountInWei = BigInt(Math.round(amount * 1_000_000))
+      this._assertWallet(wallet)
       if (balance < amountInWei) {
         throw new Error(`Insufficient USDC. Have ${Number(balance) / 1_000_000}, need ${amount}`)
       }
@@ -2126,6 +2167,7 @@ export class Hyperliquid extends System {
         functionName: 'allowance',
         args: [this.address, BRIDGE_ADDRESS],
       })
+      this._assertWallet(wallet)
 
       if (allowance < amountInWei) {
         console.log('[Hyperliquid] Approving USDC...')
@@ -2136,7 +2178,9 @@ export class Hyperliquid extends System {
           args: [BRIDGE_ADDRESS, amountInWei],
         })
 
-        await this.walletAdapter.waitForTransactionReceipt({ hash: approveTx })
+        const approval = await wallet.adapter.waitForTransactionReceipt({ hash: approveTx })
+        if (approval?.status !== 'success') throw new Error('USDC approval did not succeed')
+        this._assertWallet(wallet)
         console.log('[Hyperliquid] USDC approved')
       }
 
@@ -2149,6 +2193,7 @@ export class Hyperliquid extends System {
       })
 
       const receipt = await this.walletAdapter.waitForTransactionReceipt({ hash: transferTx })
+      if (receipt?.status !== 'success') throw new Error('Deposit transaction did not succeed')
       const txHash = receipt?.transactionHash || transferTx
 
       console.log('[Hyperliquid] Deposit submitted:', txHash)
@@ -2182,8 +2227,10 @@ export class Hyperliquid extends System {
     if (!this.walletAdapter) {
       throw new Error('Wallet not connected')
     }
+    const wallet = this._captureWallet()
 
     await this._ensureArbitrum()
+    this._assertWallet(wallet)
 
     const privateKey = generatePrivateKey()
     const account = privateKeyToAccount(privateKey)
@@ -2226,6 +2273,7 @@ export class Hyperliquid extends System {
 
     try {
       const signature = await this.walletAdapter.signTypedData(typedData)
+      this._assertWallet(wallet)
 
       const r = `0x${signature.slice(2, 66)}`
       const s = `0x${signature.slice(66, 130)}`
@@ -2251,6 +2299,7 @@ export class Hyperliquid extends System {
       })
 
       const result = await response.json()
+      this._assertWallet(wallet)
 
       if (result.status === 'err') {
         throw new Error(result.response || 'Agent approval failed')
@@ -2263,6 +2312,7 @@ export class Hyperliquid extends System {
     }
 
     await this._setConfiguredReferrerIfNeeded()
+    this._assertWallet(wallet)
 
     this._saveAgentKey({ privateKey, address: agentAddress, createdAt: Date.now() })
 
