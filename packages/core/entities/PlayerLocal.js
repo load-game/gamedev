@@ -191,6 +191,13 @@ export class PlayerLocal extends Entity {
       await this.world.loader.preloader
     }
 
+    // Downloaded models are not enough: module scripts can still be loading
+    // while they create the world's floor and other collision geometry.
+    const apps = [...this.world.entities.items.values()].filter(
+      entity => entity.isApp && this.world.blueprints.get(entity.data.blueprint)?.preload
+    )
+    await Promise.all(apps.map(entity => entity.ready))
+
     if (this.destroyed) return
     this.applyAvatar()
     this.initCapsule()
