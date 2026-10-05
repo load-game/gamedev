@@ -53,6 +53,7 @@ const names = [
   'companionRequest',
   'companionResult',
   'companionState',
+  'worldAccess',
 ]
 
 const byName = {}
