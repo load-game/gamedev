@@ -76,7 +76,7 @@ export class App extends Entity {
     this.hitResultsPool = []
     this.hitResults = []
     this.deadHook = { dead: false }
-    this.build()
+    this.ready = this.build()
   }
 
   createNode(name, data) {
