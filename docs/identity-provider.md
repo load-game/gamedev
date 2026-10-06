@@ -99,3 +99,8 @@ same subject. This updates authenticated admission before allowing the action.
 A Solana address cannot substitute for an EVM wallet in token ownership or stake
 checks. `world.requestSignIn()` opens the account overlay for Identity actions
 that need no EVM transaction. No account-link operation is a token approval.
+
+Closing the account panel cancels its pending attempt. Canceling social linking
+invalidates the gateway handoff and closes the popup without signing out. Wallet
+approval is stopped before submission if the selected wallet or game session
+changes. Refresh linked accounts reloads credentials and available providers.

@@ -297,7 +297,7 @@ test('Solana linking signs the challenge, refreshes credentials and rejects acco
         calls.push({ url, body: init.body && JSON.parse(init.body) })
         return Response.json(
           url.endsWith('/challenge')
-            ? { challengeId: 'proof', message: 'Link wallet proof' }
+            ? { address: current, challengeId: 'proof', message: 'Link wallet proof' }
             : { credentials: [{ family: 'solana', address: current }] }
         )
       },
@@ -376,5 +376,83 @@ test('social linking refreshes through the gateway even when OAuth severs the po
     assert.equal(closed, true)
   } finally {
     globalThis.open = original
+  }
+})
+
+test('cancelling a social popup cancels its handoff without changing the game session', async () => {
+  const original = globalThis.open
+  const abort = new AbortController()
+  const calls = []
+  let closed = false
+  globalThis.open = () => ({
+    closed: false,
+    location: { replace() {} },
+    close() {
+      closed = true
+    },
+  })
+  const bridge = createIdentityAuthBridge(
+    'https://game.test/identity',
+    {},
+    {
+      storage: null,
+      fetcher: async (url, init) => {
+        calls.push(url)
+        if (url.endsWith('/manage'))
+          return Response.json({
+            url: 'https://identity.test/api/auth/session-handoff?token=proof',
+            state: 'test-state',
+          })
+        if (url.includes('link-status')) {
+          abort.abort()
+          return Response.json({ complete: false })
+        }
+        assert.equal(url.endsWith('/link-cancel'), true)
+        assert.deepEqual(JSON.parse(init.body), { state: 'test-state' })
+        return Response.json({ ok: true })
+      },
+    }
+  )
+  try {
+    await assert.rejects(bridge.linkSocialAccount('discord', { signal: abort.signal }), /cancelled/)
+    assert.equal(closed, true)
+    assert.equal(calls.length, 3)
+    assert.equal(
+      calls.some(x => x.endsWith('/logout')),
+      false
+    )
+  } finally {
+    globalThis.open = original
+  }
+})
+
+test('cancelled Solana approval never submits a proof', async () => {
+  const original = globalThis.solana,
+    abort = new AbortController(),
+    calls = []
+  globalThis.solana = {
+    publicKey: { toString: () => 'selected-wallet' },
+    connect: async () => ({ publicKey: { toString: () => 'selected-wallet' } }),
+    signMessage: async () => {
+      abort.abort()
+      return { signature: new Uint8Array([1, 2, 3]) }
+    },
+  }
+  const bridge = createIdentityAuthBridge(
+    'https://game.test/identity',
+    {},
+    {
+      storage: null,
+      fetcher: async url => {
+        calls.push(url)
+        return Response.json({ address: 'selected-wallet', challengeId: 'proof', message: 'Link this wallet' })
+      },
+    }
+  )
+  try {
+    await assert.rejects(bridge.linkSolanaWallet({ signal: abort.signal }), /Account changed/)
+    assert.equal(calls.length, 1)
+  } finally {
+    globalThis.solana = original
   }
 })
