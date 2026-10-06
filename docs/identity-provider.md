@@ -79,7 +79,7 @@ forwards the proof to Identity's confidential `/v1/wallet-links/challenges` and
 `/v1/wallet-links/verify` endpoints. Deploy the Identity endpoints before enabling
 this client flow. Wallet linking never grants token approval.
 
-Each configured social provider gets its own Link button. Authorization opens in
+Each configured social provider that is not already linked gets a Link button. Authorization opens in
 a popup through a subject-bound handoff. The game polls the authenticated gateway
 for completion, so OAuth opener isolation does not interrupt it. Completion
 refreshes provider-verified credentials without navigating or reconnecting the
