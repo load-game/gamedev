@@ -11,8 +11,20 @@ export function IdentityFriendsPanel({ world }) {
   const signedIn = !!world.network.identity
   const request = useCallback(
     async (method, payload) => {
-      if (!world.friendsClient) throw new Error('Friends are unavailable in this world.')
-      return world.friendsClient.request(method, payload)
+      if (world.friendsClient) return world.friendsClient.request(method, payload)
+      const auth = globalThis.__runtimeAuth
+      if (!auth?.friends || method === 'friends-join') throw new Error('Friends are unavailable in this world.')
+      const result = await auth.friends(
+        method === 'friends-act' ? { action: payload.action, target: payload.address, handle: payload.handle } : {}
+      )
+      return result.friends.map(row => ({
+        address: row.profile.id,
+        name: row.profile.displayName,
+        handle: row.profile.handle,
+        state: row.state,
+        online: false,
+        sameCity: false,
+      }))
     },
     [world]
   )

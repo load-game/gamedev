@@ -251,6 +251,7 @@ export function createIdentityAuthBridge(
     },
     identityCapabilities: () => request('capabilities'),
     linkedCredentials: () => request('linked'),
+    friends: payload => request('friends', payload || {}),
     async linkSolanaWallet({ signal } = {}) {
       const version = epoch
       const cancelled = () => version !== epoch || signal?.aborted
