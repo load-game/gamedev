@@ -1,3 +1,4 @@
+import { admittedIdentity, requestProductRecords } from './productRecords.js'
 import { IdentityFriends } from './IdentityFriends.js'
 import { readFriendJoin } from './Friends.js'
 import moment from 'moment'
@@ -236,12 +237,21 @@ export class ServerNetwork extends System {
     return service
   }
 
+  identityForPlayer(playerId) {
+    return admittedIdentity(this, playerId)
+  }
+  productRecords(playerId, payload) {
+    return requestProductRecords(this, playerId, payload)
+  }
+  accountFacts(playerId) {
+    return requestProductRecords(this, playerId, {}, true)
+  }
   async reserveFriend(token, sessionId, identity) {
     const value = readFriendJoin(token, process.env.ADMISSION_SECRET)
     const service = this.friendServices.get(value.appId)
     if (!service) throw new Error('friend_offline')
     await service.authorizeJoin(token, sessionId)
-    return this.admission.reserve(sessionId, identity)
+    return this.admission.reserve(sessionId, identity ? { ...identity, friendArrival: true } : identity)
   }
 
   init({ db, authConfig } = {}) {
@@ -1234,6 +1244,7 @@ export class ServerNetwork extends System {
       })
     }
     await this.applyEntityModified(data, { ignoreNetworkId: socket.id })
+    if (typeof data.e === 'string') this.world.events.emit('player-emote', { playerId: socket.id, emote: data.e })
   }
 
   onEntityEvent = (socket, event) => {

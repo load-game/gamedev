@@ -160,6 +160,14 @@ export function IdentityFriendsPanel({ world }) {
                   ? 'Request sent'
                   : 'Blocked'}
           </div>
+          {row.state === 'friend' && world.achievementsClient && (
+            <button
+              className='usermenu-btn menu-button menu-label'
+              onClick={() => world.emit('account-open', { tab: 'achievements', subject: row.address })}
+            >
+              View badges
+            </button>
+          )}
           {row.state === 'friend' && row.online && !row.sameCity && (
             <button
               className='usermenu-btn menu-button menu-label'
