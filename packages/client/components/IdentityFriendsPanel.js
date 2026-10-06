@@ -22,6 +22,7 @@ export function IdentityFriendsPanel({ world }) {
         name: row.profile.displayName,
         handle: row.profile.handle,
         state: row.state,
+        presenceAvailable: false,
         online: false,
         sameCity: false,
       }))
@@ -146,11 +147,13 @@ export function IdentityFriendsPanel({ world }) {
           </div>
           <div className='usermenu-muted'>
             {row.state === 'friend'
-              ? row.sameCity
-                ? 'In your city'
-                : row.online
-                  ? 'Online'
-                  : 'Offline'
+              ? row.presenceAvailable === false
+                ? 'City presence is unavailable here'
+                : row.sameCity
+                  ? 'In your city'
+                  : row.online
+                    ? 'Online'
+                    : 'Offline'
               : row.state === 'incoming'
                 ? 'Incoming request'
                 : row.state === 'outgoing'
