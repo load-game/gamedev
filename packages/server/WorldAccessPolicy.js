@@ -26,7 +26,7 @@ export class WorldAccessPolicy {
 
   async decide(identity) {
     if (
-      identity?.authenticatedWith !== 'evm' ||
+      !['evm', 'identity'].includes(identity?.authenticatedWith) ||
       !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') ||
       !Number.isFinite(identity.expiresAt) ||
       identity.expiresAt <= this.now()

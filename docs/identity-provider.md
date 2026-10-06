@@ -30,7 +30,7 @@ the engine replaces its entities while retaining the renderer and asset cache.
 Client world scripts can call `world.account()` to read their current verified
 account. It returns null for guests and worlds without authenticated admission. The
 account contains `userId`, `issuer`, `name`, `walletAddress`,
-`authenticatedWith: 'evm'`, and `expiresAt`. It is sent only in that client's
+`authenticatedWith: 'evm' | 'identity'`, and `expiresAt`. It is sent only in that client's
 snapshot. This is presentation data on the client; the server remains the
 authority for all privileged actions.
 
@@ -50,8 +50,7 @@ the engine or a world wallet-disconnect action uses the same path. Failed
 connections offer Retry connection. Failed logout must succeed before rejoining,
 including if the user manually refreshes. A verification response already in
 flight finishes before logout, preventing a late response from restoring the
-old account cookie. Social login and contract-wallet authentication are future provider
-work, not enabled by this change. Standalone worlds retain their existing
+old account cookie. Contract-wallet authentication remains unavailable. Standalone worlds retain their existing
 behavior unless this mode is configured.
 
 ## Session lifecycle for scripts
@@ -69,3 +68,26 @@ Use `world.getPlayer()` again rather than retaining the previous player proxy.
 The new server admission snapshot remains the identity authority. Changed or
 removed entities are reconciled without duplicating players; unchanged apps
 keep running and receive current server state and subsequent events.
+
+
+## Linked identities and hosted sign-in
+
+The account panel lists fresh provider-verified EVM wallets, Solana wallets and
+social credentials. Manage linked accounts opens a short-lived, subject-bound
+handoff to Peezy Identity settings. Link proofs run on the provider; Return to
+your game refreshes the game session and credentials. The gateway never trusts
+client-supplied linked addresses or subject IDs. An expired or revoked handoff
+cannot restore a signed-out account.
+
+When the gateway enables hosted sign-in, Sign in with Peezy Identity uses the
+provider's OAuth authorization-code flow with PKCE, browser-bound state and a
+signed ID-token nonce. A person can sign in with Solana or a supported social
+account without an EVM wallet. The game receives the stable Identity subject,
+not a wallet-derived player ID. Registration availability remains provider-owned.
+
+`walletAddress` is optional for a hosted identity. EVM-backed actions request a
+connected EVM wallet, and the gateway accepts it only when freshly linked to that
+same subject. This updates authenticated admission before allowing the action.
+A Solana address cannot substitute for an EVM wallet in token ownership or stake
+checks. `world.requestSignIn()` opens the account overlay for Identity actions
+that need no EVM transaction. No account-link operation is a token approval.

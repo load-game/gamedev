@@ -251,6 +251,11 @@ export class Apps extends System {
       furnishing(entity) {
         return createFurnishingAPI(entity)
       },
+      requestSignIn() {
+        if (!world.network.isClient) throw new Error('client_only')
+        if (globalThis.__runtimeAuth?.mode !== 'identity') throw new Error('identity_unavailable')
+        world.emit('identity-login')
+      },
       account() {
         if (!world.network.isClient) throw new Error('client_only')
         return world.network.identity ? { ...world.network.identity } : null

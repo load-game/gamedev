@@ -1,3 +1,4 @@
+import { LinkedIdentityAccounts } from './LinkedIdentityAccounts.js'
 import { css } from '@firebolt-dev/css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronDownIcon, LoaderIcon, LogOutIcon, UserIcon } from 'lucide-react'
@@ -1400,9 +1401,8 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
         {auth?.mode === 'identity' ? (
           <div className='usermenu-hero'>
             <div className='usermenu-section-label'>{world.network.identity?.name || 'Player'}</div>
-            <div className='usermenu-muted mono'>
-              {auth.address?.slice(0, 6)}…{auth.address?.slice(-4)}
-            </div>
+            {auth.address && <div className='usermenu-muted mono'>{auth.address}</div>}
+            <LinkedIdentityAccounts />
             <button
               className='usermenu-btn menu-button menu-label'
               disabled={auth.pending}
