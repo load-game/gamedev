@@ -223,7 +223,11 @@ export function createIdentityAuthBridge(
       const accounts = await provider()
         ?.request?.({ method: 'eth_accounts' })
         .catch(() => [])
-      if (session?.user?.id && normalize(session.user.wallet?.address) === normalize(accounts?.[0])) {
+      if (
+        session?.user?.id &&
+        session.user.wallet?.address &&
+        normalize(session.user.wallet.address) === normalize(accounts?.[0])
+      ) {
         if (connectionKnown && connectionIdentity?.userId === session.user.id) return true
         await rejoin()
       } else if (session?.user?.id && session.identity?.authenticatedWith === 'identity') {
