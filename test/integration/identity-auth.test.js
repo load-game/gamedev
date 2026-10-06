@@ -239,7 +239,8 @@ test('hosted identity binds only a provider-linked EVM wallet without replacing 
   let bound = false,
     reconnects = 0
   const wallet = {
-    request: async ({ method }) => (method === 'eth_accounts' || method === 'eth_requestAccounts' ? [address] : null),
+    request: async ({ method }) =>
+      method === 'eth_accounts' ? [] : method === 'eth_requestAccounts' ? [address] : null,
   }
   const auth = createIdentityAuthBridge(
     'https://game.test/identity',
