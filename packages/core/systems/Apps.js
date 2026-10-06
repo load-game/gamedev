@@ -251,9 +251,9 @@ export class Apps extends System {
       furnishing(entity) {
         return createFurnishingAPI(entity)
       },
-      openAccount(entity, tab = 'account') {
+      openAccount(entity, tab = 'account', options = {}) {
         if (!world.network.isClient) throw new Error('client_only')
-        world.emit('account-open', tab)
+        world.emit('account-open', { tab, subject: options.subject || null })
       },
       registerFriendsClient(entity, request) {
         if (!world.network.isClient || typeof request !== 'function') throw new Error('client_only')
@@ -262,6 +262,26 @@ export class Apps extends System {
         entity.on('destroy', () => {
           if (world.friendsClient === client) world.friendsClient = null
         })
+      },
+      registerAchievementsClient(entity, request) {
+        if (!world.network.isClient || typeof request !== 'function') throw new Error('client_only')
+        const client = { request }
+        world.achievementsClient = client
+        entity.on('destroy', () => {
+          if (world.achievementsClient === client) world.achievementsClient = null
+        })
+      },
+      identity(entity, playerId) {
+        if (!world.network.isServer) throw new Error('server_only')
+        return world.network.identityForPlayer(playerId)
+      },
+      productRecords(entity, playerId, payload) {
+        if (!world.network.isServer) throw new Error('server_only')
+        return world.network.productRecords(playerId, payload)
+      },
+      accountFacts(entity, playerId) {
+        if (!world.network.isServer) throw new Error('server_only')
+        return world.network.accountFacts(playerId)
       },
       requestSignIn() {
         if (!world.network.isClient) throw new Error('client_only')

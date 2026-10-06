@@ -21,6 +21,7 @@ export function EditorLayout({ world, ui, children }) {
   const [buildMode, setBuildMode] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [accountTab, setAccountTab] = useState('account')
+  const [accountSubject, setAccountSubject] = useState(null)
   const [exploreMenuOpen, setExploreMenuOpen] = useState(false)
   const [walletPickerOpen, setWalletPickerOpen] = useState(false)
   const { walletAuth, connectWallet, disconnectWallet } = useWalletAuth(world)
@@ -53,8 +54,10 @@ export function EditorLayout({ world, ui, children }) {
   }, [])
 
   useEffect(() => {
-    const openAccount = tab => {
-      setAccountTab(tab === 'friends' ? 'friends' : 'account')
+    const openAccount = input => {
+      const tab = typeof input === 'string' ? input : input?.tab
+      setAccountSubject(typeof input?.subject === 'string' ? input.subject : null)
+      setAccountTab(['friends', 'achievements'].includes(tab) ? tab : 'account')
       setExploreMenuOpen(false)
       setWalletPickerOpen(false)
       setUserMenuOpen(true)
@@ -184,7 +187,11 @@ export function EditorLayout({ world, ui, children }) {
               <EditorUserMenu
                 open={userMenuOpen}
                 tab={accountTab}
-                onTabChange={setAccountTab}
+                subject={accountSubject}
+                onTabChange={tab => {
+                  setAccountSubject(null)
+                  setAccountTab(tab)
+                }}
                 auth={walletAuth}
                 world={world}
                 onClose={() => setUserMenuOpen(false)}
