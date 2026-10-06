@@ -273,3 +273,108 @@ test('hosted identity binds only a provider-linked EVM wallet without replacing 
   assert.equal(bound, true)
   assert.equal(reconnects, 1)
 })
+
+test('Solana linking signs the challenge, refreshes credentials and rejects account changes', async () => {
+  const original = globalThis.solana
+  const calls = []
+  let change = false
+  let current = 'SolanaAddress'
+  globalThis.solana = {
+    publicKey: { toString: () => current },
+    connect: async () => ({ publicKey: { toString: () => current } }),
+    signMessage: async bytes => {
+      assert.equal(new TextDecoder().decode(bytes), 'Link wallet proof')
+      if (change) current = 'DifferentAddress'
+      return { signature: new Uint8Array([1, 2, 3]) }
+    },
+  }
+  const bridge = createIdentityAuthBridge(
+    'https://game.test/identity',
+    {},
+    {
+      storage: null,
+      fetcher: async (url, init) => {
+        calls.push({ url, body: init.body && JSON.parse(init.body) })
+        return Response.json(
+          url.endsWith('/challenge')
+            ? { challengeId: 'proof', message: 'Link wallet proof' }
+            : { credentials: [{ family: 'solana', address: current }] }
+        )
+      },
+    }
+  )
+  try {
+    const result = await bridge.linkSolanaWallet()
+    assert.equal(result.credentials[0].address, 'SolanaAddress')
+    assert.equal(calls[1].body.signature, 'AQID')
+    assert.equal(calls[1].body.challengeId, 'proof')
+    change = true
+    calls.length = 0
+    await assert.rejects(bridge.linkSolanaWallet(), /Account changed/)
+    assert.equal(calls.length, 1)
+  } finally {
+    globalThis.solana = original
+  }
+})
+
+test('blocked social popup does not create a handoff or navigate away', async () => {
+  const original = globalThis.open
+  globalThis.open = () => null
+  const bridge = createIdentityAuthBridge(
+    'https://game.test/identity',
+    {},
+    {
+      storage: null,
+      fetcher: () => {
+        throw new Error('must not request')
+      },
+    }
+  )
+  try {
+    await assert.rejects(bridge.linkSocialAccount('discord'), /Allow popups/)
+  } finally {
+    globalThis.open = original
+  }
+})
+
+test('social linking refreshes through the gateway even when OAuth severs the popup reference', async () => {
+  const original = globalThis.open
+  const calls = []
+  let closed = false
+  const popup = {
+    closed: false,
+    location: {
+      replace: () => {
+        popup.closed = true
+      },
+    },
+    close: () => {
+      closed = true
+    },
+  }
+  globalThis.open = () => popup
+  const bridge = createIdentityAuthBridge(
+    'https://game.test/identity',
+    {},
+    {
+      storage: null,
+      fetcher: async (url, init) => {
+        calls.push({ url, body: init.body && JSON.parse(init.body) })
+        return Response.json(
+          url.endsWith('/manage')
+            ? { url: 'https://identity.test/api/auth/session-handoff?token=test', state: 'opaque-state' }
+            : { complete: true, credentials: [{ kind: 'social', provider: 'discord' }] }
+        )
+      },
+    }
+  )
+  try {
+    const result = await bridge.linkSocialAccount('discord')
+    assert.equal(result.credentials[0].provider, 'discord')
+    assert.deepEqual(calls[0].body, { provider: 'discord', popup: true })
+    assert.equal(calls[1].url, 'https://game.test/identity/link-status?state=opaque-state')
+    assert.equal(closed, true)
+  } finally {
+    globalThis.open = original
+  }
+})

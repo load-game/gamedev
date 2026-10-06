@@ -73,11 +73,19 @@ keep running and receive current server state and subsequent events.
 ## Linked identities and hosted sign-in
 
 The account panel lists fresh provider-verified EVM wallets, Solana wallets and
-social credentials. Manage linked accounts opens a short-lived, subject-bound
-handoff to Peezy Identity settings. Link proofs run on the provider; Return to
-your game refreshes the game session and credentials. The gateway never trusts
-client-supplied linked addresses or subject IDs. An expired or revoked handoff
-cannot restore a signed-out account.
+social credentials. Link Solana wallet requests an injected Solana wallet signature
+inside the game. The gateway derives the subject from its HttpOnly session and
+forwards the proof to Identity's confidential `/v1/wallet-links/challenges` and
+`/v1/wallet-links/verify` endpoints. Deploy the Identity endpoints before enabling
+this client flow. Wallet linking never grants token approval.
+
+Each configured social provider gets its own Link button. Authorization opens in
+a popup through a subject-bound handoff. The game polls the authenticated gateway
+for completion, so OAuth opener isolation does not interrupt it. Completion
+refreshes provider-verified credentials without navigating or reconnecting the
+world. The panel offers cancellation and explains blocked popups. The gateway
+rejects expired, replayed and signed-out handoffs and never trusts a browser-supplied
+subject or linked address.
 
 When the gateway enables hosted sign-in, Sign in with Peezy Identity uses the
 provider's OAuth authorization-code flow with PKCE, browser-bound state and a

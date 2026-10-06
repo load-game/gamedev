@@ -1,22 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function LinkedIdentityAccounts() {
+  const linking = useRef(null)
   const auth = globalThis.__runtimeAuth
   const [credentials, setCredentials] = useState([])
   const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
+  const [pending, setPending] = useState('')
+  const [providers, setProviders] = useState([])
+  const [notice, setNotice] = useState('')
   useEffect(() => {
     let active = true
-    auth
-      .linkedCredentials()
-      .then(data => {
-        if (active) setCredentials(data.credentials)
+    Promise.all([auth.linkedCredentials(), auth.identityCapabilities()])
+      .then(([data, capabilities]) => {
+        if (active) {
+          setCredentials(data.credentials)
+          setProviders(capabilities.socialProviders || [])
+        }
       })
       .catch(e => {
         if (active) setError(e.message)
       })
     return () => {
       active = false
+      linking.current?.abort()
     }
   }, [auth])
   return (
@@ -29,23 +35,41 @@ export function LinkedIdentityAccounts() {
             : credential.provider || credential.kind}
         </div>
       ))}
-      <button
-        className='usermenu-btn menu-button menu-label'
-        disabled={pending}
-        onClick={async () => {
-          setPending(true)
-          setError('')
-          try {
-            await auth.manageLinkedAccounts()
-          } catch (e) {
-            setError(e.message)
-            setPending(false)
-          }
-        }}
-      >
-        Manage linked accounts
-      </button>
-      <p>Link wallets and social accounts in Peezy Identity, then return to refresh them here.</p>
+      {['solana', ...providers].map(provider => (
+        <button
+          key={provider}
+          className='usermenu-btn menu-button menu-label'
+          disabled={!!pending}
+          onClick={async () => {
+            linking.current = new AbortController()
+            setPending(provider)
+            setError('')
+            setNotice('')
+            try {
+              const data = await (provider === 'solana'
+                ? auth.linkSolanaWallet()
+                : auth.linkSocialAccount(provider, { signal: linking.current.signal }))
+              setCredentials(data.credentials)
+              setNotice('Account linked.')
+            } catch (e) {
+              setError(e.message)
+            } finally {
+              setPending('')
+            }
+          }}
+        >
+          {pending === provider
+            ? 'Waiting for approval…'
+            : `Link ${provider === 'solana' ? 'Solana wallet' : { twitter: 'X', github: 'GitHub', discord: 'Discord', apple: 'Apple', telegram: 'Telegram' }[provider] || provider}`}
+        </button>
+      ))}
+      {pending && pending !== 'solana' && (
+        <button className='usermenu-btn menu-button menu-label' onClick={() => linking.current?.abort()}>
+          Cancel linking
+        </button>
+      )}
+      <p>Approve in your wallet or the social sign-in window. Your game stays open.</p>
+      {notice && <p role='status'>{notice}</p>}
       {error && (
         <p role='alert' className='player-panel-error'>
           {error}

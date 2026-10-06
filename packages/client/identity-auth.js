@@ -251,6 +251,48 @@ export function createIdentityAuthBridge(
     },
     identityCapabilities: () => request('capabilities'),
     linkedCredentials: () => request('linked'),
+    async linkSolanaWallet() {
+      const version = epoch
+      const wallet = globalThis.phantom?.solana || globalThis.solana
+      if (!wallet?.connect || !wallet?.signMessage)
+        throw new Error('Open the game in a browser with a Solana wallet such as Phantom installed.')
+      const connected = await wallet.connect()
+      const address = (connected?.publicKey || wallet.publicKey)?.toString()
+      if (!address) throw new Error('Select a Solana wallet account.')
+      const challenge = await request('wallet-link/challenge', { address, family: 'solana' })
+      const signed = await wallet.signMessage(new TextEncoder().encode(challenge.message), 'utf8')
+      if (version !== epoch || wallet.publicKey?.toString() !== address)
+        throw new Error('Account changed. Try linking again.')
+      const signature = btoa(String.fromCharCode(...signed.signature))
+      await request('wallet-link/verify', { challengeId: challenge.challengeId, message: challenge.message, signature })
+      if (version !== epoch) throw new Error('Session ended.')
+      return request('linked')
+    },
+    async linkSocialAccount(providerName, { signal } = {}) {
+      // Open synchronously so browser popup blockers see the user's click.
+      const popup = globalThis.open('about:blank', '_blank', 'popup,width=520,height=720')
+      if (!popup) throw new Error('Allow popups for this game, then try again.')
+      const version = epoch
+      try {
+        const { url, state: linkState } = await request('manage', { provider: providerName, popup: true })
+        const destination = new URL(url)
+        if (destination.protocol !== 'https:') throw new Error('Invalid authorization destination')
+        if (version !== epoch || popup.closed) throw new Error('Linking cancelled.')
+        popup.location.replace(destination.toString())
+        const deadline = Date.now() + 15 * 60_000
+        while (Date.now() < deadline) {
+          if (version !== epoch || signal?.aborted) throw new Error('Linking cancelled.')
+          const result = await request(`link-status?state=${encodeURIComponent(linkState)}`)
+          if (version !== epoch || signal?.aborted) throw new Error('Linking cancelled.')
+          if (result.complete) return result
+          // Poll the gateway: OAuth providers can sever the popup's window reference.
+          await new Promise(resolve => setTimeout(resolve, 1500))
+        }
+        throw new Error('Authorization expired. Try again.')
+      } finally {
+        popup.close()
+      }
+    },
     async manageLinkedAccounts() {
       const { url } = await request('manage', {})
       const destination = new URL(url)
