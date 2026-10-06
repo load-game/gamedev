@@ -16,6 +16,12 @@ test.skipIf(!process.env.TEST_POSTGRES_URL)(
     const a = await createAppStorage(null, env)
     const b = await createAppStorage(null, env)
     try {
+      const presenceKey = 'engine:identity-friends:game:social:presence:alice'
+      assert.equal(
+        (await a.commit([{ key: presenceKey, value: { generation: 'city-a' }, expectedUpdatedAt: null }])).ok,
+        true
+      )
+      assert.equal((await b.getFresh(presenceKey)).generation, 'city-a')
       const create = value => [{ key: 'home:alice', value, expectedUpdatedAt: null }]
       const first = await Promise.all([a.commit(create(1)), b.commit(create(2))])
       assert.equal(first.filter(r => r.ok).length, 1)

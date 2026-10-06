@@ -251,6 +251,18 @@ export class Apps extends System {
       furnishing(entity) {
         return createFurnishingAPI(entity)
       },
+      openAccount(entity, tab = 'account') {
+        if (!world.network.isClient) throw new Error('client_only')
+        world.emit('account-open', tab)
+      },
+      registerFriendsClient(entity, request) {
+        if (!world.network.isClient || typeof request !== 'function') throw new Error('client_only')
+        const client = { request }
+        world.friendsClient = client
+        entity.on('destroy', () => {
+          if (world.friendsClient === client) world.friendsClient = null
+        })
+      },
       requestSignIn() {
         if (!world.network.isClient) throw new Error('client_only')
         if (globalThis.__runtimeAuth?.mode !== 'identity') throw new Error('identity_unavailable')

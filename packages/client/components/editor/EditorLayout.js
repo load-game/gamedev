@@ -20,6 +20,7 @@ export function EditorLayout({ world, ui, children }) {
   const [open, setOpen] = useState(true)
   const [buildMode, setBuildMode] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [accountTab, setAccountTab] = useState('account')
   const [exploreMenuOpen, setExploreMenuOpen] = useState(false)
   const [walletPickerOpen, setWalletPickerOpen] = useState(false)
   const { walletAuth, connectWallet, disconnectWallet } = useWalletAuth(world)
@@ -52,11 +53,22 @@ export function EditorLayout({ world, ui, children }) {
   }, [])
 
   useEffect(() => {
+    const openAccount = tab => {
+      setAccountTab(tab === 'friends' ? 'friends' : 'account')
+      setExploreMenuOpen(false)
+      setWalletPickerOpen(false)
+      setUserMenuOpen(true)
+    }
+    world.on('account-open', openAccount)
+    return () => world.off('account-open', openAccount)
+  }, [world])
+
+  useEffect(() => {
     if (ui.app && !open) setOpen(true)
   }, [ui.app])
 
   useEffect(() => {
-    if (isPrivyAuth) return
+    if (isPrivyAuth || walletAuth.mode === 'identity') return
     if (!walletAuth.connected && userMenuOpen) {
       setUserMenuOpen(false)
     }
@@ -93,6 +105,7 @@ export function EditorLayout({ world, ui, children }) {
     if (walletAuth.pending) return
     if (isPrivyAuth || walletAuth.connected) {
       setWalletPickerOpen(false)
+      setAccountTab('account')
       setUserMenuOpen(true)
       return
     }
@@ -156,7 +169,7 @@ export function EditorLayout({ world, ui, children }) {
                 buildMode={buildMode}
                 auth={walletAuth}
                 onUserClick={onUserClick}
-                onExploreClick={() => setExploreMenuOpen(true)}
+                onExploreClick={walletAuth.mode === 'identity' ? undefined : () => setExploreMenuOpen(true)}
               />
             )}
             {showWalletPicker && (
@@ -170,6 +183,8 @@ export function EditorLayout({ world, ui, children }) {
             {ready && (
               <EditorUserMenu
                 open={userMenuOpen}
+                tab={accountTab}
+                onTabChange={setAccountTab}
                 auth={walletAuth}
                 world={world}
                 onClose={() => setUserMenuOpen(false)}

@@ -1,3 +1,4 @@
+import { IdentityFriendsPanel } from './IdentityFriendsPanel.js'
 import { LinkedIdentityAccounts } from './LinkedIdentityAccounts.js'
 import { css } from '@firebolt-dev/css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -834,7 +835,7 @@ function PrivyAccountSection({ world, onDisconnectWallet, children }) {
   )
 }
 
-export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet }) {
+export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet, tab = 'account', onTabChange }) {
   const apiBaseUrl = useMemo(resolveWorldServiceApiBase, [])
   const isPrivyMode = auth?.mode === 'privy'
   const canManageWorld = !!auth?.authenticated && auth?.mode !== 'identity'
@@ -1402,7 +1403,19 @@ export function EditorUserMenu({ open, auth, world, onClose, onDisconnectWallet 
           <div className='usermenu-hero'>
             <div className='usermenu-section-label'>{world.network.identity?.name || 'Player'}</div>
             {auth.address && <div className='usermenu-muted mono'>{auth.address}</div>}
-            <LinkedIdentityAccounts />
+            <div className='player-panel-stack' style={{ flexDirection: 'row' }}>
+              {['account', 'friends'].map(value => (
+                <button
+                  key={value}
+                  className='usermenu-btn menu-button menu-label'
+                  aria-pressed={tab === value}
+                  onClick={() => onTabChange?.(value)}
+                >
+                  {value === 'account' ? 'Account' : 'Friends'}
+                </button>
+              ))}
+            </div>
+            {tab === 'friends' ? <IdentityFriendsPanel world={world} /> : <LinkedIdentityAccounts />}
             <button
               className='usermenu-btn menu-button menu-label'
               disabled={auth.pending}
