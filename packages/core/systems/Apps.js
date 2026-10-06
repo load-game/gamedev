@@ -9,6 +9,7 @@ import { Layers } from '../extras/Layers.js'
 import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { warn } from '../extras/warn.js'
 import { createFurnishingAPI } from '../extras/furnishing.js'
+import { createCompanionsAPI } from '../extras/companions.js'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -204,11 +205,7 @@ export class Apps extends System {
     }
     this.worldMethods = {
       companions(entity) {
-        if (!world.network.isClient) throw new Error('client_only')
-        return {
-          list: () => structuredClone(world.companions.agents),
-          request: (action, params) => world.companions.request(action, params),
-        }
+        return createCompanionsAPI(world)
       },
       clearAgentLandmarks(entity) {
         if (!world.network.isClient) return

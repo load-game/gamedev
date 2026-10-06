@@ -34,6 +34,10 @@ binding authenticates a player connection, not the person speaking into its mic.
 
 Client scripts use `world.companions().list()` and `.request(action, params)` for
 pairing UI. Listen for `world.on('companions', ...)` to refresh it.
+
+Server scripts can read `world.companions().list()` to inspect current verified
+pairings. The returned snapshot excludes sockets and cannot mutate pairing state.
+Requests remain client-only and follow the signed authorization flow.
 `world.agentLandmark({id,label,position,description,approach})` registers a named
 scene location for perception. IDs are scoped to the app entity. Use
 `world.clearAgentLandmarks()` when rebuilding a scene; destruction clears them.

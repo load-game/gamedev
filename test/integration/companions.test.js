@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vite-plus/test'
 import { privateKeyToAccount } from 'viem/accounts'
 import { Companions } from '../../packages/server/Companions.js'
+import { createCompanionsAPI } from '../../packages/core/extras/companions.js'
 import { AgentControl } from '../../packages/core/systems/AgentControl.js'
 import { ClientCompanions } from '../../packages/core/systems/ClientCompanions.js'
 import * as THREE from 'three'
@@ -14,6 +15,22 @@ function setup(options = {}) {
   const network = { worldId: 'test-world', sockets: new Map([agent, human, guest].map(s => [s.id, s])), send() {} }
   return { agent, human, guest, network, service: new Companions(network, options) }
 }
+test('server app companion lookup observes verified pairing without exposing sockets or allowing requests', async () => {
+  const f = setup({ verify: async () => true })
+  const api = createCompanionsAPI({ network: { isServer: true, companions: f.service } })
+  await f.service.request(f.agent, { action: 'register', owner: owner.address })
+  assert.equal(api.list()[0].ownerPlayerId, null)
+  await f.service.request(f.human, { action: 'challenge', agentId: 'agent' })
+  await f.service.request(f.human, { action: 'authorize', agentId: 'agent', signature: '0x00' })
+  const rows = api.list()
+  assert.equal(rows[0].ownerPlayerId, 'human')
+  assert.equal('socket' in rows[0], false)
+  rows[0].ownerPlayerId = 'guest'
+  assert.equal(api.list()[0].ownerPlayerId, 'human')
+  assert.throws(() => api.request('revoke', { agentId: 'agent' }), /client_only/)
+  f.service.leave(f.human)
+  assert.equal(api.list()[0].ownerPlayerId, null)
+})
 test('address claim is unverified; signature binds only its human, agent, and live session', async () => {
   const f = setup(),
     s = f.service
