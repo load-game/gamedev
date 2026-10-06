@@ -1,4 +1,5 @@
-import { Friends, readFriendJoin } from './Friends.js'
+import { IdentityFriends } from './IdentityFriends.js'
+import { readFriendJoin } from './Friends.js'
 import moment from 'moment'
 import { Admission } from './Admission.js'
 import { Companions } from './Companions.js'
@@ -211,7 +212,8 @@ export class ServerNetwork extends System {
 
   friendsForApp(entity, auth) {
     if (this.friendServices.has(entity.data.id)) return this.friendServices.get(entity.data.id)
-    const service = new Friends({
+    const service = new IdentityFriends({
+      getIdentity: id => this.sockets.get(id)?.identity,
       storage: this.world.storage,
       auth,
       players: () => [...this.world.entities.players.values()].map(p => entity.getPlayerProxy(p.data.id)),

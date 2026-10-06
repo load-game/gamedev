@@ -210,14 +210,16 @@ export function MenuRow({ world, open, onToggle, buildMode, auth, onUserClick, o
           <HammerIcon size='1.125rem' />
         </div>
       )}
-      <OnboardingTarget
-        step={onboardingStep}
-        name='editor-explore'
-        onNext={advanceOnboarding}
-        onSkip={dismissOnboarding}
-      >
-        <ExploreBtn onClick={onExploreClick} />
-      </OnboardingTarget>
+      {onExploreClick && (
+        <OnboardingTarget
+          step={onboardingStep}
+          name='editor-explore'
+          onNext={advanceOnboarding}
+          onSkip={dismissOnboarding}
+        >
+          <ExploreBtn onClick={onExploreClick} />
+        </OnboardingTarget>
+      )}
       <MicBtn world={world} />
       <OnboardingTarget step={onboardingStep} name='editor-user' onNext={advanceOnboarding} onSkip={dismissOnboarding}>
         <UserBtn auth={auth} onClick={onUserClick} />

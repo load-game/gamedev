@@ -831,37 +831,47 @@ World scripts create nodes through `app.create`; they do not inject browser UI.
 Script globals expose `Date.now()` and `Date.parse(isoTimestamp)`. The scripting
 Date is a limited object, not a constructor. Use timestamp arithmetic for age.
 
-### Wallet friends
+### Identity friends
 
-On the server, call `const friends = world.friends(auth)` with this app's
-`world.walletAuth()` instance. The app must authenticate the caller and pass the
-actual sending player ID, never an ID supplied inside the client payload.
+On the server, call `const friends = world.friends()` and pass the actual sending
+player ID. The engine derives the account from that player's admitted Peezy
+Identity session. Wallet connections and signatures are unnecessary.
 
-- `friends.request(playerId, nearbyPlayerId)` requires both verified wallets and
-  positions within five metres. There is no request-by-address operation.
-- `friends.act(playerId, address, action)` accepts `accept`, `decline`, `cancel`,
-  `remove`, `block`, or `unblock`. Only the recipient can accept a request.
-- `friends.list(playerId)` returns the caller's relationships, names, addresses,
-  `online` and `sameCity`. Presence is visible only to accepted friends.
-- `friends.sync()` immediately updates presence after verification or revocation.
-  The engine also renews it every ten seconds and expires it after thirty seconds.
-- `friends.join(playerId, address)` issues a thirty-second join authorization for
-  an accepted friend in another instance. Pass it to client-side
-  `await world.joinFriend(token)`. The client reserves before leaving, retains the
-  assignment only in the current tab, and reloads into the destination's normal
-  spawn. Errors leave the current city connected.
+- `friends.request(playerId, nearbyPlayerId)` requires live Identity accounts and
+  positions within five metres.
+- `friends.act(playerId, subject, action, handle)` supports `request`, `accept`,
+  `decline`, `cancel`, `remove`, `block`, and `unblock`. For request-by-handle,
+  leave subject undefined and supply the handle. Acceptance remains explicit.
+- `friends.list(playerId)` returns relationships, display names, optional handles,
+  `online`, and `sameCity`. The compatibility field `address` is an Identity
+  subject UUID, never a wallet address. Credentials and emails are excluded.
+- `friends.sync()` updates presence; the engine renews it every ten seconds and
+  expires it after thirty seconds.
+- `friends.join(playerId, subject)` issues a thirty-second authorization for an
+  accepted friend in another city. Client `world.joinFriend(token)` reserves
+  admission before leaving. Failed admission keeps the current city connected.
 
-Records are scoped by world ID and app entity ID. Keep those IDs identical across
-instances. `engine:friends:` records automatically use configured shared storage.
-No wallet key, on-chain transaction or platform account is required. A wallet
-change creates a different identity. When a wallet has several verified sessions,
-its most recently verified live session supplies its location. Basic limits are
-200 relationships per wallet and ten new requests per minute.
+Peezy Identity owns the persistent friends, requests, and blocks across clients.
+Blocks remove friendship and requests; unblocking does not restore them. The
+confidential Identity API applies account limits and request rate limits. Guests
+must sign in; any linked sign-in method uses the same account list.
 
-Cross-instance joining requires the fixed-game gateway's friend join support and
-its shared `ADMISSION_SECRET`. The gateway binds authorizations to its signed
-session cookie and tab. The destination checks the friendship and live recipient
-again before applying the normal admission capacity limit.
+Game presence stays scoped by world ID and app entity ID. Keep both identical
+across instances. Shared storage uses `engine:identity-friends:`. Old wallet-based
+records are unused and are not migrated in this devnet rollout. The latest live
+session supplies the account's city.
+
+Cross-city joining uses the fixed-game gateway and shared `ADMISSION_SECRET`.
+The destination rechecks the Identity relationship and recipient's live session,
+then applies normal capacity and room admission requirements. Friendship does
+not grant private-room eligibility.
+
+On the client, `world.registerFriendsClient(request)` registers the world's
+transport callback for the shared Account Friends panel. It receives a method
+and payload and returns a promise. Support `friends-list`, `friends-act`, and
+`friends-join` with authenticated server handlers. Registration clears on app
+destruction. `world.openAccount('friends')` opens that panel; use it for navigation
+shortcuts instead of building a second friends list.
 
 ### Player context menu input
 
@@ -875,5 +885,5 @@ editing states. The returned `dispose()` releases input and listeners; app
 destruction also disposes it. The world owns menu presentation and distance rules.
 
 On the server, `friends.status(playerId, targetId)` returns `none`, `incoming`,
-`outgoing`, `friend`, or `blocked` for a verified nearby player. A wallet address
+`outgoing`, `friend`, or `blocked` for an Identity-authenticated nearby player. Its account UUID
 is included only for an existing relationship, for use with `friends.act()`.
