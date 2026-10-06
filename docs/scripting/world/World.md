@@ -861,6 +861,7 @@ across instances. Shared storage uses `engine:identity-friends:`. Old wallet-bas
 records are unused and are not migrated in this devnet rollout. The latest live
 session supplies the account's city.
 
+Configure `FRIENDS_GATEWAY_URL` to the private pool `/internal/friends` endpoint.
 Cross-city joining uses the fixed-game gateway and shared `ADMISSION_SECRET`.
 The destination rechecks the Identity relationship and recipient's live session,
 then applies normal capacity and room admission requirements. Friendship does

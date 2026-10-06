@@ -17,7 +17,7 @@ export class IdentityFriends extends Friends {
     }
   }
   async graph(subject, payload = {}) {
-    const url = resolveControlInternalUrl('/internal/friends')
+    const url = process.env.FRIENDS_GATEWAY_URL || resolveControlInternalUrl('/internal/friends')
     if (!url || !this.secret) throw new Error('friends_unavailable')
     const response = await fetch(url, {
       method: 'POST',
