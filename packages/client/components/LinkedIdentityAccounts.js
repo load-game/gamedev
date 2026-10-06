@@ -36,7 +36,12 @@ export function LinkedIdentityAccounts() {
             : credential.provider || credential.kind}
         </div>
       ))}
-      {['solana', ...providers].map(provider => (
+      {[
+        'solana',
+        ...providers.filter(
+          provider => !credentials.some(credential => credential.kind === 'social' && credential.provider === provider)
+        ),
+      ].map(provider => (
         <button
           key={provider}
           className='usermenu-btn menu-button menu-label'
