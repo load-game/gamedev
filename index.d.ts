@@ -1261,13 +1261,15 @@ interface WorldAPI {
     approach?: [number, number, number] | null
   }): void
   clearAgentLandmarks(): void
+  /** Open the Identity sign-in panel without requiring an EVM wallet. */
+  requestSignIn(): void
   /** Verified account for the current client connection; null in guest worlds. */
   account(): {
     userId: string
     issuer: string
     name: string
-    walletAddress: string
-    authenticatedWith: 'evm'
+    walletAddress?: string
+    authenticatedWith: 'evm' | 'identity'
     expiresAt: number
   } | null
   walletAuth(): {

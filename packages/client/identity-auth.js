@@ -94,7 +94,12 @@ export function createIdentityAuthBridge(
     const next = normalize(accounts?.[0])
     if (next === observedAddress) return
     observedAddress = next
-    if (!tracking || selectingWallet) return
+    if (
+      !tracking ||
+      selectingWallet ||
+      (connectionIdentity?.authenticatedWith === 'identity' && !connectionIdentity.walletAddress)
+    )
+      return
     void invalidateSession().catch(() => {})
   }
   const disconnected = () => accountChanged([])
@@ -221,10 +226,39 @@ export function createIdentityAuthBridge(
       if (session?.user?.id && normalize(session.user.wallet?.address) === normalize(accounts?.[0])) {
         if (connectionKnown && connectionIdentity?.userId === session.user.id) return true
         await rejoin()
+      } else if (session?.user?.id && session.identity?.authenticatedWith === 'identity') {
+        const wallet = provider()
+        if (!wallet?.request) throw new Error('Connect an EVM wallet linked to your Peezy Identity for this action.')
+        selectingWallet = true
+        let selected
+        try {
+          selected = await wallet.request({ method: 'eth_requestAccounts' })
+        } finally {
+          selectingWallet = false
+        }
+        const address = selected?.[0]
+        await request('bind-wallet', { address })
+        observedAddress = normalize(address)
+        await rejoin()
       } else {
         await bridge.connectWalletSession()
       }
       return state.phase === 'idle' && !!connectionIdentity
+    },
+    identityCapabilities: () => request('capabilities'),
+    linkedCredentials: () => request('linked'),
+    async manageLinkedAccounts() {
+      const { url } = await request('manage', {})
+      const destination = new URL(url)
+      if (destination.protocol !== 'https:') throw new Error('Invalid account management destination')
+      globalThis.location.assign(destination.toString())
+    },
+    async signInWithIdentity() {
+      const { url } = await request('sign-in', {})
+      const destination = new URL(url)
+      if (destination.protocol !== 'https:') throw new Error('Invalid sign-in destination')
+      write(GUEST_CHOICE, null)
+      globalThis.location.assign(destination.toString())
     },
     retrySession: () => (read(PENDING_SIGN_OUT) ? invalidateSession() : rejoin()),
     logoutAndClearSession: invalidateSession,

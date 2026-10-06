@@ -37,8 +37,9 @@ export class Admission {
           !identity.issuer.startsWith('https://') ||
           typeof identity.name !== 'string' ||
           identity.name.length > 128 ||
-          identity.authenticatedWith !== 'evm' ||
-          !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') ||
+          !['evm', 'identity'].includes(identity.authenticatedWith) ||
+          (identity.authenticatedWith === 'evm' && !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '')) ||
+          (identity.walletAddress !== undefined && !/^0x[0-9a-f]{40}$/i.test(identity.walletAddress)) ||
           !Number.isFinite(identity.expiresAt) ||
           identity.expiresAt <= this.now()))
     )

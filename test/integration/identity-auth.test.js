@@ -234,3 +234,41 @@ test('rapid wallet changes share one logout and guest handoff', async () => {
   assert.equal(f.reconnects, 1)
   assert.equal(f.bridge.getState().phase, 'idle')
 })
+
+test('hosted identity binds only a provider-linked EVM wallet without replacing its subject', async () => {
+  let bound = false,
+    reconnects = 0
+  const wallet = {
+    request: async ({ method }) => (method === 'eth_accounts' || method === 'eth_requestAccounts' ? [address] : null),
+  }
+  const auth = createIdentityAuthBridge(
+    'https://game.test/identity',
+    { clearRuntimeAuthState() {} },
+    {
+      provider: () => wallet,
+      storage: null,
+      fetcher: async (url, init) => {
+        if (url.endsWith('/me'))
+          return Response.json({
+            user: { id: 'same-subject', wallet: bound ? { address } : null },
+            identity: { authenticatedWith: 'identity' },
+          })
+        assert.equal(url.endsWith('/bind-wallet'), true)
+        assert.deepEqual(JSON.parse(init.body), { address })
+        bound = true
+        return Response.json({ ok: true })
+      },
+    }
+  )
+  auth.setConnectionIdentity({ userId: 'same-subject', authenticatedWith: 'identity' })
+  auth.attachTransport({
+    suspend() {},
+    async reconnect() {
+      reconnects++
+      auth.setConnectionIdentity({ userId: 'same-subject', authenticatedWith: 'identity', walletAddress: address })
+    },
+  })
+  assert.equal(await auth.ensureWalletSession(), true)
+  assert.equal(bound, true)
+  assert.equal(reconnects, 1)
+})

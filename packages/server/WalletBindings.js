@@ -31,7 +31,7 @@ export class WalletBindings {
         if (this.network.requiresIdentityWallet && !socket?.identity) throw new Error('authentication_required')
         if (!socket || typeof address !== 'string' || !/^0x[\da-f]{40}$/i.test(address))
           throw new Error('invalid_identity')
-        if (socket.identity && socket.identity.walletAddress.toLowerCase() !== address.toLowerCase())
+        if (socket.identity && (socket.identity.walletAddress || '').toLowerCase() !== address.toLowerCase())
           throw new Error('identity_wallet_mismatch')
         clear(playerId)
         const nonce = randomBytes(24).toString('hex'),
@@ -69,7 +69,12 @@ export class WalletBindings {
         const socket = live(playerId)
         if (b && b.socket === socket) return b.address
         const identity = socket?.identity
-        return identity?.authenticatedWith === 'evm' && identity.expiresAt > this.now() ? identity.walletAddress : null
+        return identity &&
+          ['evm', 'identity'].includes(identity.authenticatedWith) &&
+          /^0x[0-9a-f]{40}$/i.test(identity.walletAddress || '') &&
+          identity.expiresAt > this.now()
+          ? identity.walletAddress
+          : null
       },
       revoke: clear,
     }

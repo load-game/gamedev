@@ -15,6 +15,13 @@ export function IdentityOverlay({ world }) {
       }),
     [auth, world]
   )
+  const [hosted, setHosted] = useState(false)
+  useEffect(() => {
+    auth
+      .identityCapabilities?.()
+      .then(c => setHosted(c.hostedSignIn))
+      .catch(() => {})
+  }, [auth])
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const continueAsGuest = useCallback(() => {
@@ -66,6 +73,24 @@ export function IdentityOverlay({ world }) {
                 ? 'Confirm in your wallet…'
                 : 'Connect wallet'}
         </button>
+        {hosted && (
+          <button
+            className='menu-button menu-label'
+            disabled={pending || sessionState.phase !== 'idle'}
+            onClick={async () => {
+              setPending(true)
+              try {
+                await auth.signInWithIdentity()
+              } catch (e) {
+                setError(e.message)
+                setPending(false)
+              }
+            }}
+          >
+            Sign in with Peezy Identity
+          </button>
+        )}
+        {hosted && <p>Use Solana or a linked social account.</p>}
         <button
           className='menu-button menu-label'
           onClick={continueAsGuest}

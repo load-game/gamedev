@@ -72,3 +72,20 @@ test('guest-enabled identity admission accepts guests but never downgrades malfo
   admission.connected(id)
   assert.equal(admission.status().connected, 1)
 })
+
+test('hosted identity admits a walletless subject and never accepts an invalid bound wallet', () => {
+  const admission = new Admission({ capacity: 16, requireIdentity: true })
+  const id = '11111111-1111-4111-8111-111111111111'
+  const identity = {
+    userId: id,
+    issuer: 'https://identity.test/api/auth',
+    name: 'Social player',
+    authenticatedWith: 'identity',
+    expiresAt: Date.now() + 60000,
+  }
+  assert.throws(() => admission.reserve(id, { ...identity, walletAddress: 'solana-address' }), /identity_required/)
+  const result = admission.reserve(id, identity)
+  assert.equal(admission.consume(result.ticket), id)
+  admission.connected(id)
+  assert.equal(admission.seats.get(id).identity.walletAddress, undefined)
+})
