@@ -44,7 +44,7 @@ export function createIdentityAuthBridge(
       method: body === undefined ? 'GET' : 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      signal: signal || AbortSignal.timeout(8000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     })
     const data = await response.json()
@@ -251,6 +251,68 @@ export function createIdentityAuthBridge(
     },
     identityCapabilities: () => request('capabilities'),
     linkedCredentials: () => request('linked'),
+    async linkSolanaWallet({ signal } = {}) {
+      const version = epoch
+      const cancelled = () => version !== epoch || signal?.aborted
+      if (cancelled()) throw new Error('Linking cancelled.')
+      const wallet = globalThis.phantom?.solana || globalThis.solana
+      if (!wallet?.connect || !wallet?.signMessage)
+        throw new Error('Open the game in a browser with a Solana wallet such as Phantom installed.')
+      const connected = await wallet.connect()
+      if (cancelled()) throw new Error('Linking cancelled.')
+      const address = (connected?.publicKey || wallet.publicKey)?.toString()
+      if (!address) throw new Error('Select a Solana wallet account.')
+      const challenge = await request('wallet-link/challenge', { address, family: 'solana' }, signal)
+      if (cancelled()) throw new Error('Linking cancelled.')
+      if (challenge.address !== address) throw new Error('Wallet challenge does not match the selected account.')
+      const signed = await wallet.signMessage(new TextEncoder().encode(challenge.message), 'utf8')
+      if (cancelled() || wallet.publicKey?.toString() !== address)
+        throw new Error('Account changed. Try linking again.')
+      const signature = btoa(String.fromCharCode(...signed.signature))
+      await request(
+        'wallet-link/verify',
+        { challengeId: challenge.challengeId, message: challenge.message, signature },
+        signal
+      )
+      if (cancelled()) throw new Error('Linking cancelled.')
+      const linked = await request('linked', undefined, signal)
+      if (cancelled()) throw new Error('Linking cancelled.')
+      return linked
+    },
+    async linkSocialAccount(providerName, { signal } = {}) {
+      if (signal?.aborted) throw new Error('Linking cancelled.')
+      // Open synchronously so browser popup blockers see the user's click.
+      const popup = globalThis.open('about:blank', '_blank', 'popup,width=520,height=720')
+      if (!popup) throw new Error('Allow popups for this game, then try again.')
+      const version = epoch
+      let linkState,
+        completed = false
+      try {
+        const result = await request('manage', { provider: providerName, popup: true }, signal)
+        linkState = result.state
+        const { url } = result
+        const destination = new URL(url)
+        if (destination.protocol !== 'https:') throw new Error('Invalid authorization destination')
+        if (version !== epoch || signal?.aborted || popup.closed) throw new Error('Linking cancelled.')
+        popup.location.replace(destination.toString())
+        const deadline = Date.now() + 15 * 60_000
+        while (Date.now() < deadline) {
+          if (version !== epoch || signal?.aborted) throw new Error('Linking cancelled.')
+          const result = await request(`link-status?state=${encodeURIComponent(linkState)}`, undefined, signal)
+          if (version !== epoch || signal?.aborted) throw new Error('Linking cancelled.')
+          if (result.complete) {
+            completed = true
+            return result
+          }
+          // Poll the gateway: OAuth providers can sever the popup's window reference.
+          await new Promise(resolve => setTimeout(resolve, 1500))
+        }
+        throw new Error('Authorization expired. Try again.')
+      } finally {
+        if (linkState && !completed) await request('link-cancel', { state: linkState }).catch(() => {})
+        popup.close()
+      }
+    },
     async manageLinkedAccounts() {
       const { url } = await request('manage', {})
       const destination = new URL(url)

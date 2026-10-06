@@ -1,22 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function LinkedIdentityAccounts() {
+  const linking = useRef(null)
   const auth = globalThis.__runtimeAuth
   const [credentials, setCredentials] = useState([])
   const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
+  const [pending, setPending] = useState('')
+  const [providers, setProviders] = useState([])
+  const [notice, setNotice] = useState('')
   useEffect(() => {
     let active = true
-    auth
-      .linkedCredentials()
-      .then(data => {
-        if (active) setCredentials(data.credentials)
+    Promise.allSettled([auth.linkedCredentials(), auth.identityCapabilities()])
+      .then(([linked, capabilities]) => {
+        if (!active) return
+        if (linked.status === 'fulfilled') setCredentials(linked.value.credentials)
+        else setError(linked.reason.message)
+        if (capabilities.status === 'fulfilled') setProviders(capabilities.value.socialProviders || [])
+        else setError('Social sign-in options are unavailable. Refresh linked accounts to retry.')
       })
       .catch(e => {
         if (active) setError(e.message)
       })
     return () => {
       active = false
+      linking.current?.abort()
     }
   }, [auth])
   return (
@@ -29,23 +36,76 @@ export function LinkedIdentityAccounts() {
             : credential.provider || credential.kind}
         </div>
       ))}
+      {['solana', ...providers].map(provider => (
+        <button
+          key={provider}
+          className='usermenu-btn menu-button menu-label'
+          disabled={!!pending}
+          onClick={async () => {
+            linking.current = new AbortController()
+            setPending(provider)
+            setError('')
+            setNotice('')
+            try {
+              const data = await (provider === 'solana'
+                ? auth.linkSolanaWallet({ signal: linking.current.signal })
+                : auth.linkSocialAccount(provider, { signal: linking.current.signal }))
+              setCredentials(data.credentials)
+              setNotice('Account linked.')
+            } catch (e) {
+              setError(e.message)
+            } finally {
+              setPending('')
+            }
+          }}
+        >
+          {pending === provider
+            ? 'Waiting for approval…'
+            : `Link ${provider === 'solana' ? 'Solana wallet' : { twitter: 'X', github: 'GitHub', discord: 'Discord', apple: 'Apple', telegram: 'Telegram' }[provider] || provider}`}
+        </button>
+      ))}
+      {pending && pending !== 'solana' && pending !== 'refresh' && (
+        <button className='usermenu-btn menu-button menu-label' onClick={() => linking.current?.abort()}>
+          Cancel linking
+        </button>
+      )}
       <button
         className='usermenu-btn menu-button menu-label'
-        disabled={pending}
+        disabled={!!pending}
         onClick={async () => {
-          setPending(true)
+          setPending('refresh')
+          setError('')
+          setNotice('')
+          try {
+            const linked = await auth.linkedCredentials()
+            setCredentials(linked.credentials)
+            const capabilities = await auth.identityCapabilities()
+            setProviders(capabilities.socialProviders || [])
+          } catch (e) {
+            setError(e.message)
+          } finally {
+            setPending('')
+          }
+        }}
+      >
+        Refresh linked accounts
+      </button>
+      <button
+        className='usermenu-linkbtn menu-button menu-label'
+        disabled={!!pending}
+        onClick={async () => {
           setError('')
           try {
             await auth.manageLinkedAccounts()
           } catch (e) {
             setError(e.message)
-            setPending(false)
           }
         }}
       >
-        Manage linked accounts
+        Account settings
       </button>
-      <p>Link wallets and social accounts in Peezy Identity, then return to refresh them here.</p>
+      <p>Approve in your wallet or the social sign-in window. Your game stays open.</p>
+      {notice && <p role='status'>{notice}</p>}
       {error && (
         <p role='alert' className='player-panel-error'>
           {error}
