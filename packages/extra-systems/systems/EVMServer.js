@@ -4,6 +4,7 @@ import * as utils from 'viem/utils'
 
 import { System } from '@gamedev/core/systems/System.js'
 import { localEvmChains } from '../localEvmChain.js'
+import { DevelopmentRpc } from '../developmentRpc.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
 const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon, ...localEvmChains()]
@@ -84,6 +85,7 @@ export class EVM extends System {
     super(world)
 
     this.publicClients = new Map()
+    this.developmentRpcs = new Map()
     this.runtimeAPIs = new Map()
     this.utils = utils
     this.abis = {
@@ -121,15 +123,19 @@ export class EVM extends System {
     const runtimeAPI = {
       utils: this.utils,
       abis: this.abis,
+      configureRpc: input => this.configureRpc(input, boundChainId),
+      pauseRpc: () => this.pauseRpc(boundChainId),
+      getGeneration: () => this.developmentRpcs.get(boundChainId)?.current?.generation || null,
       getAddress: this.getAddress.bind(this),
       isConnected: this.isConnected.bind(this),
       getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
-      getRpcChainId: () => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getChainId(),
+      getRpcChainId: () => this._withRpc(boundChainId || DEFAULT_CHAIN_ID, client => client.getChainId()),
       getTransactionReceipt: params =>
-        this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getTransactionReceipt(params),
-      getTransaction: params => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getTransaction(params),
-      getBlockNumber: () => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getBlockNumber(),
-      getBlock: params => this._getPublicClient(boundChainId || DEFAULT_CHAIN_ID).getBlock(params),
+        this._withRpc(boundChainId || DEFAULT_CHAIN_ID, client => client.getTransactionReceipt(params)),
+      getTransaction: params =>
+        this._withRpc(boundChainId || DEFAULT_CHAIN_ID, client => client.getTransaction(params)),
+      getBlockNumber: () => this._withRpc(boundChainId || DEFAULT_CHAIN_ID, client => client.getBlockNumber()),
+      getBlock: params => this._withRpc(boundChainId || DEFAULT_CHAIN_ID, client => client.getBlock(params)),
       readContract: params => this.readContract(params, { chainId: boundChainId }),
       waitForTransactionReceipt: params => this.waitForTransactionReceipt(params, { chainId: boundChainId }),
       getNativeBalance: address => this.getNativeBalance(address, { chainId: boundChainId }),
@@ -175,8 +181,41 @@ export class EVM extends System {
     return chain
   }
 
+  async configureRpc(input, boundChainId = null) {
+    const id = boundChainId || normalizeChainId(input?.chainId)
+    const chain = this._requireSupportedChain(id)
+    let rpc = this.developmentRpcs.get(id)
+    if (!rpc) {
+      rpc = new DevelopmentRpc(chain)
+      this.developmentRpcs.set(id, rpc)
+    }
+    const state = await rpc.configure(input)
+    this.publicClients.delete(id)
+    return { generation: state.generation, rpcUrl: state.rpcUrl }
+  }
+
+  pauseRpc(chainId) {
+    const rpc = this.developmentRpcs.get(chainId)
+    if (!rpc) {
+      const chain = this._requireSupportedChain(chainId)
+      this.developmentRpcs.set(chainId, new DevelopmentRpc(chain))
+    } else rpc.pause()
+    this.publicClients.delete(chainId)
+  }
+
+  async _withRpc(chainId, operation, { fresh = false } = {}) {
+    const rpc = this.developmentRpcs.get(chainId)
+    const state = rpc?.capture()
+    const result = await operation(this._getPublicClient(chainId))
+    if (rpc) {
+      rpc.assertCurrent(state)
+      if (fresh) await rpc.assertFresh(state)
+    }
+    return result
+  }
+
   _getPublicClient(chainId) {
-    const targetChain = this._requireSupportedChain(chainId)
+    const targetChain = this.developmentRpcs.get(chainId)?.getChain() || this._requireSupportedChain(chainId)
     let publicClient = this.publicClients.get(targetChain.id)
     if (!publicClient) {
       publicClient = createPublicClient({
@@ -221,13 +260,13 @@ export class EVM extends System {
     if (request && typeof request === 'object' && !Array.isArray(request)) {
       delete request.chainId
     }
-    return this._getPublicClient(requestedChainId).readContract(request)
+    return this._withRpc(requestedChainId, client => client.readContract(request))
   }
 
   async getNativeBalance(address = this.getAddress(), { chainId } = {}) {
     const target = this._normalizeAddress(address, 'address')
     const targetChainId = this._resolveOperationChainId(chainId)
-    const balance = await this._getPublicClient(targetChainId).getBalance({ address: target })
+    const balance = await this._withRpc(targetChainId, client => client.getBalance({ address: target }))
     return Number(formatEther(balance))
   }
 
@@ -265,6 +304,6 @@ export class EVM extends System {
     if (request && typeof request === 'object' && !Array.isArray(request)) {
       delete request.chainId
     }
-    return this._getPublicClient(requestedChainId).waitForTransactionReceipt(request)
+    return this._withRpc(requestedChainId, client => client.waitForTransactionReceipt(request), { fresh: true })
   }
 }
