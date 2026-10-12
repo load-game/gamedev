@@ -22,6 +22,47 @@ const input = generation => ({
 })
 const manifest = state => ({ ...state, schemaVersion: 1, sourceChainId: 4663, phase: 'ready', ready: true })
 
+test('a catalog read splits into batches accepted by the shared gateway', async () => {
+  const originalFetch = globalThis.fetch
+  const state = input('catalog'),
+    batches = []
+  globalThis.fetch = async (url, options) => {
+    if (url === state.manifestUrl) return Response.json(manifest(state))
+    assert.equal(url, state.rpcUrl)
+    const body = JSON.parse(options.body)
+    assert.ok(Array.isArray(body))
+    batches.push(body.length)
+    if (body.length > 32) return Response.json({ error: 'Invalid batch size' }, { status: 400 })
+    return Response.json(body.map(item => ({ jsonrpc: '2.0', id: item.id, result: '0x' })))
+  }
+  try {
+    const evm = new ClientEVM({})
+    evm._requireSupportedChain = () => chain
+    await evm.getRuntimeAPI(chain.id).configureRpc(state)
+    const client = evm._getPublicClient(chain.id)
+    const results = await Promise.all(
+      Array.from({ length: 85 }, (_, i) =>
+        client.request({
+          method: 'eth_call',
+          params: [
+            { to: '0x1111111111111111111111111111111111111111', data: '0x' + i.toString(16).padStart(2, '0') },
+            'latest',
+          ],
+        })
+      )
+    )
+    assert.equal(results.length, 85)
+    assert.ok(results.every(result => result === '0x'))
+    assert.equal(
+      batches.reduce((a, b) => a + b, 0),
+      85
+    )
+    assert.ok(batches.every(size => size <= 32))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 // These tests replace only the external manifest/provider. They exercise the engine
 // and wallet adapter together, including a reset during asynchronous wallet setup.
 test('development RPC rejects redirects, unready fixtures and expired or mismatched generations', async () => {
