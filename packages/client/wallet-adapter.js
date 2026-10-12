@@ -468,6 +468,29 @@ export class RuntimeWalletAdapter {
     const targetChainHex = toHexChainId(requestedChainId)
     const context = await this._requireWalletContext({ request: true })
 
+    if (input?.updateRpc) {
+      const chain = input.chain
+      if (
+        chain?.development !== true ||
+        chain.id !== parseChainId(targetChainHex) ||
+        !chain.rpcUrls?.default?.http?.length ||
+        chain.rpcUrls.default.http.some(url => new URL(url).protocol !== 'https:')
+      ) {
+        throw new Error('Invalid development chain RPC update')
+      }
+      await context.provider.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: targetChainHex,
+            chainName: chain.name,
+            nativeCurrency: chain.nativeCurrency,
+            rpcUrls: chain.rpcUrls.default.http,
+          },
+        ],
+      })
+    }
+
     if (context.source === 'privy' && typeof context.wallet?.switchChain === 'function') {
       const maybeNumber = parseChainId(targetChainHex)
       await context.wallet.switchChain(maybeNumber || targetChainHex)
@@ -555,27 +578,35 @@ export class RuntimeWalletAdapter {
     return publicClient.getBalance({ address: resolvedAddress })
   }
 
-  async signMessage(params) {
+  async signMessage(params, { beforeWrite } = {}) {
     const { context, walletClient } = await this._getViemClients({ request: true })
     if (params?.account && !sameAddress(params.account, context.address)) throw new Error('Wallet account changed')
+    if (beforeWrite) await beforeWrite()
     return walletClient.signMessage({ ...params, account: context.address })
   }
 
-  async sendTransaction(params) {
-    const { context, walletClient } = await this._getViemClients({ request: true })
-    return walletClient.sendTransaction({
-      ...params,
-      account: params?.account || context.address,
-    })
-  }
-
-  async writeContract(params) {
+  async sendTransaction(params, { beforeWrite } = {}) {
     const { context, walletClient } = await this._getViemClients({ request: true })
     const expectedAccount = typeof params?.account === 'string' ? params.account : params?.account?.address
     if (expectedAccount && !sameAddress(expectedAccount, context.address)) throw new Error('Wallet account changed')
     if (params?.chain?.id && (await readProviderChainId(context.provider)) !== params.chain.id) {
       throw new Error('Wallet chain changed')
     }
+    if (beforeWrite) await beforeWrite()
+    return walletClient.sendTransaction({
+      ...params,
+      account: params?.account || context.address,
+    })
+  }
+
+  async writeContract(params, { beforeWrite } = {}) {
+    const { context, walletClient } = await this._getViemClients({ request: true })
+    const expectedAccount = typeof params?.account === 'string' ? params.account : params?.account?.address
+    if (expectedAccount && !sameAddress(expectedAccount, context.address)) throw new Error('Wallet account changed')
+    if (params?.chain?.id && (await readProviderChainId(context.provider)) !== params.chain.id) {
+      throw new Error('Wallet chain changed')
+    }
+    if (beforeWrite) await beforeWrite()
     return walletClient.writeContract({
       ...params,
       account: params?.account || context.address,

@@ -12,6 +12,7 @@ export function localEvmChains(
   return [
     {
       id,
+      development: true,
       name: nodeEnv?.LOCAL_EVM_CHAIN_NAME || publicEnv?.PUBLIC_LOCAL_EVM_CHAIN_NAME || 'Local game development',
       nativeCurrency: { name: 'Test Ether', symbol: 'ETH', decimals: 18 },
       rpcUrls: { default: { http: [rpc] } },

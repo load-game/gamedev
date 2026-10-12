@@ -728,6 +728,21 @@ reachable by the browser. These settings take effect when the runtime starts.
 configured metadata to an injected wallet only when it reports unknown chain
 (error 4902), then verifies the selected chain. Rejections are propagated.
 
+For a public fork that periodically resets, use the bound development API's
+`configureRpc({chainId, sourceChainId, generation, rpcUrl, manifestUrl, resetsAt})`. The manifest
+must be ready and match the generation, chain and reset deadline. Both URLs must
+use HTTPS on the declared RPC origin. The RPC must be the manifest's generation
+endpoint. Production chain definitions cannot be rotated this way.
+
+Poll the project deployment manifest and call `pauseRpc()` while it rebuilds.
+Reconfigure when its fixtures are ready, clear chain-backed UI state, and retain
+user drafts and off-chain data. `getGeneration()` exposes the configured generation.
+Reads that cross a local generation change fail. Writes recheck the remote manifest
+after wallet setup, immediately before signing, and after completion. Wallet setup
+explicitly offers the new RPC even when the chain ID stays the same. A rejected
+update stops the write. Application requests and receipt displays must also be
+bound to the generation that started them.
+
 Client EVM runtimes also expose `connect()`, `disconnect()` and
 `getWalletState()`. Connection requests wallet access; disconnection clears the
 runtime wallet binding until explicitly connected again, without revoking the

@@ -961,6 +961,16 @@ interface EVMAPI {
   }>
   getChainId(params?: any): Promise<number>
   getRpcChainId(): Promise<number>
+  configureRpc(input: {
+    chainId: number
+    sourceChainId: number
+    generation: string
+    rpcUrl: string
+    manifestUrl: string
+    resetsAt: string
+  }): Promise<{ generation: string; rpcUrl: string }>
+  pauseRpc(): void
+  getGeneration(): string | null
   switchChain(params?: any): Promise<{ id: number }>
   readContract(params: any): Promise<any>
   signMessage(params: { account: string; message: string }): Promise<string>

@@ -3,6 +3,7 @@ import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 
 import { System } from '@gamedev/core/systems/System.js'
 import { localEvmChains } from '../localEvmChain.js'
+import { DevelopmentRpc } from '../developmentRpc.js'
 
 const DEFAULT_CHAIN_ID = mainnet.id
 const SUPPORTED_CHAINS = [mainnet, arbitrum, base, optimism, polygon, ...localEvmChains()]
@@ -130,6 +131,7 @@ export class EVM extends System {
     this.networkAddress = null
     this.networkChainId = null
     this.publicClients = new Map()
+    this.developmentRpcs = new Map()
     this.runtimeAPIs = new Map()
     this.utils = { formatEther, formatUnits, getAddress, parseUnits }
     this.abis = {
@@ -167,6 +169,9 @@ export class EVM extends System {
     const runtimeAPI = {
       utils: this.utils,
       abis: this.abis,
+      configureRpc: input => this.configureRpc(input, boundChainId),
+      pauseRpc: () => this.pauseRpc(boundChainId),
+      getGeneration: () => this.developmentRpcs.get(boundChainId)?.current?.generation || null,
       getAddress: () => this.getAddress(),
       isConnected: () => this.isConnected(),
       connect: () => this._requireWalletAdapter().connect(),
@@ -174,10 +179,10 @@ export class EVM extends System {
       getWalletState: () => this._requireWalletAdapter().refresh(),
       onWalletChange: listener => this._requireWalletAdapter().subscribe(listener),
       getRpcChainId: async () =>
-        this._getPublicClient(boundChainId || (await this._resolveOperationChainId())).getChainId(),
+        this._withRpc(boundChainId || (await this._resolveOperationChainId()), client => client.getChainId()),
       getChainId: params => this.getChainId(this._mergeRuntimeOptions(params, boundChainId)),
       readContract: params => this.readContract(params, { chainId: boundChainId }),
-      signMessage: params => this._requireWalletAdapter().signMessage(params),
+      signMessage: params => this.signMessage(params, boundChainId),
       sendTransaction: params => this.sendTransaction(params, { chainId: boundChainId }),
       writeContract: params => this.writeContract(params, { chainId: boundChainId }),
       waitForTransactionReceipt: params => this.waitForTransactionReceipt(params, { chainId: boundChainId }),
@@ -201,7 +206,7 @@ export class EVM extends System {
     ]) {
       runtimeAPI[method] = async params => {
         const id = boundChainId || (await this._resolveOperationChainId())
-        return this._getPublicClient(id)[method](params)
+        return this._withRpc(id, client => client[method](params))
       }
     }
 
@@ -307,8 +312,41 @@ export class EVM extends System {
     return chain
   }
 
+  async configureRpc(input, boundChainId = null) {
+    const id = boundChainId || normalizeChainId(input?.chainId)
+    const chain = this._requireSupportedChain(id)
+    let rpc = this.developmentRpcs.get(id)
+    if (!rpc) {
+      rpc = new DevelopmentRpc(chain)
+      this.developmentRpcs.set(id, rpc)
+    }
+    const state = await rpc.configure(input)
+    this.publicClients.delete(id)
+    return { generation: state.generation, rpcUrl: state.rpcUrl }
+  }
+
+  pauseRpc(chainId) {
+    const rpc = this.developmentRpcs.get(chainId)
+    if (!rpc) {
+      const chain = this._requireSupportedChain(chainId)
+      this.developmentRpcs.set(chainId, new DevelopmentRpc(chain))
+    } else rpc.pause()
+    this.publicClients.delete(chainId)
+  }
+
+  async _withRpc(chainId, operation, { fresh = false } = {}) {
+    const rpc = this.developmentRpcs.get(chainId)
+    const state = rpc?.capture()
+    const result = await operation(this._getPublicClient(chainId))
+    if (rpc) {
+      rpc.assertCurrent(state)
+      if (fresh) await rpc.assertFresh(state)
+    }
+    return result
+  }
+
   _getPublicClient(chainId) {
-    const targetChain = this._requireSupportedChain(chainId)
+    const targetChain = this.developmentRpcs.get(chainId)?.getChain() || this._requireSupportedChain(chainId)
     let publicClient = this.publicClients.get(targetChain.id)
     if (!publicClient) {
       publicClient = createPublicClient({
@@ -411,11 +449,14 @@ export class EVM extends System {
   async _ensureWalletChain(chainId = null) {
     if (!chainId) return null
     const targetChainId = this._requireSupportedChain(chainId).id
+    const rpc = this.developmentRpcs.get(chainId)
+    const state = rpc?.capture()
     const currentChainId = normalizeChainId(await this._requireWalletAdapter().getChainId({ request: true }))
 
-    if (currentChainId !== targetChainId) {
+    if (currentChainId !== targetChainId || this.walletRpcGeneration !== state) {
       await this.switchChain({ chainId: targetChainId })
     }
+    if (rpc) await rpc.assertFresh(state)
 
     return targetChainId
   }
@@ -481,7 +522,17 @@ export class EVM extends System {
     if (context.useWalletAdapter) {
       return this._requireWalletAdapter().readContract(request)
     }
-    return this._getPublicClient(context.chainId).readContract(request)
+    return this._withRpc(context.chainId, client => client.readContract(request))
+  }
+
+  async signMessage(params, chainId = null) {
+    const rpc = this.developmentRpcs.get(chainId)
+    const state = rpc?.capture()
+    const beforeWrite = rpc ? () => rpc.assertFresh(state) : undefined
+    if (beforeWrite) await beforeWrite()
+    const result = await this._requireWalletAdapter().signMessage(params, { beforeWrite })
+    if (rpc) await rpc.assertFresh(state)
+    return result
   }
 
   async sendTransaction(params, { chainId } = {}) {
@@ -490,11 +541,16 @@ export class EVM extends System {
     const requestedChainId = normalizeChainId(txParams.chainId) || normalizeChainId(chainId)
     delete txParams.chainId
 
-    if (requestedChainId) {
-      await this._ensureWalletChain(requestedChainId)
-    }
-
-    return walletAdapter.sendTransaction(txParams)
+    const id = requestedChainId || (await this._resolveOperationChainId())
+    const rpc = this.developmentRpcs.get(id)
+    const state = rpc?.capture()
+    if (requestedChainId || rpc) await this._ensureWalletChain(id)
+    if (rpc) txParams.chain = rpc.getChain()
+    const beforeWrite = rpc ? () => rpc.assertFresh(state) : undefined
+    if (beforeWrite) await beforeWrite()
+    const result = await walletAdapter.sendTransaction(txParams, { beforeWrite })
+    if (rpc) await rpc.assertFresh(state)
+    return result
   }
 
   async writeContract(params, { chainId } = {}) {
@@ -503,11 +559,16 @@ export class EVM extends System {
     const requestedChainId = normalizeChainId(txParams.chainId) || normalizeChainId(chainId)
     delete txParams.chainId
 
-    if (requestedChainId) {
-      await this._ensureWalletChain(requestedChainId)
-    }
-
-    return walletAdapter.writeContract(txParams)
+    const id = requestedChainId || (await this._resolveOperationChainId())
+    const rpc = this.developmentRpcs.get(id)
+    const state = rpc?.capture()
+    if (requestedChainId || rpc) await this._ensureWalletChain(id)
+    if (rpc) txParams.chain = rpc.getChain()
+    const beforeWrite = rpc ? () => rpc.assertFresh(state) : undefined
+    if (beforeWrite) await beforeWrite()
+    const result = await walletAdapter.writeContract(txParams, { beforeWrite })
+    if (rpc) await rpc.assertFresh(state)
+    return result
   }
 
   async waitForTransactionReceipt(params, { chainId } = {}) {
@@ -530,7 +591,7 @@ export class EVM extends System {
     if (context.useWalletAdapter) {
       return this._requireWalletAdapter().waitForTransactionReceipt(request)
     }
-    return this._getPublicClient(context.chainId).waitForTransactionReceipt(request)
+    return this._withRpc(context.chainId, client => client.waitForTransactionReceipt(request), { fresh: true })
   }
 
   async switchChain(params, { chainId } = {}) {
@@ -542,9 +603,20 @@ export class EVM extends System {
       throw new Error('chainId is required')
     }
 
-    const targetChain = this._requireSupportedChain(requestedChainId)
+    const rpc = this.developmentRpcs.get(requestedChainId)
+    const state = rpc?.capture()
+    const targetChain = rpc?.getChain() || this._requireSupportedChain(requestedChainId)
+    if (rpc) await rpc.assertFresh(state)
     const targetChainId = targetChain.id
-    const result = await this._requireWalletAdapter().switchChain({ chainId: targetChainId, chain: targetChain })
+    const result = await this._requireWalletAdapter().switchChain({
+      chainId: targetChainId,
+      chain: targetChain,
+      updateRpc: !!rpc,
+    })
+    if (rpc) {
+      await rpc.assertFresh(state)
+    }
+    this.walletRpcGeneration = state
     this.chainId = normalizeChainId(result?.id) || targetChainId
     this.pendingPlayerSync = true
     this.pendingNetworkSync = true
@@ -571,7 +643,7 @@ export class EVM extends System {
       return Number(formatEther(balance))
     }
 
-    const balance = await this._getPublicClient(context.chainId).getBalance({ address: target })
+    const balance = await this._withRpc(context.chainId, client => client.getBalance({ address: target }))
     return Number(formatEther(balance))
   }
 
@@ -603,21 +675,18 @@ export class EVM extends System {
   }
 
   async transferNative(to, amount, { chainId } = {}) {
-    const walletAdapter = this._requireWalletAdapter()
     const destination = this._normalizeAddress(to, 'to')
     const value = this._parseAmountToUnits(amount, 18, 'amount')
     const targetChainId = normalizeChainId(chainId)
 
-    if (targetChainId) {
-      await this._ensureWalletChain(targetChainId)
-    }
+    const rpc = this.developmentRpcs.get(targetChainId || this.chainId)
+    const state = rpc?.capture()
 
-    const hash = await walletAdapter.sendTransaction({
-      to: destination,
-      value,
-    })
+    const hash = await this.sendTransaction({ to: destination, value }, { chainId: targetChainId })
+    if (rpc) rpc.assertCurrent(state)
     const receipt = await this.waitForTransactionReceipt({ hash }, { chainId: targetChainId })
 
+    if (rpc) await rpc.assertFresh(state)
     return {
       hash: receipt?.transactionHash || hash,
       receipt,
@@ -625,7 +694,6 @@ export class EVM extends System {
   }
 
   async transferToken(tokenAddress, to, amount, decimals = 18, { chainId } = {}) {
-    const walletAdapter = this._requireWalletAdapter()
     const token = this._normalizeAddress(tokenAddress, 'tokenAddress')
     const destination = this._normalizeAddress(to, 'to')
     const targetChainId = normalizeChainId(chainId)
@@ -634,19 +702,23 @@ export class EVM extends System {
       throw new Error('Invalid decimals')
     }
 
-    if (targetChainId) {
-      await this._ensureWalletChain(targetChainId)
-    }
+    const rpc = this.developmentRpcs.get(targetChainId || this.chainId)
+    const state = rpc?.capture()
 
     const value = this._parseAmountToUnits(amount, decimals, 'amount')
-    const hash = await walletAdapter.writeContract({
-      address: token,
-      abi: ERC20_ABI,
-      functionName: 'transfer',
-      args: [destination, value],
-    })
+    const hash = await this.writeContract(
+      {
+        address: token,
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [destination, value],
+      },
+      { chainId: targetChainId }
+    )
+    if (rpc) rpc.assertCurrent(state)
     const receipt = await this.waitForTransactionReceipt({ hash }, { chainId: targetChainId })
 
+    if (rpc) await rpc.assertFresh(state)
     return {
       hash: receipt?.transactionHash || hash,
       receipt,
