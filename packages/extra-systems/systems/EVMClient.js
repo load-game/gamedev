@@ -351,7 +351,7 @@ export class EVM extends System {
     if (!publicClient) {
       publicClient = createPublicClient({
         chain: targetChain,
-        transport: http(undefined, { batch: true }),
+        transport: http(undefined, { batch: targetChain.development ? { batchSize: 32 } : true }),
       })
       this.publicClients.set(targetChain.id, publicClient)
     }
