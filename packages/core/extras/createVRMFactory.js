@@ -5,6 +5,8 @@ import { DEG2RAD } from './general.js'
 import { getTrianglesFromGeometry } from './getTrianglesFromGeometry.js'
 import { getTextureBytesFromMaterial } from './getTextureBytesFromMaterial.js'
 import { Emotes } from './playerEmotes.js'
+import { createAvatarAssetLifetime } from './avatarAssetLifetime.js'
+import { createAvatarBlinkFactory } from './avatarBlink.js'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
@@ -84,6 +86,8 @@ const Modes = {
 }
 
 export function createVRMFactory(glb, setupMaterial) {
+  const lifetime = createAvatarAssetLifetime(glb.scene)
+  const createBlink = createAvatarBlinkFactory(glb)
   // we'll update matrix ourselves
   glb.scene.matrixAutoUpdate = false
   glb.scene.matrixWorldAutoUpdate = false
@@ -170,7 +174,14 @@ export function createVRMFactory(glb, setupMaterial) {
 
   return {
     create,
+    dispose() {
+      if (!lifetime.dispose()) return false
+      glb = null
+      skinnedMeshes.length = 0
+      return true
+    },
     applyStats(stats) {
+      if (!glb) return
       glb.scene.traverse(obj => {
         if (obj.geometry && !stats.geometries.has(obj.geometry.uuid)) {
           stats.geometries.add(obj.geometry.uuid)
@@ -185,7 +196,10 @@ export function createVRMFactory(glb, setupMaterial) {
   }
 
   function create(matrix, hooks, node) {
+    const release = lifetime.retain()
+    let destroyed = false
     const vrm = cloneGLB(glb)
+    const blink = createBlink?.(vrm.scene)
     const tvrm = vrm.userData.vrm
     const skinnedMeshes = getSkinnedMeshes(vrm.scene)
     const skeleton = skinnedMeshes[0].skeleton // should be same across all skinnedMeshes
@@ -294,6 +308,7 @@ export function createVRMFactory(glb, setupMaterial) {
         emotes[url] = emote
         currentEmote = emote
         hooks.loader.load('emote', url).then(emo => {
+          if (destroyed) return
           const clip = emo.toClip({
             rootToHips,
             version,
@@ -335,7 +350,7 @@ export function createVRMFactory(glb, setupMaterial) {
     let paused = false
 
     const update = delta => {
-      if (paused) return
+      if (paused || destroyed) return
       elapsed += delta
       const should = rateCheck ? elapsed >= rate : true
       if (should) {
@@ -370,6 +385,8 @@ export function createVRMFactory(glb, setupMaterial) {
       } else {
         skeleton.update = noop
       }
+      // Eyelids stay smooth even when distant skeletal animation is throttled.
+      blink?.update(delta)
     }
 
     const aimBone = (() => {
@@ -557,6 +574,7 @@ export function createVRMFactory(glb, setupMaterial) {
       hooks.loader
         .load('emote', url)
         .then(emo => {
+          if (destroyed) return
           if (pose.loadId !== loadId) return
           const clip = emo.toClip({
             rootToHips,
@@ -743,9 +761,16 @@ export function createVRMFactory(glb, setupMaterial) {
         rateCheck = false
       },
       destroy() {
+        if (destroyed) return
+        destroyed = true
         hooks.scene.remove(vrm.scene)
         // world.updater.remove(update)
         hooks.octree?.remove(sItem)
+        mixer.stopAllAction()
+        mixer.uncacheRoot(skinnedMeshes[0])
+        sItem.geometry.dispose()
+        for (const skeleton of new Set(skinnedMeshes.map(mesh => mesh.skeleton))) skeleton.dispose()
+        release()
       },
     }
   }

@@ -30,6 +30,8 @@ export class ClientLoader extends System {
     this.files = new Map()
     this.promises = new Map()
     this.results = new Map()
+    this.avatarUsers = new Map()
+    this.imageUsers = new Map()
     this.rgbeLoader = new RGBELoader()
     this.texLoader = new TextureLoader()
     this.gltfLoader = new GLTFLoader()
@@ -94,6 +96,61 @@ export class ClientLoader extends System {
   get(type, url) {
     const key = `${type}/${url}`
     return this.results.get(key)
+  }
+
+  retainAvatar(url) {
+    return this.retainAssetUse(this.avatarUsers, url)
+  }
+
+  retainImage(url) {
+    return this.retainAssetUse(this.imageUsers, this.world.resolveURL(url))
+  }
+
+  retainAssetUse(users, url) {
+    users.set(url, (users.get(url) || 0) + 1)
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      const remaining = (users.get(url) || 1) - 1
+      if (remaining) users.set(url, remaining)
+      else users.delete(url)
+    }
+  }
+
+  async releaseAsset(type, url) {
+    if (!['avatar', 'image'].includes(type) || typeof url !== 'string' || !url) return false
+    if (type === 'image') url = this.world.resolveURL(url)
+    const key = `${type}/${url}`
+    const pending = this.promises.get(key)
+    if (!pending) return false
+    try {
+      await pending
+    } catch {
+      /* Failed parses can also be evicted and retried. */
+    }
+    const users = type === 'avatar' ? this.avatarUsers : this.imageUsers
+    if (this.promises.get(key) !== pending || users.has(url)) return false
+    const asset = this.results.get(key)
+    if (asset && type === 'avatar' && !asset.factory.dispose()) return false
+    if (asset && type === 'image') {
+      URL.revokeObjectURL(asset.src)
+      asset.onload = asset.onerror = null
+      asset.src = ''
+    }
+    this.results.delete(key)
+    this.promises.delete(key)
+    const resolved = this.world.resolveURL(url)
+    // Other loader types or aliases may still use the same downloaded bytes.
+    const shared = [...this.promises.keys()].some(other => {
+      const otherUrl = other.slice(other.indexOf('/') + 1)
+      return this.world.resolveURL(otherUrl) === resolved
+    })
+    if (!shared) {
+      this.files.delete(url)
+      this.files.delete(resolved)
+    }
+    return true
   }
 
   preload(type, url) {
@@ -189,12 +246,15 @@ export class ClientLoader extends System {
         return texture
       }
       if (type === 'image') {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
           const img = new Image()
           img.onload = () => {
             this.results.set(key, img)
             resolve(img)
-            // URL.revokeObjectURL(img.src)
+          }
+          img.onerror = () => {
+            URL.revokeObjectURL(img.src)
+            reject(new Error('Image failed to load'))
           }
           img.src = URL.createObjectURL(file)
         })
@@ -255,6 +315,8 @@ export class ClientLoader extends System {
           hooks,
           toNodes(customHooks) {
             const clone = node.clone(true)
+            clone.get('avatar').src = url
+            clone.get('avatar').factory = null
             if (customHooks) {
               clone.get('avatar').hooks = customHooks
             }
@@ -382,6 +444,8 @@ export class ClientLoader extends System {
           hooks,
           toNodes(customHooks) {
             const clone = node.clone(true)
+            clone.get('avatar').src = url
+            clone.get('avatar').factory = null
             if (customHooks) {
               clone.get('avatar').hooks = customHooks
             }
@@ -447,6 +511,7 @@ export class ClientLoader extends System {
         }
       })
     }
+    if (type === 'avatar') promise = promise.finally(() => URL.revokeObjectURL(localUrl))
     this.promises.set(key, promise)
   }
 
