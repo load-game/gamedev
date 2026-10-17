@@ -53,6 +53,18 @@ model.traverse(node => {
 })
 ```
 
+### `.releaseAsset(type, url)`: Promise\<Boolean\>
+
+Client-only. Supported types: `'avatar'` and `'image'`. After removing preview
+nodes, release the source's cached bytes and parsed resources. Avatars also
+release their GPU geometry, materials and textures; images release decoded
+image data and internal blob URLs. Returns `true` when evicted, or `false` if
+absent, unsupported, or still used by any live or loading node (including player
+avatars, UI images and world image nodes). It waits for an in-flight load and
+never invalidates a newer cache entry. Later loads or remounts fetch fresh
+assets. Remove all nodes using that source before calling; a busy result may
+be retried after their removal. Other asset types are not released.
+
 ### `.on(event, callback)`
 
 Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
@@ -211,6 +223,7 @@ Built-in supported chains:
 - Polygon (`137`)
 - Arbitrum (`42161`)
 - Base (`8453`)
+- HyperEVM (`999`, native currency HYPE)
 
 `player.evm` is the replicated player wallet address, and `player.evmChainId` is the replicated active EVM chain id. On the local player, when an EVM wallet is connected, they typically match `world.evm().getAddress()` and `world.evm().getChainId()`.
 

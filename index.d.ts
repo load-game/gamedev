@@ -1364,6 +1364,7 @@ interface WorldAPI {
 
   // Loader (subset)
   load(type: 'avatar' | 'model', url: string): Promise<BaseNode>
+  releaseAsset(type: 'avatar' | 'image', url: string): Promise<boolean>
 
   // EVM
   evm(chainId?: number): EVMAPI

@@ -539,6 +539,10 @@ export class Apps extends System {
           }
         })
       },
+      releaseAsset(entity, type, url) {
+        if (!world.network.isClient) return Promise.resolve(false)
+        return world.loader.releaseAsset?.(type, url) ?? Promise.resolve(false)
+      },
       getQueryParam(entity, key) {
         if (!isBrowser) {
           console.error('getQueryParam() must be called in the browser')
