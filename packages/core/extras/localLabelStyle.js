@@ -10,17 +10,17 @@ export function normalizeLocalLabelStyle(value) {
     if (!input || typeof input.image !== 'string' || input.image.length > 200000 || !imagePattern.test(input.image))
       throw new Error('Label frame must be an inline image')
     if (typeof input.color !== 'string' || !colorPattern.test(input.color)) throw new Error('Invalid label text color')
-    if (
-      input.compactImage !== undefined &&
-      (typeof input.compactImage !== 'string' ||
-        input.compactImage.length > 200000 ||
-        !imagePattern.test(input.compactImage))
-    )
-      throw new Error('Compact label frame must be an inline image')
+    const optional = {}
+    for (const key of ['compactImage', 'compactLeftImage', 'compactRightImage']) {
+      if (input[key] === undefined) continue
+      if (typeof input[key] !== 'string' || input[key].length > 200000 || !imagePattern.test(input[key]))
+        throw new Error('Compact label artwork must be an inline image')
+      optional[key] = input[key]
+    }
     return Object.freeze({
       image: input.image,
       color: input.color,
-      ...(input.compactImage ? { compactImage: input.compactImage } : {}),
+      ...optional,
     })
   }
   return Object.freeze({ nameTag: frame(value.nameTag), chat: frame(value.chat) })
@@ -140,6 +140,24 @@ export function createPlayerLabelNodes(createNode, player, style) {
     })
   )
   speechBox.add(speech.text)
+  for (const [key, edge] of [
+    ['compactLeftImage', 'left'],
+    ['compactRightImage', 'right'],
+  ]) {
+    if (!style.chat[key]) continue
+    const holder = createNode('uiview', {
+      absolute: true,
+      [edge]: -13,
+      top: 0,
+      bottom: 0,
+      width: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: false,
+    })
+    holder.add(createNode('uiimage', { src: source(style.chat[key]), width: 24, height: 24, objectFit: 'contain' }))
+    speechBox.add(holder)
+  }
   speech.root.add(speechBox)
   void Promise.resolve(player.world?.loader?.load?.('image', speechSource)).catch(() => {})
   player.aura.add(name.root)

@@ -1375,7 +1375,13 @@ interface WorldAPI {
   setLocalPlayerLabelStyle(
     style: {
       nameTag: { image: string; color: string }
-      chat: { image: string; color: string; compactImage?: string }
+      chat: {
+        image: string
+        color: string
+        compactImage?: string
+        compactLeftImage?: string
+        compactRightImage?: string
+      }
     } | null
   ): void
 

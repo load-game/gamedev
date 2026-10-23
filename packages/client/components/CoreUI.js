@@ -690,6 +690,28 @@ function Message({ world, msg, now }) {
           }}
         />
       )}
+      {frame &&
+        ['compactLeftImage', 'compactRightImage'].map(
+          (key, index) =>
+            frame[key] && (
+              <img
+                key={key}
+                alt=''
+                aria-hidden='true'
+                src={frame[key]}
+                style={{
+                  position: 'absolute',
+                  pointerEvents: 'none',
+                  [index ? 'right' : 'left']: '-1.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '1.65rem',
+                  height: '1.65rem',
+                  objectFit: 'contain',
+                }}
+              />
+            )
+        )}
       {msg.from && (
         <span className='message-from' style={frame ? { position: 'relative' } : undefined}>
           [{msg.from}]

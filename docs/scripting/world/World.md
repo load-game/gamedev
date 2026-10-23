@@ -77,6 +77,11 @@ keep decorations in the margins. Sender names and message bodies remain native
 text. Long names are shortened for fit without changing profile identity.
 `chat.compactImage` may provide separate 552 × 48 artwork for the chat log and speech bubble.
 Log text size, row padding and column width remain unchanged when equipped.
+Optional `chat.compactLeftImage` and `chat.compactRightImage` put separate inline
+icons in the existing side gutters. They use contain fitting in fixed square
+boxes, preserving their proportions when text wraps. Omit those icons from
+`compactImage` to avoid duplicates. The same per-image size and source limits
+apply; these decorations do not change text layout or message identity.
 
 Overrides are app-scoped and removed when the app is destroyed. If another app
 also overrides labels, the most recently applied override wins; removing it
