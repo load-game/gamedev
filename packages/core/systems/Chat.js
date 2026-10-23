@@ -2,6 +2,7 @@ import moment from 'moment'
 import { uuid } from '../utils.js'
 import { syncLobbyProfilePatch } from '../profileSync.js'
 import { System } from './System.js'
+import { createLocalLabelStyleState } from '../extras/localLabelStyle.js'
 
 /**
  * Chat System
@@ -20,6 +21,10 @@ export class Chat extends System {
     this.msgs = []
     this.listeners = new Set()
     this.commands = {} // cmd -> Function
+    this.localLabelStyles = createLocalLabelStyleState(style => {
+      this.world.emit('local-label-style', style)
+      for (const callback of this.listeners) callback([...this.msgs])
+    })
   }
 
   add(msg, broadcast) {
@@ -191,6 +196,7 @@ export class Chat extends System {
   }
 
   destroy() {
+    this.localLabelStyles.clear()
     this.msgs = []
     this.listeners.clear()
   }
