@@ -2,7 +2,7 @@
 
 ## Setup
 
-Recommended Node.js version: 24.15.0
+Recommended Node.js version: 24.22.1
 
 ```
 vp install
