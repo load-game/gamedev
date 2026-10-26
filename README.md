@@ -18,7 +18,7 @@ Then open `http://localhost:3000`.
 
 What `vp run dev` does:
 
-- Requires Node.js `24.15.0` (latest LTS).
+- Requires Node.js `24.22.1` (latest LTS).
 - Starts a local world server when `WORLD_URL` points to localhost.
 - Runs app-server sync so local edits deploy to the world in seconds.
 - Auto-creates `.env` with local defaults if one does not exist yet.

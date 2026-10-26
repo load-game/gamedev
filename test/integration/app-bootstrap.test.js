@@ -40,7 +40,7 @@ test('scaffold writes scene scaffold and world manifest', async () => {
   assert.equal(await fileExists(path.join(rootDir, 'hyperfy.app-runtime.d.ts')), false)
 
   const nvmrc = await fs.readFile(path.join(rootDir, '.nvmrc'), 'utf8')
-  assert.equal(nvmrc, '24.15.0\n')
+  assert.equal(nvmrc, '24.22.1\n')
 
   const pkg = await readJson(path.join(rootDir, 'package.json'))
   assert.equal(pkg.packageManager, 'pnpm@11.1.3')

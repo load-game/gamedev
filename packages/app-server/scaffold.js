@@ -41,7 +41,7 @@ dist/
 .DS_Store
 `
 
-const DEFAULT_NVMRC = '24.15.0\n'
+const DEFAULT_NVMRC = '24.22.1\n'
 
 const DEFAULT_TSCONFIG = {
   compilerOptions: {

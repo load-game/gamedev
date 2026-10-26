@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.15.0-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 WORKDIR /app
 
 # Install Python and build tools
@@ -16,7 +16,7 @@ COPY . .
 RUN pnpm run build
 
 # Production stage
-FROM node:24.15.0-alpine AS production
+FROM node:24.22.1-alpine AS production
 WORKDIR /app
 
 # Add curl for healthcheck and ca-certificates for SSL
