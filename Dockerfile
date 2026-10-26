@@ -8,6 +8,7 @@ RUN apk add --no-cache python3 make g++ linux-headers eudev-dev
 # Enable the locked package manager and copy workspace metadata first
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY patches ./patches
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 

@@ -44,7 +44,8 @@ test('scaffold writes scene scaffold and world manifest', async () => {
 
   const pkg = await readJson(path.join(rootDir, 'package.json'))
   assert.equal(pkg.packageManager, 'pnpm@11.1.3')
-  assert.equal(pkg.devDependencies['vite-plus'], '^0.1.22')
+  assert.equal(pkg.devDependencies['vite-plus'], '1.4.0')
+  assert.equal(pkg.devDependencies.vite, 'npm:@voidzero-dev/vite-plus-core@1.4.0')
 
   assert.equal(await fileExists(path.join(rootDir, 'apps', 'Model', 'Model.json')), false)
   assert.equal(await fileExists(path.join(rootDir, 'apps', 'Model', 'index.js')), false)

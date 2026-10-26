@@ -81,7 +81,8 @@ function buildPackageJson({ packageName, sdkName, sdkVersion }) {
   const devDependencies = {
     [sdkName]: 'latest',
     typescript: '^5.9.2',
-    'vite-plus': '^0.1.22',
+    'vite-plus': '1.4.0',
+    vite: 'npm:@voidzero-dev/vite-plus-core@1.4.0',
   }
   const pkg = {
     name: packageName,

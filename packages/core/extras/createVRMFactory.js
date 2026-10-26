@@ -328,9 +328,9 @@ export function createVRMFactory(glb, setupMaterial) {
       const clampedDistance = Math.max(distance - DIST_MIN, 0)
       const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
       rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
-      // console.log('distance', distance)
-      // console.log('rate per second', 1 / rate)
     }
+    // console.log('distance', distance)
+    // console.log('rate per second', 1 / rate)
 
     let paused = false
 
