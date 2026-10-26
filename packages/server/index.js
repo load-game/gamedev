@@ -1414,10 +1414,10 @@ function registerCommonRoutes(app, { includeBootstrapControl = false, connection
     root: publicDir,
     prefix: '/',
     decorateReply: false,
-    setHeaders: res => {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
-      res.setHeader('Pragma', 'no-cache')
-      res.setHeader('Expires', '0')
+    setHeaders: reply => {
+      reply.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+      reply.header('Pragma', 'no-cache')
+      reply.header('Expires', '0')
     },
   })
   app.register(multipart)
