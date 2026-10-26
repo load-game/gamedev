@@ -22,6 +22,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+      - run: pnpm run audit:security
       - run: pnpm exec vp check --no-lint
       - run: pnpm exec vp lint --quiet .
       - run: pnpm build
