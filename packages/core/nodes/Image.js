@@ -86,12 +86,28 @@ export class Image extends Node {
   async build() {
     this.needsRebuild = false
     if (this.ctx.world.network.isServer) return
-    if (!this._src) return
+    if (!this._src) {
+      this.unbuild()
+      return
+    }
+    this.pendingAssetUse?.()
     const n = ++this.n
-    let image = this.ctx.world.loader.get('image', this._src)
-    if (!image) image = await this.ctx.world.loader.load('image', this._src)
+    const url = this.ctx.world.resolveURL(this._src)
+    const release = this.ctx.world.loader.retainImage?.(url)
+    this.pendingAssetUse = release
+    let image
+    try {
+      image = this.ctx.world.loader.get('image', url)
+      if (!image) image = await this.ctx.world.loader.load('image', url)
+    } catch (error) {
+      release?.()
+      if (this.n === n) console.warn(error.message)
+      return
+    }
     if (this.n !== n) return
+    this.pendingAssetUse = null
     this.unbuild()
+    this.assetUse = release
     const imgAspect = image.width / image.height
     let width = this._width
     let height = this._height
@@ -236,6 +252,12 @@ export class Image extends Node {
 
   unbuild() {
     this.n++
+    this.pendingAssetUse?.()
+    this.pendingAssetUse = null
+    this.assetUse?.()
+    this.assetUse = null
+    this.texture?.dispose()
+    this.texture = null
     if (this.mesh) {
       this.ctx.world.stage.scene.remove(this.mesh)
       this.mesh.material.dispose()

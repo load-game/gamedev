@@ -154,6 +154,9 @@ export class UIImage extends Node {
 
   unmount() {
     if (this.ctx.world.network.isServer) return
+    this.imageVersion = (this.imageVersion || 0) + 1
+    this.releaseImageUse?.()
+    this.releaseImageUse = null
     if (this.yogaNode) {
       this.parent.yogaNode?.removeChild(this.yogaNode)
       this.yogaNode.free()
@@ -182,13 +185,24 @@ export class UIImage extends Node {
   }
 
   async loadImage(src) {
-    if (!this.ctx?.world) return
+    if (!this.ctx?.world || !this.mounted || this.ctx.world.network.isServer) return
+    const version = (this.imageVersion = (this.imageVersion || 0) + 1)
+    this.releaseImageUse?.()
+    this.img = null
     const url = this.ctx.world.resolveURL(src)
-    this.img = this.ctx.world.loader.get('image', url)
-    if (!this.img) {
-      this.img = await this.ctx.world.loader.load('image', url)
+    const release = this.ctx.world.loader.retainImage?.(url)
+    this.releaseImageUse = release
+    let image
+    try {
+      image = this.ctx.world.loader.get('image', url)
+      if (!image) image = await this.ctx.world.loader.load('image', url)
+    } catch (error) {
+      release?.()
+      if (version === this.imageVersion) console.warn(error.message)
+      return
     }
-    if (!this.ui) return
+    if (version !== this.imageVersion || !this.mounted || !this.ui) return
+    this.img = image
     this.yogaNode?.markDirty()
     this.ui?.redraw()
   }
@@ -353,6 +367,9 @@ export class UIImage extends Node {
     if (this._src) {
       this.loadImage(this._src)
     } else {
+      this.imageVersion = (this.imageVersion || 0) + 1
+      this.releaseImageUse?.()
+      this.releaseImageUse = null
       this.img = null
       this.ui?.redraw()
     }

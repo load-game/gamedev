@@ -29,11 +29,20 @@ export class Avatar extends Node {
     this.needsRebuild = false
     if (this._src) {
       const n = ++this.n
-      let avatar = this.ctx.world.loader.get('avatar', this._src)
-      if (!avatar) avatar = await this.ctx.world.loader.load('avatar', this._src)
+      const release = this.ctx.world.loader.retainAvatar?.(this._src)
+      this.releaseAssetUse = release
+      let avatar
+      try {
+        avatar = this.ctx.world.loader.get('avatar', this._src)
+        if (!avatar) avatar = await this.ctx.world.loader.load('avatar', this._src)
+      } catch (error) {
+        release?.()
+        if (this.n !== n) return
+        throw error
+      }
       if (this.n !== n) return
       this.factory = avatar?.factory
-      this.hooks = avatar?.hooks
+      this.hooks ||= avatar?.hooks
     }
     if (this.factory) {
       this.instance = this.factory.create(this.matrixWorld, this.hooks, this)
@@ -67,6 +76,9 @@ export class Avatar extends Node {
       this.instance.destroy()
       this.instance = null
     }
+    this.releaseAssetUse?.()
+    this.releaseAssetUse = null
+    if (this._src) this.factory = null
   }
 
   applyStats(stats) {

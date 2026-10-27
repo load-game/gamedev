@@ -2,6 +2,12 @@
 
 Renders a VRM avatar
 
+Avatars with standard VRM blink morph bindings blink automatically. Each avatar
+instance has its own timing and morph weights, including previews and local or
+remote players. A combined blink preset is preferred; separate left/right
+presets are supported when it is absent. Models without these bindings keep
+their original behavior. Eyelid animation pauses with the avatar.
+
 ```jsx
 const src = props.avatar?.url
 const emote = props.emote?.url
@@ -50,4 +56,3 @@ hips, spine, chest, neck, head, leftShoulder, leftUpperArm, leftLowerArm, leftHa
 ### `.{...Node}`
 
 Inherits all [Node](/docs/scripting/nodes/Node.md) properties
-
