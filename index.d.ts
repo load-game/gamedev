@@ -1371,6 +1371,19 @@ interface WorldAPI {
   getBrowserPreferences(): { colorScheme: 'light' | 'dark'; reducedMotion: boolean } | null
   getPreference(key: string): any
   setPreference(key: string, value: any): void
+  /** Client-only preview; never saved to profiles or sent to other players. Null removes this app's override. */
+  setLocalPlayerLabelStyle(
+    style: {
+      nameTag: { image: string; color: string }
+      chat: {
+        image: string
+        color: string
+        compactImage?: string
+        compactLeftImage?: string
+        compactRightImage?: string
+      }
+    } | null
+  ): void
 
   // Hyperliquid
   hyperliquid(): HyperliquidAPI
