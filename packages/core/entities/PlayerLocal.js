@@ -12,6 +12,7 @@ import { ControlPriorities } from '../extras/ControlPriorities.js'
 import { isBoolean, isNumber } from 'lodash-es'
 import { hasRank, Ranks } from '../extras/ranks.js'
 import { Ragdoll } from '../extras/Ragdoll.js'
+import { createPlayerLabelNodes } from '../extras/localLabelStyle.js'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -172,6 +173,16 @@ export class PlayerLocal extends Entity {
     this.bubbleBox.add(this.bubbleText)
     this.aura.add(this.bubble)
 
+    this.onLocalLabelStyle = style => {
+      const speaking = this.bubble.active || this.localLabels?.speech.active
+      this.localLabels?.destroy()
+      this.localLabels = style ? createPlayerLabelNodes(createNode, this, style) : null
+      this.bubble.active = !!speaking && !style
+      if (speaking && this.localLabels) this.localLabels.say(this.bubbleText.value)
+    }
+    this.world.on('local-label-style', this.onLocalLabelStyle)
+    this.onLocalLabelStyle(this.world.chat?.localLabelStyles?.value ?? null)
+
     this.aura.activate({ world: this.world, entity: this })
     this.base.activate({ world: this.world, entity: this })
 
@@ -212,6 +223,8 @@ export class PlayerLocal extends Entity {
     if (this.destroyed) return
     this.destroyed = true
     clearTimeout(this.chatTimer)
+    this.world.off('local-label-style', this.onLocalLabelStyle)
+    this.localLabels?.destroy()
     this.world.off('xrSession', this.onXRSession)
     this.control?.release()
     this._ragdoll?.destroy()
@@ -248,6 +261,7 @@ export class PlayerLocal extends Entity {
         this.base.add(this.avatar)
         this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2
         this.bubble.position.y = this.avatar.getHeadToHeight() + 0.2
+        this.localLabels?.update()
         if (!this.bubble.active) {
           this.nametag.active = true
         }
@@ -1418,10 +1432,12 @@ export class PlayerLocal extends Entity {
   chat(msg) {
     this.nametag.active = false
     this.bubbleText.value = msg
-    this.bubble.active = true
+    this.bubble.active = !this.localLabels
+    this.localLabels?.say(msg)
     clearTimeout(this.chatTimer)
     this.chatTimer = setTimeout(() => {
       this.bubble.active = false
+      if (this.localLabels) this.localLabels.speech.active = false
       this.nametag.active = true
     }, 5000)
   }
@@ -1431,6 +1447,7 @@ export class PlayerLocal extends Entity {
     let changed
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name
+      this.localLabels?.update()
       this.world.emit('name', { playerId: this.data.id, name: this.data.name })
       changed = true
     }

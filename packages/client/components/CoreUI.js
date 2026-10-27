@@ -9,6 +9,7 @@ import { cls, isTouch } from '../utils.js'
 import { theme } from './theme.js'
 import { uuid } from '@gamedev/core/utils.js'
 import { ControlPriorities } from '@gamedev/core/extras/ControlPriorities.js'
+import { localMessageFrame } from '@gamedev/core/extras/localLabelStyle.js'
 // import { AppsPane } from './AppsPane.js'
 // import { MenuMain } from './MenuMain'
 // import { MenuApp } from './MenuApp.js'
@@ -540,7 +541,7 @@ function MiniMessages({ world }) {
     return () => clearTimeout(timerId)
   }, [msg])
   if (!msg) return null
-  return <Message msg={msg} />
+  return <Message world={world} msg={msg} />
 }
 
 const MESSAGES_REFRESH_RATE = 30 // every x seconds
@@ -606,6 +607,11 @@ function Messages({ world, active }) {
         flex-direction: column;
         align-items: stretch;
         overflow-y: auto;
+        /* Let ornaments paint beside the unchanged message column. */
+        margin-left: -1.8rem;
+        margin-right: -1.8rem;
+        padding-left: 1.8rem;
+        padding-right: 1.8rem;
         -webkit-mask-image: linear-gradient(to top, black calc(100% - 10rem), black 10rem, transparent);
         mask-image: linear-gradient(to top, black calc(100% - 10rem), black 10rem, transparent);
         &.active {
@@ -618,13 +624,14 @@ function Messages({ world, active }) {
     >
       <div className='messages-spacer' ref={spacerRef} />
       {msgs.map(msg => (
-        <Message key={msg.id} msg={msg} /*now={now}*/ />
+        <Message key={msg.id} world={world} msg={msg} /*now={now}*/ />
       ))}
     </div>
   )
 }
 
-function Message({ msg, now }) {
+function Message({ world, msg, now }) {
+  const frame = localMessageFrame(world?.chat.localLabelStyles.value, msg, world?.network.id)
   // const timeAgo = useMemo(() => {
   //   const createdAt = moment(msg.createdAt)
   //   const age = now.diff(createdAt, 'seconds')
@@ -642,6 +649,17 @@ function Message({ msg, now }) {
   return (
     <div
       className='message'
+      style={
+        frame
+          ? {
+              position: 'relative',
+              color: frame.color,
+              flexShrink: 0,
+              overflowWrap: 'anywhere',
+              WebkitTextStroke: '0 transparent',
+            }
+          : undefined
+      }
       css={css`
         padding: 0.25rem 0;
         line-height: 1.4;
@@ -656,8 +674,52 @@ function Message({ msg, now }) {
         }
       `}
     >
-      {msg.from && <span className='message-from'>[{msg.from}]</span>}
-      <span className='message-body'>{msg.body}</span>
+      {frame && (
+        <img
+          alt=''
+          aria-hidden='true'
+          src={frame.compactImage || frame.image}
+          style={{
+            position: 'absolute',
+            pointerEvents: 'none',
+            left: '-1.8rem',
+            top: '-.125rem',
+            width: 'calc(100% + 3.6rem)',
+            maxWidth: 'none',
+            height: 'calc(100% + .25rem)',
+          }}
+        />
+      )}
+      {frame &&
+        ['compactLeftImage', 'compactRightImage'].map(
+          (key, index) =>
+            frame[key] && (
+              <img
+                key={key}
+                alt=''
+                aria-hidden='true'
+                src={frame[key]}
+                style={{
+                  position: 'absolute',
+                  pointerEvents: 'none',
+                  [index ? 'right' : 'left']: '-1.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '1.65rem',
+                  height: '1.65rem',
+                  objectFit: 'contain',
+                }}
+              />
+            )
+        )}
+      {msg.from && (
+        <span className='message-from' style={frame ? { position: 'relative' } : undefined}>
+          [{msg.from}]
+        </span>
+      )}
+      <span className='message-body' style={frame ? { position: 'relative' } : undefined}>
+        {msg.body}
+      </span>
       {/* <span>{timeAgo}</span> */}
     </div>
   )

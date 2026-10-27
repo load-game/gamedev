@@ -326,6 +326,17 @@ export class Apps extends System {
           throw new Error('Preference exceeds 4096 characters')
         localStorage.setItem(`app:${entity.data.blueprint}:${key}`, serialized)
       },
+      setLocalPlayerLabelStyle(entity, style) {
+        if (!world.network.isClient) throw new Error('client_only')
+        if (!entity.localLabelStyleCleanup) {
+          entity.localLabelStyleCleanup = true
+          entity.on('destroy', () => {
+            world.chat.localLabelStyles.remove(entity)
+            entity.localLabelStyleCleanup = false
+          })
+        }
+        world.chat.localLabelStyles.set(entity, style)
+      },
       add(entity, pNode) {
         const node = getRef(pNode)
         if (!node) return

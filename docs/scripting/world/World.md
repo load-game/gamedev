@@ -65,6 +65,30 @@ never invalidates a newer cache entry. Later loads or remounts fetch fresh
 assets. Remove all nodes using that source before calling; a busy result may
 be retried after their removal. Other asset types are not released.
 
+### `.setLocalPlayerLabelStyle(style)`
+
+Client-only cosmetic preview for the local player's overhead name, speech bubble
+and their messages in the native chat log. Pass `{ nameTag: { image, color },
+chat: { image, color } }`, or `null` to remove this app's override. `image` is an
+inline PNG/JPEG/WebP/SVG data URL (maximum 200,000 characters); `color` is a six-
+or eight-digit hex color. Name artwork uses a 320 × 96 canvas, with text inside
+the center 186 pixels. Chat artwork stretches to fit the speech/message frame;
+keep decorations in the margins. Sender names and message bodies remain native
+text. Long names are shortened for fit without changing profile identity.
+`chat.compactImage` may provide separate 552 × 48 artwork for the chat log and speech bubble.
+Log text size, row padding and column width remain unchanged when equipped.
+Optional `chat.compactLeftImage` and `chat.compactRightImage` put separate inline
+icons in the existing side gutters. They use contain fitting in fixed square
+boxes, preserving their proportions when text wraps. Omit those icons from
+`compactImage` to avoid duplicates. The same per-image size and source limits
+apply; these decorations do not change text layout or message identity.
+
+Overrides are app-scoped and removed when the app is destroyed. If another app
+also overrides labels, the most recently applied override wins; removing it
+restores the previous app's override. No item ownership, profile data, network
+messages or other players' presentation is changed. Apps may separately retain
+the chosen style ID with `getPreference` / `setPreference`.
+
 ### `.on(event, callback)`
 
 Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
