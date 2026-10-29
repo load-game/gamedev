@@ -72,6 +72,34 @@ test('world wallet add-chain verifies metadata, disconnect remains disconnected,
   }
 })
 
+test('configured native currency agrees on server and browser and rejects malformed wallet metadata', () => {
+  const values = {
+    LOCAL_EVM_RPC_URL: 'https://anvil.peezy.tech/elysium/rpc',
+    LOCAL_EVM_CHAIN_ID: '1000099801',
+    LOCAL_EVM_NATIVE_CURRENCY_NAME: 'HYPE',
+    LOCAL_EVM_NATIVE_CURRENCY_SYMBOL: 'HYPE',
+    LOCAL_EVM_NATIVE_CURRENCY_DECIMALS: '18',
+  }
+  const publicValues = Object.fromEntries(Object.entries(values).map(([key, value]) => ['PUBLIC_' + key, value]))
+  const server = localEvmChains(values, {})[0]
+  const browser = localEvmChains({}, publicValues)[0]
+  assert.deepEqual(server, browser)
+  assert.deepEqual(server.nativeCurrency, { name: 'HYPE', symbol: 'HYPE', decimals: 18 })
+  assert.deepEqual(localEvmChains({ LOCAL_EVM_RPC_URL: values.LOCAL_EVM_RPC_URL }, {})[0].nativeCurrency, {
+    name: 'Test Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  })
+  for (const patch of [
+    { LOCAL_EVM_NATIVE_CURRENCY_SYMBOL: '<HYPE>' },
+    { LOCAL_EVM_NATIVE_CURRENCY_NAME: ' ' },
+    { LOCAL_EVM_NATIVE_CURRENCY_DECIMALS: '-1' },
+    { LOCAL_EVM_NATIVE_CURRENCY_DECIMALS: '37' },
+    { LOCAL_EVM_NATIVE_CURRENCY_DECIMALS: '1.5' },
+  ])
+    assert.throws(() => localEvmChains({ ...values, ...patch }, {}), /NATIVE_CURRENCY/)
+})
+
 test('bound chain metadata and queried RPC chain remain distinct', async () => {
   const { EVM } = await import('../../packages/extra-systems/systems/EVMClient.js')
   const evm = new EVM({}),
