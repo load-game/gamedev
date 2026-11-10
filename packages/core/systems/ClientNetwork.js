@@ -88,8 +88,6 @@ export class ClientNetwork extends System {
     this.identity = null
     this.world.events.emit('session-changing')
     this.world.emit('session-changing')
-    this.world.agentControl?.stop('session_changed')
-    this.world.companions?.destroy()
     this.world.livekit?.resetSession()
     for (const entity of this.world.entities.items.values()) {
       for (const proxy of entity.playerProxies?.values() || []) proxy.$cleanup?.()
@@ -369,18 +367,9 @@ export class ClientNetwork extends System {
         .catch(error => waiter.reject(error))
     }
     this.world.livekit?.deserialize(data.livekit)
-    this.world.companions?.deserialize(data.companions, data.companionProtocol)
     this.world.ai?.deserialize?.(data.ai)
     storage.set('authToken', data.authToken)
     this.world.admin?.onSnapshot?.(data)
-  }
-
-  onCompanionState = data => {
-    this.world.companions?.setState(data)
-  }
-
-  onCompanionResult = data => {
-    this.world.companions?.result(data)
   }
 
   onSettingsModified = data => {

@@ -50,9 +50,10 @@ const names = [
   'serverLogHistory',
   'subscribeLogs',
   'unsubscribeLogs',
-  'companionRequest',
-  'companionResult',
-  'companionState',
+  // Retired packet IDs remain reserved to preserve subsequent wire IDs.
+  null,
+  null,
+  null,
   'worldAccess',
 ]
 
@@ -63,6 +64,7 @@ let ids = -1
 
 for (const name of names) {
   const id = ++ids
+  if (!name) continue
   const info = {
     id,
     name,

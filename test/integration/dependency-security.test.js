@@ -44,6 +44,21 @@ test('legacy URI decoder handles long malformed UTF-8 within a bounded subproces
   assert.equal(child.status, 0, child.stderr)
 })
 
+test('legacy URI decoder handles many distinct malformed percent runs within a bounded subprocess', () => {
+  const child = spawnSync(
+    process.execPath,
+    [
+      '--max-old-space-size=64',
+      '-e',
+      `const decode = require(process.argv[1]); let input = ''; for (let i = 0; i < 32000; i++) input += '%' + (i >> 8).toString(16).padStart(2, '0') + '%' + (i & 255).toString(16).padStart(2, '0') + 'x'; input += '%zz'; const output = decode(input); if (!output.endsWith('%zz')) process.exit(1)`,
+      decoderEntry,
+    ],
+    { timeout: 3000, encoding: 'utf8' }
+  )
+  assert.ifError(child.error)
+  assert.equal(child.status, 0, child.stderr)
+})
+
 for (const [format, load] of Object.entries(loaders)) {
   test(`legacy Zod ${format} rejects oversized arrays and sets before parsing their elements`, async () => {
     const z = await load()

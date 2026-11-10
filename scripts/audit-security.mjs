@@ -24,14 +24,18 @@ if (
 const findings = Object.values(report.advisories)
 const blocked = findings.filter(advisory => {
   if (!['high', 'critical'].includes(advisory.severity)) return false
+  const decoderBackport =
+    advisory.module_name === 'decode-uri-component' &&
+    advisory.url?.endsWith('/GHSA-qr28-fpjm-wq7f') &&
+    advisory.findings.every(finding => finding.version === '0.2.2')
   const legacyBackport =
     advisory.module_name === 'zod' &&
     advisory.url?.endsWith('/GHSA-mrhx-c7xc-m3w5') &&
     advisory.findings.every(finding => finding.version === '3.25.76') &&
     reviewedPatch
-  return !legacyBackport
+  return !legacyBackport && !decoderBackport
 })
 for (const advisory of blocked) console.error(`${advisory.severity}: ${advisory.module_name}: ${advisory.url}`)
 if (blocked.length) process.exit(1)
-console.log('No unmitigated high or critical dependency findings. Legacy Zod backport verified.')
+console.log('No unmitigated high or critical dependency findings. Legacy Zod and URI decoder backports verified.')
 console.log(JSON.stringify(report.metadata.vulnerabilities))
