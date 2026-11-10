@@ -58,7 +58,7 @@ behavior unless this mode is configured.
 `world.on('session-changing', callback)` runs after the old socket is detached.
 Clear private menus, cached account data, pending requests, and edit sessions in
 that callback. The engine clears its packet queue, wallet cache, player proxies,
-voice session, and companion requests. It releases the old local player's
+and voice session. It releases the old local player's
 controls, physics body, and scene nodes. Delayed voice and microphone requests
 cannot attach to the replacement identity.
 

@@ -1030,12 +1030,6 @@ export class PlayerLocal extends Entity {
       if (this.control.keyD.down || this.control.arrowRight.down) this.moveDir.x += 1
     }
 
-    if (this.world.agentControl?.enabled && this.world.agentControl.direction) {
-      this.moveDir.copy(this.world.agentControl.direction).applyAxisAngle(UP, -this.cam.rotation.y)
-      this.jumpDown = false
-      this.jumpPressed = false
-    }
-
     // we're moving if direction is set
     this.moving = this.moveDir.length() > 0
 
